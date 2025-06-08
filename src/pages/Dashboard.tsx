@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,6 +9,11 @@ import { HealthTimeline } from '@/components/HealthTimeline';
 import { FamilyVault } from '@/components/FamilyVault';
 import { EmergencyCard } from '@/components/EmergencyCard';
 import { HealthScore } from '@/components/HealthScore';
+import { SmartFolders } from '@/components/SmartFolders';
+import { AIHealthSummarizer } from '@/components/AIHealthSummarizer';
+import { PredictiveReminders } from '@/components/PredictiveReminders';
+import { FamilyHealthDashboard } from '@/components/FamilyHealthDashboard';
+import { SymptomChecker } from '@/components/SymptomChecker';
 import { MobileHeader } from '@/components/MobileHeader';
 import { MobileTabBar } from '@/components/MobileTabBar';
 import { MobileCard } from '@/components/MobileCard';
@@ -62,6 +68,26 @@ const Dashboard = () => {
                     </div>
                   </div>
                   <TrendingUp className="text-green-500" />
+                </div>
+              </MobileCard>
+
+              {/* AI Health Summary - Mobile */}
+              <MobileCard title="AI Health Insights" subtitle="Personalized health analysis">
+                <div className="space-y-3">
+                  <div className="flex items-start gap-3 p-2 rounded-lg bg-amber-50">
+                    <AlertTriangle className="w-4 h-4 text-amber-500 mt-1" />
+                    <div>
+                      <p className="text-sm font-medium">BP Pattern Alert</p>
+                      <p className="text-xs text-gray-600">Elevated 4x in 6 months</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3 p-2 rounded-lg bg-blue-50">
+                    <TrendingUp className="w-4 h-4 text-blue-500 mt-1" />
+                    <div>
+                      <p className="text-sm font-medium">Respiratory Pattern</p>
+                      <p className="text-xs text-gray-600">3 episodes since 2020</p>
+                    </div>
+                  </div>
                 </div>
               </MobileCard>
 
@@ -179,6 +205,18 @@ const Dashboard = () => {
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
+            {/* Top Row - AI Features */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <AIHealthSummarizer />
+              <PredictiveReminders />
+            </div>
+
+            {/* Second Row - Smart Organization */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <SmartFolders />
+              <FamilyHealthDashboard />
+            </div>
+
             {/* Health Alerts */}
             <Card>
               <CardHeader>
@@ -205,52 +243,46 @@ const Dashboard = () => {
               </CardContent>
             </Card>
 
-            {/* Quick Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-gray-600">Total Records</p>
-                      <p className="text-2xl font-bold">247</p>
+            {/* Symptom Checker & Quick Stats */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2">
+                <SymptomChecker />
+              </div>
+              <div className="space-y-4">
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-gray-600">Total Records</p>
+                        <p className="text-2xl font-bold">247</p>
+                      </div>
+                      <FileText className="text-blue-500" />
                     </div>
-                    <FileText className="text-blue-500" />
-                  </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-gray-600">Family Members</p>
-                      <p className="text-2xl font-bold">4</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-gray-600">Health Score</p>
+                        <p className="text-2xl font-bold">87</p>
+                      </div>
+                      <TrendingUp className="text-emerald-500" />
                     </div>
-                    <Users className="text-green-500" />
-                  </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-gray-600">Health Score</p>
-                      <p className="text-2xl font-bold">87</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-gray-600">Data Security</p>
+                        <p className="text-2xl font-bold text-green-600">AES-256</p>
+                      </div>
+                      <Shield className="text-green-600" />
                     </div>
-                    <TrendingUp className="text-emerald-500" />
-                  </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-gray-600">Data Security</p>
-                      <p className="text-2xl font-bold text-green-600">AES-256</p>
-                    </div>
-                    <Shield className="text-green-600" />
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              </div>
             </div>
 
             {/* Recent Documents */}
