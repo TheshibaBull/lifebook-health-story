@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Heart, FileText, Users, Calendar, TrendingUp, AlertTriangle, Shield, QrCode } from 'lucide-react';
+import { Heart, FileText, Users, Calendar, TrendingUp, AlertTriangle, Shield, QrCode, Download } from 'lucide-react';
 import { HealthTimeline } from '@/components/HealthTimeline';
 import { FamilyVault } from '@/components/FamilyVault';
 import { EmergencyCard } from '@/components/EmergencyCard';
@@ -17,6 +17,7 @@ import { SymptomChecker } from '@/components/SymptomChecker';
 import { MobileHeader } from '@/components/MobileHeader';
 import { MobileTabBar } from '@/components/MobileTabBar';
 import { MobileCard } from '@/components/MobileCard';
+import { DataExport } from '@/components/DataExport';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 const Dashboard = () => {
@@ -50,8 +51,8 @@ const Dashboard = () => {
                   Emergency Card
                 </Button>
                 <Button variant="outline" size="sm" className="flex-1">
-                  <FileText className="w-4 h-4 mr-2" />
-                  Upload Records
+                  <Download className="w-4 h-4 mr-2" />
+                  Export Data
                 </Button>
               </div>
 
@@ -160,6 +161,10 @@ const Dashboard = () => {
             <TabsContent value="insights" className="mt-0">
               <HealthScore />
             </TabsContent>
+
+            <TabsContent value="export" className="mt-0">
+              <DataExport />
+            </TabsContent>
           </Tabs>
         </div>
 
@@ -186,6 +191,10 @@ const Dashboard = () => {
                 <QrCode className="w-4 h-4 mr-2" />
                 Emergency Card
               </Button>
+              <Button variant="outline" size="sm">
+                <Download className="w-4 h-4 mr-2" />
+                Export Data
+              </Button>
               <Button size="sm">
                 <FileText className="w-4 h-4 mr-2" />
                 Upload Records
@@ -196,12 +205,13 @@ const Dashboard = () => {
 
         {/* Main Content */}
         <Tabs value={selectedTab} onValueChange={setSelectedTab}>
-          <TabsList className="grid w-full grid-cols-5 mb-6">
+          <TabsList className="grid w-full grid-cols-6 mb-6">
             <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="timeline">Health Timeline</TabsTrigger>
-            <TabsTrigger value="family">Family Vault</TabsTrigger>
+            <TabsTrigger value="timeline">Timeline</TabsTrigger>
+            <TabsTrigger value="family">Family</TabsTrigger>
             <TabsTrigger value="emergency">Emergency</TabsTrigger>
-            <TabsTrigger value="insights">Health Score</TabsTrigger>
+            <TabsTrigger value="insights">Insights</TabsTrigger>
+            <TabsTrigger value="export">Export</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
@@ -324,6 +334,10 @@ const Dashboard = () => {
 
           <TabsContent value="insights">
             <HealthScore />
+          </TabsContent>
+
+          <TabsContent value="export">
+            <DataExport />
           </TabsContent>
         </Tabs>
       </div>
