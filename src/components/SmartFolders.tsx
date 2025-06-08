@@ -1,12 +1,12 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Folder, Heart, Teeth, Eye, Brain, Stethoscope } from 'lucide-react';
+import { Folder, Heart, Smile, Eye, Brain, Stethoscope } from 'lucide-react';
 
 const SmartFolders = () => {
   const folders = [
     { name: 'Cardiology', count: 15, icon: Heart, color: 'text-red-500', bgColor: 'bg-red-50' },
-    { name: 'Dental', count: 8, icon: Teeth, color: 'text-blue-500', bgColor: 'bg-blue-50' },
+    { name: 'Dental', count: 8, icon: Smile, color: 'text-blue-500', bgColor: 'bg-blue-50' },
     { name: 'Ophthalmology', count: 5, icon: Eye, color: 'text-green-500', bgColor: 'bg-green-50' },
     { name: 'Neurology', count: 3, icon: Brain, color: 'text-purple-500', bgColor: 'bg-purple-50' },
     { name: 'General', count: 12, icon: Stethoscope, color: 'text-gray-500', bgColor: 'bg-gray-50' },
