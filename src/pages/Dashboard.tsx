@@ -1,10 +1,10 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Heart, FileText, Users, Calendar, TrendingUp, AlertTriangle, Shield, QrCode, Download } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { HealthTimeline } from '@/components/HealthTimeline';
 import { FamilyVault } from '@/components/FamilyVault';
 import { EmergencyCard } from '@/components/EmergencyCard';
@@ -23,6 +23,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 const Dashboard = () => {
   const [selectedTab, setSelectedTab] = useState('overview');
   const isMobile = useIsMobile();
+  const navigate = useNavigate();
 
   const healthAlerts = [
     { type: 'urgent', message: 'Annual thyroid test overdue by 3 months', date: '2024-01-15' },
@@ -35,6 +36,10 @@ const Dashboard = () => {
     { name: 'Prescription - Hypertension', date: '2024-01-10', type: 'Prescription', doctor: 'Dr. Johnson' },
     { name: 'X-Ray Chest', date: '2024-01-05', type: 'Imaging', doctor: 'Dr. Wilson' }
   ];
+
+  const handleUploadRecords = () => {
+    navigate('/upload-record');
+  };
 
   if (isMobile) {
     return (
@@ -195,7 +200,7 @@ const Dashboard = () => {
                 <Download className="w-4 h-4 mr-2" />
                 Export Data
               </Button>
-              <Button size="sm">
+              <Button size="sm" onClick={handleUploadRecords}>
                 <FileText className="w-4 h-4 mr-2" />
                 Upload Records
               </Button>

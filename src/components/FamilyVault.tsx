@@ -1,11 +1,13 @@
 
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Users } from 'lucide-react';
+import { AddFamilyMemberDialog } from '@/components/AddFamilyMemberDialog';
 
 const FamilyVault = () => {
-  const familyMembers = [
+  const [familyMembers, setFamilyMembers] = useState([
     { 
       id: '1', 
       name: 'Mle', 
@@ -22,7 +24,11 @@ const FamilyVault = () => {
       status: 'Active',
       lastUpdate: '1 week ago'
     },
-  ];
+  ]);
+
+  const handleAddMember = (newMember: any) => {
+    setFamilyMembers(prev => [...prev, newMember]);
+  };
 
   return (
     <Card>
@@ -56,10 +62,7 @@ const FamilyVault = () => {
           <div className="mt-6 p-4 border-2 border-dashed border-gray-300 rounded-lg text-center">
             <Users className="w-12 h-12 text-gray-400 mx-auto mb-2" />
             <p className="text-gray-600 mb-3">Add a family member to manage their health records</p>
-            <Button>
-              <Users className="w-4 h-4 mr-2" />
-              Add Family Member
-            </Button>
+            <AddFamilyMemberDialog onAddMember={handleAddMember} />
           </div>
         </div>
       </CardContent>
