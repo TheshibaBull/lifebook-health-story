@@ -78,7 +78,6 @@ export class PushNotificationService {
       badge: payload.badge,
       tag: payload.tag,
       data: payload.data,
-      vibrate: [200, 100, 200],
       actions: [
         {
           action: 'view',
