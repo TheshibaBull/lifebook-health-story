@@ -30,42 +30,42 @@ export const useDeviceCapabilities = () => {
     const caps: DeviceCapability[] = [
       {
         name: 'Camera',
-        icon: <Camera className="w-5 h-5" />,
+        icon: Camera({ className: "w-5 h-5" }),
         available: !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia),
         status: 'permission-needed',
         description: 'Take photos of medical documents'
       },
       {
         name: 'Microphone',
-        icon: <Mic className="w-5 h-5" />,
+        icon: Mic({ className: "w-5 h-5" }),
         available: !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia),
         status: 'permission-needed',
         description: 'Voice notes and dictation'
       },
       {
         name: 'Location',
-        icon: <MapPin className="w-5 h-5" />,
+        icon: MapPin({ className: "w-5 h-5" }),
         available: !!(navigator.geolocation),
         status: 'permission-needed',
         description: 'Emergency location sharing'
       },
       {
         name: 'Vibration',
-        icon: <Vibrate className="w-5 h-5" />,
+        icon: Vibrate({ className: "w-5 h-5" }),
         available: !!(navigator.vibrate),
         status: 'active',
         description: 'Haptic feedback for alerts'
       },
       {
         name: 'Notifications',
-        icon: <Bell className="w-5 h-5" />,
+        icon: Bell({ className: "w-5 h-5" }),
         available: 'Notification' in window,
         status: Notification.permission === 'granted' ? 'active' : 'permission-needed',
         description: 'Health reminders and alerts'
       },
       {
         name: 'Bluetooth',
-        icon: <Bluetooth className="w-5 h-5" />,
+        icon: Bluetooth({ className: "w-5 h-5" }),
         available: !!(navigator as any).bluetooth,
         status: 'inactive',
         description: 'Connect health devices'
