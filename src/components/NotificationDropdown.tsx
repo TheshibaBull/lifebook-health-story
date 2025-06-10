@@ -11,11 +11,15 @@ import {
   DropdownMenuSeparator, 
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
-import { Bell, ChevronDown, CheckCircle, AlertCircle, Clock, Settings } from 'lucide-react';
+import { Bell, ChevronDown, CheckCircle, AlertCircle, Clock } from 'lucide-react';
 import { PushNotificationService } from '@/services/pushNotificationService';
 import { useToast } from '@/hooks/use-toast';
 
-const NotificationDropdown = () => {
+interface NotificationDropdownProps {
+  trigger?: React.ReactNode;
+}
+
+const NotificationDropdown = ({ trigger }: NotificationDropdownProps) => {
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>('default');
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [settings, setSettings] = useState({
@@ -111,21 +115,25 @@ const NotificationDropdown = () => {
     }
   };
 
+  const defaultTrigger = (
+    <Button variant="outline" size="sm" className="w-full justify-between">
+      <div className="flex items-center gap-2">
+        <Bell className="w-4 h-4" />
+        Manage Notifications
+      </div>
+      <div className="flex items-center gap-2">
+        {getStatusBadge()}
+        <ChevronDown className="w-4 h-4" />
+      </div>
+    </Button>
+  );
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="sm" className="w-full justify-between">
-          <div className="flex items-center gap-2">
-            <Bell className="w-4 h-4" />
-            Manage Notifications
-          </div>
-          <div className="flex items-center gap-2">
-            {getStatusBadge()}
-            <ChevronDown className="w-4 h-4" />
-          </div>
-        </Button>
+        {trigger || defaultTrigger}
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-80" align="start">
+      <DropdownMenuContent className="w-80" align="end">
         <DropdownMenuLabel className="flex items-center justify-between">
           <span>Notification Settings</span>
           {getStatusBadge()}

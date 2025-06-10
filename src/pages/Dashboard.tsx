@@ -25,6 +25,7 @@ import { DynamicHealthTimeline } from '@/components/DynamicHealthTimeline';
 import { FamilyHealthAnalytics } from '@/components/FamilyHealthAnalytics';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { NotificationDropdown } from '@/components/NotificationDropdown';
+import { HealthDataInteroperability } from '@/components/HealthDataInteroperability';
 
 const Dashboard = () => {
   const [selectedTab, setSelectedTab] = useState('overview');
@@ -168,14 +169,6 @@ const Dashboard = () => {
                   ))}
                 </div>
               </MobileCard>
-
-              {/* Mobile Push Notifications with Dropdown */}
-              <MobileCard title="Notifications" subtitle="Push notification settings" icon={<Bell className="w-6 h-6" />}>
-                <div className="py-2">
-                  <p className="text-sm text-gray-600 mb-2">Stay updated with health reminders</p>
-                  <NotificationDropdown />
-                </div>
-              </MobileCard>
             </TabsContent>
 
             <TabsContent value="timeline" className="mt-0">
@@ -245,7 +238,7 @@ const Dashboard = () => {
             <TabsTrigger value="analytics">Analytics</TabsTrigger>
             <TabsTrigger value="healthcare">Healthcare</TabsTrigger>
             <TabsTrigger value="emergency">Emergency</TabsTrigger>
-            <TabsTrigger value="export">Export</TabsTrigger>
+            <TabsTrigger value="interop">Data Exchange</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
@@ -378,8 +371,8 @@ const Dashboard = () => {
             <EmergencyCard />
           </TabsContent>
 
-          <TabsContent value="export">
-            <DataExport />
+          <TabsContent value="interop">
+            <HealthDataInteroperability />
           </TabsContent>
         </Tabs>
       </div>
