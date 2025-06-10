@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -77,7 +76,7 @@ const MobileDeviceIntegration = () => {
       {
         name: 'Bluetooth',
         icon: <Bluetooth className="w-5 h-5" />,
-        available: !!(navigator.bluetooth),
+        available: !!(navigator as any).bluetooth,
         status: 'inactive',
         description: 'Connect health devices'
       }

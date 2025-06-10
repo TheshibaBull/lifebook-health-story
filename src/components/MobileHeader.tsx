@@ -4,17 +4,19 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Bell, Menu } from 'lucide-react';
 import { NotificationDropdown } from './NotificationDropdown';
+import { cn } from '@/lib/utils';
 
 interface MobileHeaderProps {
   title: string;
   onMenuClick?: () => void;
+  className?: string;
 }
 
-const MobileHeader = ({ title, onMenuClick }: MobileHeaderProps) => {
+const MobileHeader = ({ title, onMenuClick, className }: MobileHeaderProps) => {
   const [notificationCount] = useState(3); // Mock notification count
 
   return (
-    <div className="sticky top-0 z-50 bg-white border-b border-gray-200 px-4 py-3">
+    <div className={cn("sticky top-0 z-50 bg-white border-b border-gray-200 px-4 py-3", className)}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           {onMenuClick && (
