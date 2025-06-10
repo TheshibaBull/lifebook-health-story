@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -25,6 +24,7 @@ import { HealthcareIntegration } from '@/components/HealthcareIntegration';
 import { DynamicHealthTimeline } from '@/components/DynamicHealthTimeline';
 import { FamilyHealthAnalytics } from '@/components/FamilyHealthAnalytics';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { NotificationModal } from '@/components/NotificationModal';
 
 const Dashboard = () => {
   const [selectedTab, setSelectedTab] = useState('overview');
@@ -173,10 +173,7 @@ const Dashboard = () => {
               <MobileCard title="Notifications" subtitle="Push notification settings" icon={<Bell className="w-6 h-6" />}>
                 <div className="py-2">
                   <p className="text-sm text-gray-600 mb-2">Stay updated with health reminders</p>
-                  <Button variant="outline" size="sm" className="w-full">
-                    <Bell className="w-4 h-4 mr-2" />
-                    Manage Notifications
-                  </Button>
+                  <NotificationModal />
                 </div>
               </MobileCard>
             </TabsContent>

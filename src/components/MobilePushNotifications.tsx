@@ -8,7 +8,11 @@ import { Bell, AlertCircle, CheckCircle, Clock, Heart } from 'lucide-react';
 import { PushNotificationService } from '@/services/pushNotificationService';
 import { useToast } from '@/hooks/use-toast';
 
-const MobilePushNotifications = () => {
+interface MobilePushNotificationsProps {
+  onClose?: () => void;
+}
+
+const MobilePushNotifications = ({ onClose }: MobilePushNotificationsProps) => {
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>('default');
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [settings, setSettings] = useState({
@@ -22,7 +26,15 @@ const MobilePushNotifications = () => {
 
   useEffect(() => {
     checkNotificationStatus();
+    loadSettings();
   }, []);
+
+  const loadSettings = () => {
+    const savedSettings = localStorage.getItem('notification-settings');
+    if (savedSettings) {
+      setSettings(JSON.parse(savedSettings));
+    }
+  };
 
   const checkNotificationStatus = () => {
     if ('Notification' in window) {
@@ -35,26 +47,24 @@ const MobilePushNotifications = () => {
   const handleEnableNotifications = async () => {
     const granted = await PushNotificationService.requestPermission();
     if (granted) {
-      const subscription = await PushNotificationService.subscribeToPush();
-      if (subscription) {
-        PushNotificationService.storeSubscription(subscription);
-        setIsSubscribed(true);
-        setNotificationPermission('granted');
-        
-        toast({
-          title: "Notifications Enabled",
-          description: "You'll receive health reminders and updates",
-        });
+      await PushNotificationService.initialize();
+      const subscription = PushNotificationService.getStoredSubscription();
+      setIsSubscribed(!!subscription);
+      setNotificationPermission('granted');
+      
+      toast({
+        title: "Notifications Enabled",
+        description: "You'll receive health reminders and updates",
+      });
 
-        // Send a test notification
-        setTimeout(() => {
-          PushNotificationService.sendLocalNotification({
-            title: "Welcome to Lifebook Health!",
-            body: "Your health notifications are now active",
-            icon: "/favicon.ico"
-          });
-        }, 1000);
-      }
+      // Send a test notification
+      setTimeout(() => {
+        PushNotificationService.sendLocalNotification({
+          title: "Welcome to Lifebook Health!",
+          body: "Your health notifications are now active",
+          icon: "/favicon.ico"
+        });
+      }, 1000);
     } else {
       toast({
         title: "Permission Denied",
@@ -70,11 +80,16 @@ const MobilePushNotifications = () => {
       body: "Your notifications are working perfectly!",
       icon: "/favicon.ico"
     });
+    
+    toast({
+      title: "Test Sent",
+      description: "Check if you received the notification",
+    });
   };
 
   const handleScheduleReminder = () => {
     const reminderTime = new Date();
-    reminderTime.setMinutes(reminderTime.getMinutes() + 1); // 1 minute from now
+    reminderTime.setMinutes(reminderTime.getMinutes() + 1);
 
     PushNotificationService.scheduleHealthReminder(
       'medication',
@@ -89,8 +104,14 @@ const MobilePushNotifications = () => {
   };
 
   const updateSetting = (key: keyof typeof settings, value: boolean) => {
-    setSettings(prev => ({ ...prev, [key]: value }));
-    localStorage.setItem('notification-settings', JSON.stringify({ ...settings, [key]: value }));
+    const newSettings = { ...settings, [key]: value };
+    setSettings(newSettings);
+    localStorage.setItem('notification-settings', JSON.stringify(newSettings));
+    
+    toast({
+      title: "Setting Updated",
+      description: `${key} notifications ${value ? 'enabled' : 'disabled'}`,
+    });
   };
 
   const getStatusBadge = () => {
@@ -111,6 +132,11 @@ const MobilePushNotifications = () => {
           Push Notifications
           {getStatusBadge()}
         </CardTitle>
+        {onClose && (
+          <Button variant="ghost" size="sm" onClick={onClose} className="ml-auto">
+            ×
+          </Button>
+        )}
       </CardHeader>
       <CardContent className="space-y-6">
         {notificationPermission !== 'granted' ? (
