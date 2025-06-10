@@ -1,4 +1,3 @@
-
 export interface NotificationPayload {
   title: string;
   body: string;
@@ -14,6 +13,15 @@ export interface NotificationPayload {
 
 export class PushNotificationService {
   private static readonly VAPID_PUBLIC_KEY = 'YOUR_VAPID_PUBLIC_KEY'; // This would be configured in production
+
+  static async initialize(): Promise<void> {
+    if (await this.requestPermission()) {
+      const subscription = await this.subscribeToPush();
+      if (subscription) {
+        this.storeSubscription(subscription);
+      }
+    }
+  }
 
   static async requestPermission(): Promise<boolean> {
     if (!('Notification' in window)) {

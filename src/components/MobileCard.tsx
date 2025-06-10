@@ -7,11 +7,12 @@ import { ChevronRight } from 'lucide-react';
 interface MobileCardProps {
   title: string;
   subtitle?: string;
-  icon: React.ReactNode;
+  icon?: React.ReactNode;
   badge?: string;
   badgeVariant?: 'default' | 'secondary' | 'destructive' | 'outline';
   children?: React.ReactNode;
   onClick?: () => void;
+  showArrow?: boolean;
   action?: {
     label: string;
     onClick: () => void;
@@ -26,6 +27,7 @@ const MobileCard = ({
   badgeVariant = 'secondary',
   children, 
   onClick,
+  showArrow,
   action 
 }: MobileCardProps) => {
   return (
@@ -36,9 +38,11 @@ const MobileCard = ({
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="text-blue-500">
-              {icon}
-            </div>
+            {icon && (
+              <div className="text-blue-500">
+                {icon}
+              </div>
+            )}
             <div>
               <CardTitle className="text-base">{title}</CardTitle>
               {subtitle && (
@@ -52,7 +56,7 @@ const MobileCard = ({
                 {badge}
               </Badge>
             )}
-            {onClick && <ChevronRight className="w-4 h-4 text-gray-400" />}
+            {(onClick || showArrow) && <ChevronRight className="w-4 h-4 text-gray-400" />}
           </div>
         </div>
       </CardHeader>

@@ -1,8 +1,12 @@
-
 import { Heart, FileText, Users, Settings, Search } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
-const MobileTabBar = () => {
+interface MobileTabBarProps {
+  activeTab?: string;
+  onTabChange?: (tab: string) => void;
+}
+
+const MobileTabBar = ({ activeTab, onTabChange }: MobileTabBarProps) => {
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -15,7 +19,21 @@ const MobileTabBar = () => {
   ];
 
   const isActive = (path: string) => {
+    if (activeTab) {
+      // If activeTab is provided, use it for internal tab switching
+      return activeTab === path.replace('/', '');
+    }
     return location.pathname === path;
+  };
+
+  const handleTabClick = (tab: any) => {
+    if (onTabChange && activeTab) {
+      // If onTabChange is provided, use it for internal tab switching
+      onTabChange(tab.path.replace('/', ''));
+    } else {
+      // Otherwise, navigate normally
+      navigate(tab.path);
+    }
   };
 
   return (
@@ -28,7 +46,7 @@ const MobileTabBar = () => {
           return (
             <button
               key={tab.path}
-              onClick={() => navigate(tab.path)}
+              onClick={() => handleTabClick(tab)}
               className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-colors ${
                 active 
                   ? 'text-blue-600 bg-blue-50' 

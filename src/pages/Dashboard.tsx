@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -81,7 +80,7 @@ const Dashboard = () => {
               </div>
 
               {/* Health Score Card */}
-              <MobileCard title="Health Score" subtitle="Your overall health assessment">
+              <MobileCard title="Health Score" subtitle="Your overall health assessment" icon={<Heart className="w-6 h-6" />}>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center">
@@ -97,7 +96,7 @@ const Dashboard = () => {
               </MobileCard>
 
               {/* AI Health Summary - Mobile */}
-              <MobileCard title="AI Health Insights" subtitle="Personalized health analysis">
+              <MobileCard title="AI Health Insights" subtitle="Personalized health analysis" icon={<TrendingUp className="w-6 h-6" />}>
                 <div className="space-y-3">
                   <div className="flex items-start gap-3 p-2 rounded-lg bg-amber-50">
                     <AlertTriangle className="w-4 h-4 text-amber-500 mt-1" />
@@ -117,7 +116,7 @@ const Dashboard = () => {
               </MobileCard>
 
               {/* Health Alerts */}
-              <MobileCard title="Health Alerts" subtitle="AI-powered health recommendations">
+              <MobileCard title="Health Alerts" subtitle="AI-powered health recommendations" icon={<AlertTriangle className="w-6 h-6" />}>
                 <div className="space-y-3">
                   {healthAlerts.slice(0, 2).map((alert, index) => (
                     <div key={index} className="flex items-start gap-3 p-3 rounded-lg bg-gray-50">
@@ -138,13 +137,13 @@ const Dashboard = () => {
 
               {/* Quick Stats */}
               <div className="grid grid-cols-2 gap-3">
-                <MobileCard title="Records" subtitle="">
+                <MobileCard title="Records" subtitle="" icon={<FileText className="w-6 h-6" />}>
                   <div className="flex items-center justify-between">
                     <span className="text-2xl font-bold">247</span>
                     <FileText className="text-blue-500" />
                   </div>
                 </MobileCard>
-                <MobileCard title="Family" subtitle="">
+                <MobileCard title="Family" subtitle="" icon={<Users className="w-6 h-6" />}>
                   <div className="flex items-center justify-between">
                     <span className="text-2xl font-bold">4</span>
                     <Users className="text-green-500" />
@@ -153,7 +152,7 @@ const Dashboard = () => {
               </div>
 
               {/* Recent Documents */}
-              <MobileCard title="Recent Records" subtitle="Latest uploaded documents" showArrow>
+              <MobileCard title="Recent Records" subtitle="Latest uploaded documents" icon={<FileText className="w-6 h-6" />} showArrow>
                 <div className="space-y-3">
                   {recentDocuments.slice(0, 3).map((doc, index) => (
                     <div key={index} className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50">
@@ -170,7 +169,7 @@ const Dashboard = () => {
               </MobileCard>
 
               {/* Mobile Push Notifications */}
-              <MobileCard title="Notifications" subtitle="Push notification settings">
+              <MobileCard title="Notifications" subtitle="Push notification settings" icon={<Bell className="w-6 h-6" />}>
                 <div className="py-2">
                   <p className="text-sm text-gray-600 mb-2">Stay updated with health reminders</p>
                   <Button variant="outline" size="sm" className="w-full">
@@ -391,3 +390,5 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
+
+}
