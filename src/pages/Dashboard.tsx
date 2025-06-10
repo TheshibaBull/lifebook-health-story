@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Heart, FileText, Users, Calendar, TrendingUp, AlertTriangle, Shield, QrCode, Download } from 'lucide-react';
+import { Heart, FileText, Users, Calendar, TrendingUp, AlertTriangle, Shield, QrCode, Download, Bell } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { HealthTimeline } from '@/components/HealthTimeline';
 import { FamilyVault } from '@/components/FamilyVault';
@@ -40,6 +40,19 @@ const Dashboard = () => {
   const handleUploadRecords = () => {
     navigate('/upload-record');
   };
+
+  useEffect(() => {
+    // Initialize offline sync and push notifications for mobile
+    if (isMobile) {
+      import('@/services/offlineDataSync').then(({ OfflineDataSync }) => {
+        OfflineDataSync.startAutoSync();
+      });
+      
+      import('@/services/pushNotificationService').then(({ PushNotificationService }) => {
+        PushNotificationService.initialize();
+      });
+    }
+  }, [isMobile]);
 
   if (isMobile) {
     return (
@@ -147,6 +160,17 @@ const Dashboard = () => {
                       </div>
                     </div>
                   ))}
+                </div>
+              </MobileCard>
+
+              {/* Mobile Push Notifications */}
+              <MobileCard title="Notifications" subtitle="Push notification settings">
+                <div className="py-2">
+                  <p className="text-sm text-gray-600 mb-2">Stay updated with health reminders</p>
+                  <Button variant="outline" size="sm" className="w-full">
+                    <Bell className="w-4 h-4 mr-2" />
+                    Manage Notifications
+                  </Button>
                 </div>
               </MobileCard>
             </TabsContent>
