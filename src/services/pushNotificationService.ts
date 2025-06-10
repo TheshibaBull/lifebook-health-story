@@ -5,99 +5,109 @@ export interface NotificationPayload {
   icon?: string;
   badge?: string;
   tag?: string;
-  data?: any;
+  actions?: Array<{
+    action: string;
+    title: string;
+    icon?: string;
+  }>;
 }
 
 export class PushNotificationService {
-  private static registration: ServiceWorkerRegistration | null = null;
+  private static readonly VAPID_PUBLIC_KEY = 'YOUR_VAPID_PUBLIC_KEY'; // This would be configured in production
 
-  static async initialize(): Promise<boolean> {
-    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-      console.warn('Push notifications not supported');
-      return false;
-    }
-
-    try {
-      this.registration = await navigator.serviceWorker.register('/sw.js');
-      console.log('Service worker registered');
-      return true;
-    } catch (error) {
-      console.error('Service worker registration failed:', error);
-      return false;
-    }
-  }
-
-  static async requestPermission(): Promise<NotificationPermission> {
+  static async requestPermission(): Promise<boolean> {
     if (!('Notification' in window)) {
-      throw new Error('Notifications not supported');
+      console.warn('This browser does not support notifications');
+      return false;
     }
 
-    return await Notification.requestPermission();
+    if (Notification.permission === 'granted') {
+      return true;
+    }
+
+    if (Notification.permission === 'denied') {
+      return false;
+    }
+
+    const permission = await Notification.requestPermission();
+    return permission === 'granted';
   }
 
-  static async subscribeToNotifications(): Promise<PushSubscription | null> {
-    if (!this.registration) {
-      throw new Error('Service worker not registered');
+  static async subscribeToPush(): Promise<PushSubscription | null> {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+      console.warn('Push messaging is not supported');
+      return null;
     }
 
     try {
-      const subscription = await this.registration.pushManager.subscribe({
+      const registration = await navigator.serviceWorker.ready;
+      const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: this.urlBase64ToUint8Array(
-          'BEl62iUYgUivxIkv69yViEuiBIa40HI8HiXofaBhEg7xUFLFhPQxKhKZPBz_iHQ'
-        )
+        applicationServerKey: this.urlBase64ToUint8Array(this.VAPID_PUBLIC_KEY)
       });
-      
-      // Store subscription in localStorage for demo purposes
-      localStorage.setItem('push-subscription', JSON.stringify(subscription));
+
+      console.log('Push subscription successful:', subscription);
       return subscription;
     } catch (error) {
-      console.error('Failed to subscribe to notifications:', error);
+      console.error('Push subscription failed:', error);
       return null;
     }
   }
 
-  static async showNotification(payload: NotificationPayload): Promise<void> {
-    if (!this.registration) {
-      // Fallback to browser notification (without actions)
-      if (Notification.permission === 'granted') {
-        new Notification(payload.title, {
-          body: payload.body,
-          icon: payload.icon || '/favicon.ico',
-          badge: payload.badge,
-          tag: payload.tag,
-          data: payload.data
-        });
-      }
+  static async sendLocalNotification(payload: NotificationPayload): Promise<void> {
+    if (!await this.requestPermission()) {
+      console.warn('Notification permission not granted');
       return;
     }
 
-    // Service worker notification (with actions)
-    await this.registration.showNotification(payload.title, {
+    new Notification(payload.title, {
       body: payload.body,
       icon: payload.icon || '/favicon.ico',
       badge: payload.badge,
       tag: payload.tag,
-      data: payload.data,
-      actions: [
-        {
-          action: 'view',
-          title: 'View',
-          icon: '/icons/view.png'
-        },
-        {
-          action: 'dismiss',
-          title: 'Dismiss',
-          icon: '/icons/dismiss.png'
-        }
-      ]
-    } as any);
+    });
   }
 
-  static scheduleReminder(title: string, body: string, delayMs: number): void {
-    setTimeout(() => {
-      this.showNotification({ title, body });
-    }, delayMs);
+  static scheduleHealthReminder(type: 'medication' | 'appointment' | 'checkup', message: string, scheduledTime: Date): void {
+    const now = new Date();
+    const delay = scheduledTime.getTime() - now.getTime();
+
+    if (delay > 0) {
+      setTimeout(() => {
+        this.sendLocalNotification({
+          title: `Health Reminder: ${type}`,
+          body: message,
+          icon: '/favicon.ico',
+          tag: `health-reminder-${type}`,
+          actions: [
+            { action: 'view', title: 'View Details' },
+            { action: 'dismiss', title: 'Dismiss' }
+          ]
+        });
+      }, delay);
+    }
+  }
+
+  static async scheduleRecurringReminder(
+    type: 'medication' | 'appointment' | 'checkup',
+    message: string,
+    intervalHours: number
+  ): Promise<void> {
+    const interval = intervalHours * 60 * 60 * 1000; // Convert to milliseconds
+    
+    const sendReminder = () => {
+      this.sendLocalNotification({
+        title: `Health Reminder: ${type}`,
+        body: message,
+        tag: `recurring-${type}`,
+      });
+    };
+
+    // Send immediately if permission granted
+    if (await this.requestPermission()) {
+      sendReminder();
+      setInterval(sendReminder, interval);
+    }
   }
 
   private static urlBase64ToUint8Array(base64String: string): Uint8Array {
@@ -113,5 +123,14 @@ export class PushNotificationService {
       outputArray[i] = rawData.charCodeAt(i);
     }
     return outputArray;
+  }
+
+  static getStoredSubscription(): PushSubscription | null {
+    const stored = localStorage.getItem('push-subscription');
+    return stored ? JSON.parse(stored) : null;
+  }
+
+  static storeSubscription(subscription: PushSubscription): void {
+    localStorage.setItem('push-subscription', JSON.stringify(subscription));
   }
 }

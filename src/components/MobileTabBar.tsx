@@ -1,41 +1,42 @@
 
-import { Heart, FileText, Users, Shield, TrendingUp } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Heart, FileText, Users, Settings, Search } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router-dom';
 
-interface MobileTabBarProps {
-  activeTab: string;
-  onTabChange: (tab: string) => void;
-}
+const MobileTabBar = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
 
-const MobileTabBar = ({ activeTab, onTabChange }: MobileTabBarProps) => {
   const tabs = [
-    { id: 'overview', label: 'Overview', icon: Heart },
-    { id: 'timeline', label: 'Timeline', icon: FileText },
-    { id: 'family', label: 'Family', icon: Users },
-    { id: 'emergency', label: 'Emergency', icon: Shield },
-    { id: 'insights', label: 'Score', icon: TrendingUp },
+    { icon: Heart, label: 'Health', path: '/dashboard' },
+    { icon: FileText, label: 'Records', path: '/upload-record' },
+    { icon: Search, label: 'Search', path: '/search' },
+    { icon: Users, label: 'Family', path: '/family' },
+    { icon: Settings, label: 'Settings', path: '/settings' },
   ];
 
+  const isActive = (path: string) => {
+    return location.pathname === path;
+  };
+
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 px-2 py-2 safe-area-bottom">
-      <div className="flex justify-around">
+    <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-2 py-1 z-50">
+      <div className="flex items-center justify-around">
         {tabs.map((tab) => {
           const Icon = tab.icon;
-          const isActive = activeTab === tab.id;
+          const active = isActive(tab.path);
           
           return (
             <button
-              key={tab.id}
-              onClick={() => onTabChange(tab.id)}
-              className={cn(
-                "flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors min-w-0 flex-1",
-                isActive 
-                  ? "bg-blue-50 text-blue-600" 
-                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-              )}
+              key={tab.path}
+              onClick={() => navigate(tab.path)}
+              className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-colors ${
+                active 
+                  ? 'text-blue-600 bg-blue-50' 
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
             >
               <Icon className="w-5 h-5" />
-              <span className="text-xs font-medium truncate">{tab.label}</span>
+              <span className="text-xs font-medium">{tab.label}</span>
             </button>
           );
         })}

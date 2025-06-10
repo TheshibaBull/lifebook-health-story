@@ -1,39 +1,79 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { ChevronRight } from 'lucide-react';
-import { cn } from '@/lib/utils';
 
 interface MobileCardProps {
   title: string;
   subtitle?: string;
-  children: React.ReactNode;
-  className?: string;
+  icon: React.ReactNode;
+  badge?: string;
+  badgeVariant?: 'default' | 'secondary' | 'destructive' | 'outline';
+  children?: React.ReactNode;
   onClick?: () => void;
-  showArrow?: boolean;
+  action?: {
+    label: string;
+    onClick: () => void;
+  };
 }
 
-const MobileCard = ({ title, subtitle, children, className, onClick, showArrow = false }: MobileCardProps) => {
+const MobileCard = ({ 
+  title, 
+  subtitle, 
+  icon, 
+  badge, 
+  badgeVariant = 'secondary',
+  children, 
+  onClick,
+  action 
+}: MobileCardProps) => {
   return (
     <Card 
-      className={cn(
-        "shadow-sm hover:shadow-md transition-shadow",
-        onClick && "cursor-pointer",
-        className
-      )}
+      className={`w-full ${onClick ? 'cursor-pointer hover:shadow-md transition-shadow' : ''}`}
       onClick={onClick}
     >
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="text-lg">{title}</CardTitle>
-            {subtitle && <p className="text-sm text-gray-600 mt-1">{subtitle}</p>}
+          <div className="flex items-center gap-3">
+            <div className="text-blue-500">
+              {icon}
+            </div>
+            <div>
+              <CardTitle className="text-base">{title}</CardTitle>
+              {subtitle && (
+                <p className="text-sm text-gray-500 mt-1">{subtitle}</p>
+              )}
+            </div>
           </div>
-          {showArrow && <ChevronRight className="w-5 h-5 text-gray-400" />}
+          <div className="flex items-center gap-2">
+            {badge && (
+              <Badge variant={badgeVariant} className="text-xs">
+                {badge}
+              </Badge>
+            )}
+            {onClick && <ChevronRight className="w-4 h-4 text-gray-400" />}
+          </div>
         </div>
       </CardHeader>
-      <CardContent className="pt-0">
-        {children}
-      </CardContent>
+      {children && (
+        <CardContent className="pt-0">
+          {children}
+          {action && (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="w-full mt-3"
+              onClick={(e) => {
+                e.stopPropagation();
+                action.onClick();
+              }}
+            >
+              {action.label}
+            </Button>
+          )}
+        </CardContent>
+      )}
     </Card>
   );
 };
