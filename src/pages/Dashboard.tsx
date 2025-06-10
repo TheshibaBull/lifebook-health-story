@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -18,6 +19,11 @@ import { MobileHeader } from '@/components/MobileHeader';
 import { MobileTabBar } from '@/components/MobileTabBar';
 import { MobileCard } from '@/components/MobileCard';
 import { DataExport } from '@/components/DataExport';
+import { HealthGoals } from '@/components/HealthGoals';
+import { PredictiveAnalytics } from '@/components/PredictiveAnalytics';
+import { HealthcareIntegration } from '@/components/HealthcareIntegration';
+import { DynamicHealthTimeline } from '@/components/DynamicHealthTimeline';
+import { FamilyHealthAnalytics } from '@/components/FamilyHealthAnalytics';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 const Dashboard = () => {
@@ -176,7 +182,7 @@ const Dashboard = () => {
             </TabsContent>
 
             <TabsContent value="timeline" className="mt-0">
-              <HealthTimeline />
+              <DynamicHealthTimeline />
             </TabsContent>
 
             <TabsContent value="family" className="mt-0">
@@ -234,12 +240,14 @@ const Dashboard = () => {
 
         {/* Main Content */}
         <Tabs value={selectedTab} onValueChange={setSelectedTab}>
-          <TabsList className="grid w-full grid-cols-6 mb-6">
+          <TabsList className="grid w-full grid-cols-8 mb-6">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="timeline">Timeline</TabsTrigger>
             <TabsTrigger value="family">Family</TabsTrigger>
+            <TabsTrigger value="goals">Goals</TabsTrigger>
+            <TabsTrigger value="analytics">Analytics</TabsTrigger>
+            <TabsTrigger value="healthcare">Healthcare</TabsTrigger>
             <TabsTrigger value="emergency">Emergency</TabsTrigger>
-            <TabsTrigger value="insights">Insights</TabsTrigger>
             <TabsTrigger value="export">Export</TabsTrigger>
           </TabsList>
 
@@ -350,19 +358,27 @@ const Dashboard = () => {
           </TabsContent>
 
           <TabsContent value="timeline">
-            <HealthTimeline />
+            <DynamicHealthTimeline />
           </TabsContent>
 
           <TabsContent value="family">
-            <FamilyVault />
+            <FamilyHealthAnalytics />
+          </TabsContent>
+
+          <TabsContent value="goals">
+            <HealthGoals />
+          </TabsContent>
+
+          <TabsContent value="analytics">
+            <PredictiveAnalytics />
+          </TabsContent>
+
+          <TabsContent value="healthcare">
+            <HealthcareIntegration />
           </TabsContent>
 
           <TabsContent value="emergency">
             <EmergencyCard />
-          </TabsContent>
-
-          <TabsContent value="insights">
-            <HealthScore />
           </TabsContent>
 
           <TabsContent value="export">
