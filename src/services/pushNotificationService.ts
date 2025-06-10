@@ -59,7 +59,7 @@ export class PushNotificationService {
 
   static async showNotification(payload: NotificationPayload): Promise<void> {
     if (!this.registration) {
-      // Fallback to browser notification
+      // Fallback to browser notification (without actions)
       if (Notification.permission === 'granted') {
         new Notification(payload.title, {
           body: payload.body,
@@ -72,6 +72,7 @@ export class PushNotificationService {
       return;
     }
 
+    // Service worker notification (with actions)
     await this.registration.showNotification(payload.title, {
       body: payload.body,
       icon: payload.icon || '/favicon.ico',
