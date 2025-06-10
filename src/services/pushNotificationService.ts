@@ -91,7 +91,7 @@ export class PushNotificationService {
           icon: '/icons/dismiss.png'
         }
       ]
-    });
+    } as any);
   }
 
   static scheduleReminder(title: string, body: string, delayMs: number): void {
