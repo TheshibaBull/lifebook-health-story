@@ -10,7 +10,9 @@ import CreateProfile from "./pages/CreateProfile";
 import UploadRecord from "./pages/UploadRecord";
 import Scanning from "./pages/Scanning";
 import Dashboard from "./pages/Dashboard";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
+import { Onboarding } from "./components/Onboarding";
 
 const queryClient = new QueryClient();
 
@@ -22,11 +24,13 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Welcome />} />
+          <Route path="/onboarding" element={<Onboarding />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/create-profile" element={<CreateProfile />} />
           <Route path="/upload-record" element={<UploadRecord />} />
           <Route path="/scanning" element={<Scanning />} />
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/settings" element={<Settings />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
