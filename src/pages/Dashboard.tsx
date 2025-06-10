@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Heart, FileText, Users, Calendar, TrendingUp, AlertTriangle, Shield, QrCode, Download, Bell } from 'lucide-react';
+import { Heart, FileText, Users, Calendar, TrendingUp, AlertTriangle, Shield, QrCode, Download, Bell, ChevronDown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { HealthTimeline } from '@/components/HealthTimeline';
 import { FamilyVault } from '@/components/FamilyVault';
@@ -24,7 +24,7 @@ import { HealthcareIntegration } from '@/components/HealthcareIntegration';
 import { DynamicHealthTimeline } from '@/components/DynamicHealthTimeline';
 import { FamilyHealthAnalytics } from '@/components/FamilyHealthAnalytics';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { NotificationModal } from '@/components/NotificationModal';
+import { NotificationDropdown } from '@/components/NotificationDropdown';
 
 const Dashboard = () => {
   const [selectedTab, setSelectedTab] = useState('overview');
@@ -169,11 +169,11 @@ const Dashboard = () => {
                 </div>
               </MobileCard>
 
-              {/* Mobile Push Notifications */}
+              {/* Mobile Push Notifications with Dropdown */}
               <MobileCard title="Notifications" subtitle="Push notification settings" icon={<Bell className="w-6 h-6" />}>
                 <div className="py-2">
                   <p className="text-sm text-gray-600 mb-2">Stay updated with health reminders</p>
-                  <NotificationModal />
+                  <NotificationDropdown />
                 </div>
               </MobileCard>
             </TabsContent>
