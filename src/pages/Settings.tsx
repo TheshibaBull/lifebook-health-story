@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -56,7 +57,7 @@ interface UserSettings {
   reducedMotion: boolean;
   
   // Theme
-  theme: 'light' | 'dark' | 'system';
+  theme: 'light' | 'dark';
   fontSize: 'small' | 'medium' | 'large';
   colorScheme: 'blue' | 'green' | 'purple' | 'orange';
 }
@@ -78,7 +79,7 @@ const Settings = () => {
     largeText: false,
     screenReader: false,
     reducedMotion: false,
-    theme: 'system',
+    theme: 'light',
     fontSize: 'medium',
     colorScheme: 'blue'
   });
@@ -114,44 +115,72 @@ const Settings = () => {
     // Apply theme
     if (settings.theme === 'dark') {
       document.documentElement.classList.add('dark');
-    } else if (settings.theme === 'light') {
-      document.documentElement.classList.remove('dark');
     } else {
-      // System theme
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      if (prefersDark) {
-        document.documentElement.classList.add('dark');
-      } else {
-        document.documentElement.classList.remove('dark');
-      }
+      document.documentElement.classList.remove('dark');
     }
 
     // Apply accessibility settings
+    const body = document.body;
+    
+    // High contrast
     if (settings.highContrast) {
-      document.body.classList.add('high-contrast');
+      body.classList.add('high-contrast');
     } else {
-      document.body.classList.remove('high-contrast');
+      body.classList.remove('high-contrast');
     }
     
+    // Large text
     if (settings.largeText) {
-      document.body.classList.add('large-text');
+      body.classList.add('large-text');
     } else {
-      document.body.classList.remove('large-text');
+      body.classList.remove('large-text');
     }
     
+    // Reduced motion
     if (settings.reducedMotion) {
-      document.body.classList.add('reduce-motion');
+      body.classList.add('reduce-motion');
     } else {
-      document.body.classList.remove('reduce-motion');
+      body.classList.remove('reduce-motion');
     }
 
     // Apply font size
-    document.body.classList.remove('font-small', 'font-medium', 'font-large');
-    document.body.classList.add(`font-${settings.fontSize}`);
+    body.classList.remove('text-sm', 'text-base', 'text-lg');
+    switch (settings.fontSize) {
+      case 'small':
+        body.classList.add('text-sm');
+        break;
+      case 'medium':
+        body.classList.add('text-base');
+        break;
+      case 'large':
+        body.classList.add('text-lg');
+        break;
+    }
 
     // Apply color scheme
-    document.body.classList.remove('theme-blue', 'theme-green', 'theme-purple', 'theme-orange');
-    document.body.classList.add(`theme-${settings.colorScheme}`);
+    const root = document.documentElement;
+    root.classList.remove('theme-blue', 'theme-green', 'theme-purple', 'theme-orange');
+    root.classList.add(`theme-${settings.colorScheme}`);
+    
+    // Update CSS variables for color scheme
+    switch (settings.colorScheme) {
+      case 'blue':
+        root.style.setProperty('--primary', '222.2 47.4% 11.2%');
+        root.style.setProperty('--primary-foreground', '210 40% 98%');
+        break;
+      case 'green':
+        root.style.setProperty('--primary', '142.1 76.2% 36.3%');
+        root.style.setProperty('--primary-foreground', '355.7 100% 97.3%');
+        break;
+      case 'purple':
+        root.style.setProperty('--primary', '262.1 83.3% 57.8%');
+        root.style.setProperty('--primary-foreground', '210 20% 98%');
+        break;
+      case 'orange':
+        root.style.setProperty('--primary', '24.6 95% 53.1%');
+        root.style.setProperty('--primary-foreground', '60 9.1% 97.8%');
+        break;
+    }
   }, [settings]);
 
   const handleSettingChange = (key: keyof UserSettings, value: any) => {
@@ -557,14 +586,6 @@ const Settings = () => {
                         <Moon className="w-4 h-4 mr-2" />
                         Dark
                       </Button>
-                      <Button
-                        variant={settings.theme === 'system' ? 'default' : 'outline'}
-                        onClick={() => handleSettingChange('theme', 'system')}
-                        className="justify-start"
-                        size="sm"
-                      >
-                        System
-                      </Button>
                     </div>
                   </div>
                   
@@ -948,7 +969,7 @@ const Settings = () => {
               <CardContent className="space-y-6">
                 <div>
                   <Label>Theme</Label>
-                  <div className="grid grid-cols-3 gap-2 mt-2">
+                  <div className="grid grid-cols-2 gap-2 mt-2">
                     <Button
                       variant={settings.theme === 'light' ? 'default' : 'outline'}
                       onClick={() => handleSettingChange('theme', 'light')}
@@ -964,12 +985,6 @@ const Settings = () => {
                     >
                       <Moon className="w-4 h-4" />
                       Dark
-                    </Button>
-                    <Button
-                      variant={settings.theme === 'system' ? 'default' : 'outline'}
-                      onClick={() => handleSettingChange('theme', 'system')}
-                    >
-                      System
                     </Button>
                   </div>
                 </div>
