@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -22,7 +21,9 @@ import {
   Moon,
   Sun,
   Type,
-  Database
+  Database,
+  ChevronRight,
+  ArrowLeft
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
@@ -82,6 +83,7 @@ const Settings = () => {
     colorScheme: 'blue'
   });
   const [hasChanges, setHasChanges] = useState(false);
+  const [currentView, setCurrentView] = useState('main');
   const { toast } = useToast();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
@@ -107,15 +109,24 @@ const Settings = () => {
     }
   }, []);
 
-  const handleSettingChange = (key: keyof UserSettings, value: any) => {
-    setSettings(prev => ({ ...prev, [key]: value }));
-    setHasChanges(true);
-  };
+  // Apply settings immediately when changed
+  useEffect(() => {
+    // Apply theme
+    if (settings.theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else if (settings.theme === 'light') {
+      document.documentElement.classList.remove('dark');
+    } else {
+      // System theme
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      if (prefersDark) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+    }
 
-  const handleSave = () => {
-    localStorage.setItem('user-settings', JSON.stringify(settings));
-    
-    // Apply accessibility settings immediately
+    // Apply accessibility settings
     if (settings.highContrast) {
       document.body.classList.add('high-contrast');
     } else {
@@ -134,6 +145,22 @@ const Settings = () => {
       document.body.classList.remove('reduce-motion');
     }
 
+    // Apply font size
+    document.body.classList.remove('font-small', 'font-medium', 'font-large');
+    document.body.classList.add(`font-${settings.fontSize}`);
+
+    // Apply color scheme
+    document.body.classList.remove('theme-blue', 'theme-green', 'theme-purple', 'theme-orange');
+    document.body.classList.add(`theme-${settings.colorScheme}`);
+  }, [settings]);
+
+  const handleSettingChange = (key: keyof UserSettings, value: any) => {
+    setSettings(prev => ({ ...prev, [key]: value }));
+    setHasChanges(true);
+  };
+
+  const handleSave = () => {
+    localStorage.setItem('user-settings', JSON.stringify(settings));
     setHasChanges(false);
     toast({
       title: "Settings Saved",
@@ -176,380 +203,457 @@ const Settings = () => {
     }
   };
 
+  const renderMobileSettings = () => {
+    if (currentView === 'main') {
+      return (
+        <div className="space-y-4">
+          {hasChanges && (
+            <Button onClick={handleSave} className="w-full">
+              Save Changes
+            </Button>
+          )}
+
+          <div className="space-y-3">
+            <Button
+              variant="ghost"
+              className="w-full justify-between h-14 px-4"
+              onClick={() => setCurrentView('profile')}
+            >
+              <div className="flex items-center gap-3">
+                <User className="w-5 h-5 text-blue-500" />
+                <span>Profile</span>
+              </div>
+              <ChevronRight className="w-5 h-5" />
+            </Button>
+
+            <Button
+              variant="ghost"
+              className="w-full justify-between h-14 px-4"
+              onClick={() => setCurrentView('notifications')}
+            >
+              <div className="flex items-center gap-3">
+                <Bell className="w-5 h-5 text-blue-500" />
+                <span>Notifications</span>
+              </div>
+              <ChevronRight className="w-5 h-5" />
+            </Button>
+
+            <Button
+              variant="ghost"
+              className="w-full justify-between h-14 px-4"
+              onClick={() => setCurrentView('privacy')}
+            >
+              <div className="flex items-center gap-3">
+                <Shield className="w-5 h-5 text-blue-500" />
+                <span>Privacy</span>
+              </div>
+              <ChevronRight className="w-5 h-5" />
+            </Button>
+
+            <Button
+              variant="ghost"
+              className="w-full justify-between h-14 px-4"
+              onClick={() => setCurrentView('accessibility')}
+            >
+              <div className="flex items-center gap-3">
+                <Accessibility className="w-5 h-5 text-blue-500" />
+                <span>Accessibility</span>
+              </div>
+              <ChevronRight className="w-5 h-5" />
+            </Button>
+
+            <Button
+              variant="ghost"
+              className="w-full justify-between h-14 px-4"
+              onClick={() => setCurrentView('appearance')}
+            >
+              <div className="flex items-center gap-3">
+                <Palette className="w-5 h-5 text-blue-500" />
+                <span>Appearance</span>
+              </div>
+              <ChevronRight className="w-5 h-5" />
+            </Button>
+
+            <Button
+              variant="ghost"
+              className="w-full justify-between h-14 px-4"
+              onClick={() => setCurrentView('data')}
+            >
+              <div className="flex items-center gap-3">
+                <Database className="w-5 h-5 text-blue-500" />
+                <span>Data Management</span>
+              </div>
+              <ChevronRight className="w-5 h-5" />
+            </Button>
+          </div>
+        </div>
+      );
+    }
+
+    const renderSubPage = () => {
+      const backButton = (
+        <Button
+          variant="ghost"
+          className="mb-4 p-2"
+          onClick={() => setCurrentView('main')}
+        >
+          <ArrowLeft className="w-5 h-5 mr-2" />
+          Back
+        </Button>
+      );
+
+      switch (currentView) {
+        case 'profile':
+          return (
+            <div>
+              {backButton}
+              <MobileCard 
+                title="Profile Information" 
+                subtitle="Update your personal details"
+                icon={<User className="w-6 h-6 text-blue-500" />}
+              >
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="firstName">First Name</Label>
+                    <Input
+                      id="firstName"
+                      value={settings.firstName}
+                      onChange={(e) => handleSettingChange('firstName', e.target.value)}
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="lastName">Last Name</Label>
+                    <Input
+                      id="lastName"
+                      value={settings.lastName}
+                      onChange={(e) => handleSettingChange('lastName', e.target.value)}
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="email">Email Address</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={settings.email}
+                      onChange={(e) => handleSettingChange('email', e.target.value)}
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="phone">Phone Number</Label>
+                    <Input
+                      id="phone"
+                      type="tel"
+                      value={settings.phone}
+                      onChange={(e) => handleSettingChange('phone', e.target.value)}
+                      className="mt-1"
+                    />
+                  </div>
+                </div>
+              </MobileCard>
+            </div>
+          );
+
+        case 'notifications':
+          return (
+            <div>
+              {backButton}
+              <MobileCard 
+                title="Notification Preferences" 
+                subtitle="Control your notification settings"
+                icon={<Bell className="w-6 h-6 text-blue-500" />}
+              >
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-medium">Email Notifications</h4>
+                      <p className="text-sm text-gray-600">Receive updates via email</p>
+                    </div>
+                    <Switch
+                      checked={settings.emailNotifications}
+                      onCheckedChange={(checked) => handleSettingChange('emailNotifications', checked)}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-medium">Push Notifications</h4>
+                      <p className="text-sm text-gray-600">Receive push notifications</p>
+                    </div>
+                    <Switch
+                      checked={settings.pushNotifications}
+                      onCheckedChange={(checked) => handleSettingChange('pushNotifications', checked)}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-medium">Family Notifications</h4>
+                      <p className="text-sm text-gray-600">Family member updates</p>
+                    </div>
+                    <Switch
+                      checked={settings.familyNotifications}
+                      onCheckedChange={(checked) => handleSettingChange('familyNotifications', checked)}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-medium">Emergency Alerts</h4>
+                      <p className="text-sm text-gray-600">Critical notifications</p>
+                    </div>
+                    <Switch
+                      checked={settings.emergencyAlerts}
+                      onCheckedChange={(checked) => handleSettingChange('emergencyAlerts', checked)}
+                    />
+                  </div>
+                </div>
+              </MobileCard>
+            </div>
+          );
+
+        case 'privacy':
+          return (
+            <div>
+              {backButton}
+              <MobileCard 
+                title="Privacy Controls" 
+                subtitle="Manage your privacy settings"
+                icon={<Shield className="w-6 h-6 text-blue-500" />}
+              >
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-medium">Data Sharing</h4>
+                      <p className="text-sm text-gray-600">Share data for research</p>
+                    </div>
+                    <Switch
+                      checked={settings.dataSharing}
+                      onCheckedChange={(checked) => handleSettingChange('dataSharing', checked)}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-medium">Analytics Tracking</h4>
+                      <p className="text-sm text-gray-600">Help improve the app</p>
+                    </div>
+                    <Switch
+                      checked={settings.analyticsTracking}
+                      onCheckedChange={(checked) => handleSettingChange('analyticsTracking', checked)}
+                    />
+                  </div>
+                  <div>
+                    <Label>Profile Visibility</Label>
+                    <div className="grid grid-cols-1 gap-2 mt-2">
+                      {(['private', 'family', 'public'] as const).map((visibility) => (
+                        <Button
+                          key={visibility}
+                          variant={settings.profileVisibility === visibility ? 'default' : 'outline'}
+                          onClick={() => handleSettingChange('profileVisibility', visibility)}
+                          className="capitalize justify-start"
+                          size="sm"
+                        >
+                          {visibility}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </MobileCard>
+            </div>
+          );
+
+        case 'accessibility':
+          return (
+            <div>
+              {backButton}
+              <MobileCard 
+                title="Accessibility Options" 
+                subtitle="Improve app accessibility"
+                icon={<Accessibility className="w-6 h-6 text-blue-500" />}
+              >
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <Eye className="w-5 h-5" />
+                      <div>
+                        <h4 className="font-medium">High Contrast</h4>
+                        <p className="text-sm text-gray-600">Better visibility</p>
+                      </div>
+                    </div>
+                    <Switch
+                      checked={settings.highContrast}
+                      onCheckedChange={(checked) => handleSettingChange('highContrast', checked)}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <Type className="w-5 h-5" />
+                      <div>
+                        <h4 className="font-medium">Large Text</h4>
+                        <p className="text-sm text-gray-600">Increase text size</p>
+                      </div>
+                    </div>
+                    <Switch
+                      checked={settings.largeText}
+                      onCheckedChange={(checked) => handleSettingChange('largeText', checked)}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <Volume2 className="w-5 h-5" />
+                      <div>
+                        <h4 className="font-medium">Screen Reader</h4>
+                        <p className="text-sm text-gray-600">Optimize for screen readers</p>
+                      </div>
+                    </div>
+                    <Switch
+                      checked={settings.screenReader}
+                      onCheckedChange={(checked) => handleSettingChange('screenReader', checked)}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-medium">Reduced Motion</h4>
+                      <p className="text-sm text-gray-600">Minimize animations</p>
+                    </div>
+                    <Switch
+                      checked={settings.reducedMotion}
+                      onCheckedChange={(checked) => handleSettingChange('reducedMotion', checked)}
+                    />
+                  </div>
+                </div>
+              </MobileCard>
+            </div>
+          );
+
+        case 'appearance':
+          return (
+            <div>
+              {backButton}
+              <MobileCard 
+                title="Theme & Appearance" 
+                subtitle="Customize the app's look"
+                icon={<Palette className="w-6 h-6 text-blue-500" />}
+              >
+                <div className="space-y-4">
+                  <div>
+                    <Label>Theme</Label>
+                    <div className="grid grid-cols-1 gap-2 mt-2">
+                      <Button
+                        variant={settings.theme === 'light' ? 'default' : 'outline'}
+                        onClick={() => handleSettingChange('theme', 'light')}
+                        className="justify-start"
+                        size="sm"
+                      >
+                        <Sun className="w-4 h-4 mr-2" />
+                        Light
+                      </Button>
+                      <Button
+                        variant={settings.theme === 'dark' ? 'default' : 'outline'}
+                        onClick={() => handleSettingChange('theme', 'dark')}
+                        className="justify-start"
+                        size="sm"
+                      >
+                        <Moon className="w-4 h-4 mr-2" />
+                        Dark
+                      </Button>
+                      <Button
+                        variant={settings.theme === 'system' ? 'default' : 'outline'}
+                        onClick={() => handleSettingChange('theme', 'system')}
+                        className="justify-start"
+                        size="sm"
+                      >
+                        System
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <Label>Font Size</Label>
+                    <div className="grid grid-cols-1 gap-2 mt-2">
+                      {(['small', 'medium', 'large'] as const).map((size) => (
+                        <Button
+                          key={size}
+                          variant={settings.fontSize === size ? 'default' : 'outline'}
+                          onClick={() => handleSettingChange('fontSize', size)}
+                          className="capitalize justify-start"
+                          size="sm"
+                        >
+                          {size}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label>Color Scheme</Label>
+                    <div className="grid grid-cols-2 gap-2 mt-2">
+                      {(['blue', 'green', 'purple', 'orange'] as const).map((color) => (
+                        <Button
+                          key={color}
+                          variant={settings.colorScheme === color ? 'default' : 'outline'}
+                          onClick={() => handleSettingChange('colorScheme', color)}
+                          className="capitalize"
+                          size="sm"
+                        >
+                          {color}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </MobileCard>
+            </div>
+          );
+
+        case 'data':
+          return (
+            <div>
+              {backButton}
+              <MobileCard 
+                title="Data Management" 
+                subtitle="Export or delete your data"
+                icon={<Database className="w-6 h-6 text-blue-500" />}
+              >
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-3 border rounded-lg">
+                    <div>
+                      <h4 className="font-medium">Export Your Data</h4>
+                      <p className="text-sm text-gray-600">Download all your health data</p>
+                    </div>
+                    <Button variant="outline" onClick={handleExportData} size="sm">
+                      <Download className="w-4 h-4 mr-2" />
+                      Export
+                    </Button>
+                  </div>
+                  <div className="flex items-center justify-between p-3 border rounded-lg border-red-200">
+                    <div>
+                      <h4 className="font-medium text-red-600">Delete Account</h4>
+                      <p className="text-sm text-gray-600">Permanently delete account and data</p>
+                    </div>
+                    <Button variant="destructive" onClick={handleDeleteAccount} size="sm">
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Delete
+                    </Button>
+                  </div>
+                </div>
+              </MobileCard>
+            </div>
+          );
+
+        default:
+          return <div>Page not found</div>;
+      }
+    };
+
+    return renderSubPage();
+  };
+
   if (isMobile) {
     return (
       <MobileAppLayout title="Settings" showTabBar={true}>
-        <div className="px-4 py-4 space-y-4">
-          {hasChanges && (
-            <div className="mb-4">
-              <Button onClick={handleSave} className="w-full">
-                Save Changes
-              </Button>
-            </div>
-          )}
-
-          <Tabs orientation="vertical" defaultValue="profile" className="w-full">
-            <TabsList className="grid w-full grid-cols-1 h-auto space-y-1 bg-transparent p-0">
-              <TabsTrigger 
-                value="profile" 
-                className="w-full justify-start data-[state=active]:bg-blue-100 data-[state=active]:text-blue-700"
-              >
-                <User className="w-4 h-4 mr-2" />
-                Profile
-              </TabsTrigger>
-              <TabsTrigger 
-                value="notifications" 
-                className="w-full justify-start data-[state=active]:bg-blue-100 data-[state=active]:text-blue-700"
-              >
-                <Bell className="w-4 h-4 mr-2" />
-                Notifications
-              </TabsTrigger>
-              <TabsTrigger 
-                value="privacy" 
-                className="w-full justify-start data-[state=active]:bg-blue-100 data-[state=active]:text-blue-700"
-              >
-                <Shield className="w-4 h-4 mr-2" />
-                Privacy
-              </TabsTrigger>
-              <TabsTrigger 
-                value="accessibility" 
-                className="w-full justify-start data-[state=active]:bg-blue-100 data-[state=active]:text-blue-700"
-              >
-                <Accessibility className="w-4 h-4 mr-2" />
-                Accessibility
-              </TabsTrigger>
-              <TabsTrigger 
-                value="appearance" 
-                className="w-full justify-start data-[state=active]:bg-blue-100 data-[state=active]:text-blue-700"
-              >
-                <Palette className="w-4 h-4 mr-2" />
-                Appearance
-              </TabsTrigger>
-              <TabsTrigger 
-                value="data" 
-                className="w-full justify-start data-[state=active]:bg-blue-100 data-[state=active]:text-blue-700"
-              >
-                <Database className="w-4 h-4 mr-2" />
-                Data Management
-              </TabsTrigger>
-            </TabsList>
-
-            <div className="mt-6">
-              <TabsContent value="profile" className="mt-0">
-                <MobileCard 
-                  title="Profile Information" 
-                  subtitle="Update your personal details"
-                  icon={<User className="w-6 h-6 text-blue-500" />}
-                >
-                  <div className="space-y-4">
-                    <div>
-                      <Label htmlFor="firstName">First Name</Label>
-                      <Input
-                        id="firstName"
-                        value={settings.firstName}
-                        onChange={(e) => handleSettingChange('firstName', e.target.value)}
-                        className="mt-1"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="lastName">Last Name</Label>
-                      <Input
-                        id="lastName"
-                        value={settings.lastName}
-                        onChange={(e) => handleSettingChange('lastName', e.target.value)}
-                        className="mt-1"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="email">Email Address</Label>
-                      <Input
-                        id="email"
-                        type="email"
-                        value={settings.email}
-                        onChange={(e) => handleSettingChange('email', e.target.value)}
-                        className="mt-1"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="phone">Phone Number</Label>
-                      <Input
-                        id="phone"
-                        type="tel"
-                        value={settings.phone}
-                        onChange={(e) => handleSettingChange('phone', e.target.value)}
-                        className="mt-1"
-                      />
-                    </div>
-                  </div>
-                </MobileCard>
-              </TabsContent>
-
-              <TabsContent value="notifications" className="mt-0">
-                <MobileCard 
-                  title="Notification Preferences" 
-                  subtitle="Control your notification settings"
-                  icon={<Bell className="w-6 h-6 text-blue-500" />}
-                >
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h4 className="font-medium">Email Notifications</h4>
-                        <p className="text-sm text-gray-600">Receive updates via email</p>
-                      </div>
-                      <Switch
-                        checked={settings.emailNotifications}
-                        onCheckedChange={(checked) => handleSettingChange('emailNotifications', checked)}
-                      />
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h4 className="font-medium">Push Notifications</h4>
-                        <p className="text-sm text-gray-600">Receive push notifications</p>
-                      </div>
-                      <Switch
-                        checked={settings.pushNotifications}
-                        onCheckedChange={(checked) => handleSettingChange('pushNotifications', checked)}
-                      />
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h4 className="font-medium">Family Notifications</h4>
-                        <p className="text-sm text-gray-600">Family member updates</p>
-                      </div>
-                      <Switch
-                        checked={settings.familyNotifications}
-                        onCheckedChange={(checked) => handleSettingChange('familyNotifications', checked)}
-                      />
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h4 className="font-medium">Emergency Alerts</h4>
-                        <p className="text-sm text-gray-600">Critical notifications</p>
-                      </div>
-                      <Switch
-                        checked={settings.emergencyAlerts}
-                        onCheckedChange={(checked) => handleSettingChange('emergencyAlerts', checked)}
-                      />
-                    </div>
-                  </div>
-                </MobileCard>
-              </TabsContent>
-
-              <TabsContent value="privacy" className="mt-0">
-                <MobileCard 
-                  title="Privacy Controls" 
-                  subtitle="Manage your privacy settings"
-                  icon={<Shield className="w-6 h-6 text-blue-500" />}
-                >
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h4 className="font-medium">Data Sharing</h4>
-                        <p className="text-sm text-gray-600">Share data for research</p>
-                      </div>
-                      <Switch
-                        checked={settings.dataSharing}
-                        onCheckedChange={(checked) => handleSettingChange('dataSharing', checked)}
-                      />
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h4 className="font-medium">Analytics Tracking</h4>
-                        <p className="text-sm text-gray-600">Help improve the app</p>
-                      </div>
-                      <Switch
-                        checked={settings.analyticsTracking}
-                        onCheckedChange={(checked) => handleSettingChange('analyticsTracking', checked)}
-                      />
-                    </div>
-                    <div>
-                      <Label>Profile Visibility</Label>
-                      <div className="grid grid-cols-1 gap-2 mt-2">
-                        {(['private', 'family', 'public'] as const).map((visibility) => (
-                          <Button
-                            key={visibility}
-                            variant={settings.profileVisibility === visibility ? 'default' : 'outline'}
-                            onClick={() => handleSettingChange('profileVisibility', visibility)}
-                            className="capitalize justify-start"
-                            size="sm"
-                          >
-                            {visibility}
-                          </Button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </MobileCard>
-              </TabsContent>
-
-              <TabsContent value="accessibility" className="mt-0">
-                <MobileCard 
-                  title="Accessibility Options" 
-                  subtitle="Improve app accessibility"
-                  icon={<Accessibility className="w-6 h-6 text-blue-500" />}
-                >
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <Eye className="w-5 h-5" />
-                        <div>
-                          <h4 className="font-medium">High Contrast</h4>
-                          <p className="text-sm text-gray-600">Better visibility</p>
-                        </div>
-                      </div>
-                      <Switch
-                        checked={settings.highContrast}
-                        onCheckedChange={(checked) => handleSettingChange('highContrast', checked)}
-                      />
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <Type className="w-5 h-5" />
-                        <div>
-                          <h4 className="font-medium">Large Text</h4>
-                          <p className="text-sm text-gray-600">Increase text size</p>
-                        </div>
-                      </div>
-                      <Switch
-                        checked={settings.largeText}
-                        onCheckedChange={(checked) => handleSettingChange('largeText', checked)}
-                      />
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <Volume2 className="w-5 h-5" />
-                        <div>
-                          <h4 className="font-medium">Screen Reader</h4>
-                          <p className="text-sm text-gray-600">Optimize for screen readers</p>
-                        </div>
-                      </div>
-                      <Switch
-                        checked={settings.screenReader}
-                        onCheckedChange={(checked) => handleSettingChange('screenReader', checked)}
-                      />
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h4 className="font-medium">Reduced Motion</h4>
-                        <p className="text-sm text-gray-600">Minimize animations</p>
-                      </div>
-                      <Switch
-                        checked={settings.reducedMotion}
-                        onCheckedChange={(checked) => handleSettingChange('reducedMotion', checked)}
-                      />
-                    </div>
-                  </div>
-                </MobileCard>
-              </TabsContent>
-
-              <TabsContent value="appearance" className="mt-0">
-                <MobileCard 
-                  title="Theme & Appearance" 
-                  subtitle="Customize the app's look"
-                  icon={<Palette className="w-6 h-6 text-blue-500" />}
-                >
-                  <div className="space-y-4">
-                    <div>
-                      <Label>Theme</Label>
-                      <div className="grid grid-cols-1 gap-2 mt-2">
-                        <Button
-                          variant={settings.theme === 'light' ? 'default' : 'outline'}
-                          onClick={() => handleSettingChange('theme', 'light')}
-                          className="justify-start"
-                          size="sm"
-                        >
-                          <Sun className="w-4 h-4 mr-2" />
-                          Light
-                        </Button>
-                        <Button
-                          variant={settings.theme === 'dark' ? 'default' : 'outline'}
-                          onClick={() => handleSettingChange('theme', 'dark')}
-                          className="justify-start"
-                          size="sm"
-                        >
-                          <Moon className="w-4 h-4 mr-2" />
-                          Dark
-                        </Button>
-                        <Button
-                          variant={settings.theme === 'system' ? 'default' : 'outline'}
-                          onClick={() => handleSettingChange('theme', 'system')}
-                          className="justify-start"
-                          size="sm"
-                        >
-                          System
-                        </Button>
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <Label>Font Size</Label>
-                      <div className="grid grid-cols-1 gap-2 mt-2">
-                        {(['small', 'medium', 'large'] as const).map((size) => (
-                          <Button
-                            key={size}
-                            variant={settings.fontSize === size ? 'default' : 'outline'}
-                            onClick={() => handleSettingChange('fontSize', size)}
-                            className="capitalize justify-start"
-                            size="sm"
-                          >
-                            {size}
-                          </Button>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div>
-                      <Label>Color Scheme</Label>
-                      <div className="grid grid-cols-2 gap-2 mt-2">
-                        {(['blue', 'green', 'purple', 'orange'] as const).map((color) => (
-                          <Button
-                            key={color}
-                            variant={settings.colorScheme === color ? 'default' : 'outline'}
-                            onClick={() => handleSettingChange('colorScheme', color)}
-                            className="capitalize"
-                            size="sm"
-                          >
-                            {color}
-                          </Button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </MobileCard>
-              </TabsContent>
-
-              <TabsContent value="data" className="mt-0">
-                <MobileCard 
-                  title="Data Management" 
-                  subtitle="Export or delete your data"
-                  icon={<Database className="w-6 h-6 text-blue-500" />}
-                >
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between p-3 border rounded-lg">
-                      <div>
-                        <h4 className="font-medium">Export Your Data</h4>
-                        <p className="text-sm text-gray-600">Download all your health data</p>
-                      </div>
-                      <Button variant="outline" onClick={handleExportData} size="sm">
-                        <Download className="w-4 h-4 mr-2" />
-                        Export
-                      </Button>
-                    </div>
-                    <div className="flex items-center justify-between p-3 border rounded-lg border-red-200">
-                      <div>
-                        <h4 className="font-medium text-red-600">Delete Account</h4>
-                        <p className="text-sm text-gray-600">Permanently delete account and data</p>
-                      </div>
-                      <Button variant="destructive" onClick={handleDeleteAccount} size="sm">
-                        <Trash2 className="w-4 h-4 mr-2" />
-                        Delete
-                      </Button>
-                    </div>
-                  </div>
-                </MobileCard>
-              </TabsContent>
-            </div>
-          </Tabs>
+        <div className="px-4 py-4">
+          {renderMobileSettings()}
         </div>
       </MobileAppLayout>
     );

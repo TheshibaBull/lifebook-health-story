@@ -1,379 +1,265 @@
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Heart, FileText, Users, Calendar, TrendingUp, AlertTriangle, Shield, QrCode, Download, Bell, ChevronDown } from 'lucide-react';
+import { 
+  Heart, 
+  Upload, 
+  Search, 
+  TrendingUp, 
+  Calendar, 
+  FileText, 
+  Users,
+  Activity,
+  Shield,
+  Smartphone
+} from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useToast } from '@/hooks/use-toast';
 import { HealthTimeline } from '@/components/HealthTimeline';
-import { FamilyVault } from '@/components/FamilyVault';
-import { EmergencyCard } from '@/components/EmergencyCard';
 import { HealthScore } from '@/components/HealthScore';
-import { SmartFolders } from '@/components/SmartFolders';
-import { AIHealthSummarizer } from '@/components/AIHealthSummarizer';
-import { PredictiveReminders } from '@/components/PredictiveReminders';
-import { FamilyHealthDashboard } from '@/components/FamilyHealthDashboard';
-import { SymptomChecker } from '@/components/SymptomChecker';
+import { QuickEmergencyAccess } from '@/components/QuickEmergencyAccess';
+import { UnifiedUpload } from '@/components/UnifiedUpload';
 import { MobileAppLayout } from '@/components/MobileAppLayout';
-import { MobileCard } from '@/components/MobileCard';
-import { DataExport } from '@/components/DataExport';
-import { HealthGoals } from '@/components/HealthGoals';
-import { PredictiveAnalytics } from '@/components/PredictiveAnalytics';
-import { HealthcareIntegration } from '@/components/HealthcareIntegration';
-import { DynamicHealthTimeline } from '@/components/DynamicHealthTimeline';
-import { FamilyHealthAnalytics } from '@/components/FamilyHealthAnalytics';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { NotificationDropdown } from '@/components/NotificationDropdown';
-import { HealthDataInteroperability } from '@/components/HealthDataInteroperability';
 
 const Dashboard = () => {
-  const [selectedTab, setSelectedTab] = useState('overview');
-  const isMobile = useIsMobile();
+  const [healthRecords, setHealthRecords] = useState<any[]>([]);
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const isMobile = useIsMobile();
 
-  const healthAlerts = [
-    { type: 'urgent', message: 'Annual thyroid test overdue by 3 months', date: '2024-01-15' },
-    { type: 'warning', message: 'Blood pressure trending upward - last 3 readings high', date: '2024-01-10' },
-    { type: 'info', message: 'Flu vaccination due this month', date: '2024-01-05' }
-  ];
+  useEffect(() => {
+    // Load health records from localStorage
+    const stored = localStorage.getItem('health-records');
+    if (stored) {
+      setHealthRecords(JSON.parse(stored));
+    }
+  }, []);
 
-  const recentDocuments = [
-    { name: 'Blood Test Report', date: '2024-01-15', type: 'Lab Report', doctor: 'Dr. Smith' },
-    { name: 'Prescription - Hypertension', date: '2024-01-10', type: 'Prescription', doctor: 'Dr. Johnson' },
-    { name: 'X-Ray Chest', date: '2024-01-05', type: 'Imaging', doctor: 'Dr. Wilson' }
-  ];
-
-  const handleUploadRecords = () => {
+  const handleUploadClick = () => {
     navigate('/upload-record');
   };
 
-  useEffect(() => {
-    // Initialize offline sync and push notifications for mobile
-    if (isMobile) {
-      import('@/services/offlineDataSync').then(({ OfflineDataSync }) => {
-        OfflineDataSync.startAutoSync();
-      }).catch(() => {
-        console.log('Offline sync service not available');
-      });
-      
-      import('@/services/pushNotificationService').then(({ PushNotificationService }) => {
-        PushNotificationService.initialize();
-      }).catch(() => {
-        console.log('Push notification service not available');
-      });
-    }
-  }, [isMobile]);
+  const handleSearchClick = () => {
+    navigate('/search');
+  };
+
+  const handleFamilyClick = () => {
+    navigate('/family');
+  };
+
+  const handleRecordClick = (recordId: string) => {
+    toast({
+      title: "Record Clicked",
+      description: `You clicked record with ID: ${recordId}`,
+    });
+  };
+
+  const handleEmergencyCall = () => {
+    toast({
+      title: "Emergency Call",
+      description: "Calling emergency services...",
+    });
+  };
+
+  const handleAddEmergencyContact = () => {
+    toast({
+      title: "Add Emergency Contact",
+      description: "Adding a new emergency contact...",
+    });
+  };
 
   if (isMobile) {
     return (
       <MobileAppLayout title="Health Dashboard" showTabBar={true}>
-        <div className="px-4 py-4 space-y-4">
-          {/* Quick Actions */}
-          <div className="flex gap-3 mb-4">
-            <Button size="sm" className="flex-1">
-              <QrCode className="w-4 h-4 mr-2" />
-              Emergency Card
-            </Button>
-            <Button variant="outline" size="sm" className="flex-1" onClick={handleUploadRecords}>
-              <FileText className="w-4 h-4 mr-2" />
-              Upload Records
-            </Button>
-          </div>
-
+        <div className="px-4 py-4 space-y-6">
           {/* Health Score Card */}
-          <MobileCard title="Health Score" subtitle="Your overall health assessment" icon={<Heart className="w-6 h-6 text-red-500" />}>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center">
-                  <span className="text-2xl font-bold text-blue-600">87</span>
-                </div>
-                <div>
-                  <p className="font-semibold text-green-600">Excellent</p>
-                  <p className="text-sm text-gray-600">Keep it up!</p>
-                </div>
-              </div>
-              <TrendingUp className="text-green-500" />
-            </div>
-          </MobileCard>
+          <Card>
+            <CardContent className="p-4">
+              <HealthScore />
+            </CardContent>
+          </Card>
 
-          {/* AI Health Summary - Mobile */}
-          <MobileCard title="AI Health Insights" subtitle="Personalized health analysis" icon={<TrendingUp className="w-6 h-6 text-blue-500" />}>
-            <div className="space-y-3">
-              <div className="flex items-start gap-3 p-2 rounded-lg bg-amber-50">
-                <AlertTriangle className="w-4 h-4 text-amber-500 mt-1" />
-                <div>
-                  <p className="text-sm font-medium">BP Pattern Alert</p>
-                  <p className="text-xs text-gray-600">Elevated 4x in 6 months</p>
-                </div>
+          {/* Quick Actions */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg">Quick Actions</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <Button
+                  variant="outline"
+                  className="h-20 flex flex-col items-center justify-center gap-2"
+                  onClick={() => navigate('/upload-record')}
+                >
+                  <Upload className="w-6 h-6 text-blue-500" />
+                  <span className="text-sm">Upload</span>
+                </Button>
+                <Button
+                  variant="outline"
+                  className="h-20 flex flex-col items-center justify-center gap-2"
+                  onClick={() => navigate('/search')}
+                >
+                  <Search className="w-6 h-6 text-green-500" />
+                  <span className="text-sm">Search</span>
+                </Button>
               </div>
-              <div className="flex items-start gap-3 p-2 rounded-lg bg-blue-50">
-                <TrendingUp className="w-4 h-4 text-blue-500 mt-1" />
-                <div>
-                  <p className="text-sm font-medium">Respiratory Pattern</p>
-                  <p className="text-xs text-gray-600">3 episodes since 2020</p>
-                </div>
-              </div>
-            </div>
-          </MobileCard>
+              <Button
+                variant="outline"
+                className="w-full h-16 flex items-center justify-center gap-3"
+                onClick={() => navigate('/family')}
+              >
+                <Users className="w-6 h-6 text-purple-500" />
+                <span>Family Health</span>
+              </Button>
+            </CardContent>
+          </Card>
 
-          {/* Health Alerts */}
-          <MobileCard title="Health Alerts" subtitle="AI-powered health recommendations" icon={<AlertTriangle className="w-6 h-6 text-amber-500" />}>
-            <div className="space-y-3">
-              {healthAlerts.slice(0, 2).map((alert, index) => (
-                <div key={index} className="flex items-start gap-3 p-3 rounded-lg bg-gray-50">
-                  <Badge 
-                    variant={alert.type === 'urgent' ? 'destructive' : alert.type === 'warning' ? 'default' : 'secondary'}
-                    className="mt-0.5"
-                  >
-                    {alert.type}
-                  </Badge>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium">{alert.message}</p>
-                    <p className="text-xs text-gray-500 mt-1">{alert.date}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </MobileCard>
+          {/* Health Records Section */}
+          <Tabs defaultValue="records" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="records">Records</TabsTrigger>
+              <TabsTrigger value="timeline">Timeline</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="records" className="mt-4">
+              <UnifiedUpload />
+            </TabsContent>
+            
+            <TabsContent value="timeline" className="mt-4">
+              <Card>
+                <CardContent className="p-4">
+                  <HealthTimeline />
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
 
-          {/* Quick Stats */}
-          <div className="grid grid-cols-2 gap-3">
-            <MobileCard title="Records" subtitle="" icon={<FileText className="w-6 h-6 text-blue-500" />}>
-              <div className="flex items-center justify-between">
-                <span className="text-2xl font-bold">247</span>
-                <FileText className="text-blue-500" />
-              </div>
-            </MobileCard>
-            <MobileCard title="Family" subtitle="" icon={<Users className="w-6 h-6 text-green-500" />}>
-              <div className="flex items-center justify-between">
-                <span className="text-2xl font-bold">4</span>
-                <Users className="text-green-500" />
-              </div>
-            </MobileCard>
-          </div>
-
-          {/* Recent Documents */}
-          <MobileCard title="Recent Records" subtitle="Latest uploaded documents" icon={<FileText className="w-6 h-6 text-blue-500" />} showArrow>
-            <div className="space-y-3">
-              {recentDocuments.slice(0, 3).map((doc, index) => (
-                <div key={index} className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50">
-                  <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
-                    <FileText className="w-5 h-5 text-blue-600" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm truncate">{doc.name}</p>
-                    <p className="text-xs text-gray-600">{doc.doctor} • {doc.date}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </MobileCard>
-
-          {/* Family Section */}
-          <MobileCard title="Family Health" subtitle="Manage family records" icon={<Users className="w-6 h-6 text-green-500" />} showArrow onClick={() => navigate('/family')}>
-            <div className="space-y-2">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
-                  <span className="text-sm font-bold text-green-600">M</span>
-                </div>
-                <div>
-                  <p className="text-sm font-medium">Mle</p>
-                  <p className="text-xs text-gray-600">Partner • Active</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
-                  <span className="text-sm font-bold text-blue-600">S</span>
-                </div>
-                <div>
-                  <p className="text-sm font-medium">Swapnil</p>
-                  <p className="text-xs text-gray-600">Sibling • Active</p>
-                </div>
-              </div>
-            </div>
-          </MobileCard>
+          {/* Emergency Access */}
+          <QuickEmergencyAccess />
         </div>
       </MobileAppLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-cyan-50 p-4">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
-                <Heart className="text-red-500" />
-                Lifebook Health
-              </h1>
-              <p className="text-gray-600 mt-1">Your lifelong health story in one secure place</p>
-            </div>
-            <div className="flex gap-3">
-              <Button variant="outline" size="sm">
-                <QrCode className="w-4 h-4 mr-2" />
-                Emergency Card
-              </Button>
-              <Button variant="outline" size="sm">
-                <Download className="w-4 h-4 mr-2" />
-                Export Data
-              </Button>
-              <Button size="sm" onClick={handleUploadRecords}>
-                <FileText className="w-4 h-4 mr-2" />
-                Upload Records
-              </Button>
-            </div>
-          </div>
+    <div className="min-h-screen bg-background p-4">
+      <div className="max-w-5xl mx-auto space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Card className="bg-blue-50 text-blue-900">
+            <CardHeader>
+              <CardTitle className="text-2xl font-semibold flex items-center gap-3">
+                <Heart className="w-6 h-6" />
+                Health Score
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <HealthScore />
+            </CardContent>
+          </Card>
+
+          <Card className="bg-green-50 text-green-900">
+            <CardHeader>
+              <CardTitle className="text-2xl font-semibold flex items-center gap-3">
+                <TrendingUp className="w-6 h-6" />
+                Trends
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-gray-600">Track your health trends over time</p>
+              <Button variant="secondary" className="mt-4">View Trends</Button>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-purple-50 text-purple-900">
+            <CardHeader>
+              <CardTitle className="text-2xl font-semibold flex items-center gap-3">
+                <Calendar className="w-6 h-6" />
+                Upcoming
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-gray-600">View upcoming appointments and reminders</p>
+              <Button variant="secondary" className="mt-4">View Calendar</Button>
+            </CardContent>
+          </Card>
         </div>
 
-        {/* Main Content */}
-        <Tabs value={selectedTab} onValueChange={setSelectedTab}>
-          <TabsList className="grid w-full grid-cols-8 mb-6">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="timeline">Timeline</TabsTrigger>
-            <TabsTrigger value="family">Family</TabsTrigger>
-            <TabsTrigger value="goals">Goals</TabsTrigger>
-            <TabsTrigger value="analytics">Analytics</TabsTrigger>
-            <TabsTrigger value="healthcare">Healthcare</TabsTrigger>
-            <TabsTrigger value="emergency">Emergency</TabsTrigger>
-            <TabsTrigger value="interop">Data Exchange</TabsTrigger>
-          </TabsList>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-xl font-semibold">Quick Actions</CardTitle>
+            </CardHeader>
+            <CardContent className="grid grid-cols-2 gap-4">
+              <Button onClick={handleUploadClick} className="h-16">
+                <Upload className="w-4 h-4 mr-2" />
+                Upload Record
+              </Button>
+              <Button onClick={handleSearchClick} className="h-16">
+                <Search className="w-4 h-4 mr-2" />
+                Search Records
+              </Button>
+              <Button onClick={handleFamilyClick} className="h-16">
+                <Users className="w-4 h-4 mr-2" />
+                Family Health
+              </Button>
+              <Button className="h-16">
+                <Activity className="w-4 h-4 mr-2" />
+                Track Activity
+              </Button>
+            </CardContent>
+          </Card>
 
-          <TabsContent value="overview" className="space-y-6">
-            {/* Top Row - AI Features */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <AIHealthSummarizer />
-              <PredictiveReminders />
-            </div>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-xl font-semibold">Emergency Access</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <QuickEmergencyAccess />
+            </CardContent>
+          </Card>
+        </div>
 
-            {/* Second Row - Smart Organization */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <SmartFolders />
-              <FamilyHealthDashboard />
-            </div>
-
-            {/* Health Alerts */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <AlertTriangle className="text-amber-500" />
-                  Health Alerts & Nudges
-                </CardTitle>
-                <CardDescription>AI-powered personalized health recommendations</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {healthAlerts.map((alert, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 rounded-lg border">
-                      <div className="flex items-center gap-3">
-                        <Badge variant={alert.type === 'urgent' ? 'destructive' : alert.type === 'warning' ? 'default' : 'secondary'}>
-                          {alert.type}
-                        </Badge>
-                        <span className="text-sm">{alert.message}</span>
-                      </div>
-                      <span className="text-xs text-gray-500">{alert.date}</span>
-                    </div>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-xl font-semibold">
+              <FileText className="w-5 h-5 mr-2 inline-block" />
+              Health Records
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Tabs defaultValue="records">
+              <TabsList className="mb-4">
+                <TabsTrigger value="records">List View</TabsTrigger>
+                <TabsTrigger value="timeline">Timeline</TabsTrigger>
+                <TabsTrigger value="upload">Upload</TabsTrigger>
+              </TabsList>
+              <TabsContent value="records">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {healthRecords.map((record) => (
+                    <Card key={record.id} onClick={() => handleRecordClick(record.id)} className="cursor-pointer hover:shadow-md transition-shadow">
+                      <CardHeader>
+                        <CardTitle>{record.title}</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-sm text-gray-600">{record.description}</p>
+                        <Badge variant="secondary" className="mt-2">{record.type}</Badge>
+                      </CardContent>
+                    </Card>
                   ))}
                 </div>
-              </CardContent>
-            </Card>
-
-            {/* Symptom Checker & Quick Stats */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="lg:col-span-2">
-                <SymptomChecker />
-              </div>
-              <div className="space-y-4">
-                <Card>
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm text-gray-600">Total Records</p>
-                        <p className="text-2xl font-bold">247</p>
-                      </div>
-                      <FileText className="text-blue-500" />
-                    </div>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm text-gray-600">Health Score</p>
-                        <p className="text-2xl font-bold">87</p>
-                      </div>
-                      <TrendingUp className="text-emerald-500" />
-                    </div>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm text-gray-600">Data Security</p>
-                        <p className="text-2xl font-bold text-green-600">AES-256</p>
-                      </div>
-                      <Shield className="text-green-600" />
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
-
-            {/* Recent Documents */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Recent Medical Records</CardTitle>
-                <CardDescription>Your latest uploaded and scanned documents</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {recentDocuments.map((doc, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 rounded-lg border hover:bg-gray-50 cursor-pointer">
-                      <div className="flex items-center gap-3">
-                        <FileText className="text-blue-500" />
-                        <div>
-                          <p className="font-medium">{doc.name}</p>
-                          <p className="text-sm text-gray-600">{doc.type} • {doc.doctor}</p>
-                        </div>
-                      </div>
-                      <span className="text-sm text-gray-500">{doc.date}</span>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="timeline">
-            <DynamicHealthTimeline />
-          </TabsContent>
-
-          <TabsContent value="family">
-            <FamilyHealthAnalytics />
-          </TabsContent>
-
-          <TabsContent value="goals">
-            <HealthGoals />
-          </TabsContent>
-
-          <TabsContent value="analytics">
-            <PredictiveAnalytics />
-          </TabsContent>
-
-          <TabsContent value="healthcare">
-            <HealthcareIntegration />
-          </TabsContent>
-
-          <TabsContent value="emergency">
-            <EmergencyCard />
-          </TabsContent>
-
-          <TabsContent value="interop">
-            <HealthDataInteroperability />
-          </TabsContent>
-        </Tabs>
+              </TabsContent>
+              <TabsContent value="timeline">
+                <HealthTimeline />
+              </TabsContent>
+              <TabsContent value="upload">
+                <UnifiedUpload />
+              </TabsContent>
+            </Tabs>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
