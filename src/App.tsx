@@ -11,6 +11,8 @@ import UploadRecord from "./pages/UploadRecord";
 import Scanning from "./pages/Scanning";
 import Dashboard from "./pages/Dashboard";
 import Settings from "./pages/Settings";
+import Search from "./pages/Search";
+import Family from "./pages/Family";
 import NotFound from "./pages/NotFound";
 import { Onboarding } from "./components/Onboarding";
 
@@ -31,6 +33,8 @@ const App = () => (
           <Route path="/scanning" element={<Scanning />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/search" element={<Search />} />
+          <Route path="/family" element={<Family />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

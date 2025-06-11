@@ -14,8 +14,7 @@ import { AIHealthSummarizer } from '@/components/AIHealthSummarizer';
 import { PredictiveReminders } from '@/components/PredictiveReminders';
 import { FamilyHealthDashboard } from '@/components/FamilyHealthDashboard';
 import { SymptomChecker } from '@/components/SymptomChecker';
-import { MobileHeader } from '@/components/MobileHeader';
-import { MobileTabBar } from '@/components/MobileTabBar';
+import { MobileAppLayout } from '@/components/MobileAppLayout';
 import { MobileCard } from '@/components/MobileCard';
 import { DataExport } from '@/components/DataExport';
 import { HealthGoals } from '@/components/HealthGoals';
@@ -53,148 +52,148 @@ const Dashboard = () => {
     if (isMobile) {
       import('@/services/offlineDataSync').then(({ OfflineDataSync }) => {
         OfflineDataSync.startAutoSync();
+      }).catch(() => {
+        console.log('Offline sync service not available');
       });
       
       import('@/services/pushNotificationService').then(({ PushNotificationService }) => {
         PushNotificationService.initialize();
+      }).catch(() => {
+        console.log('Push notification service not available');
       });
     }
   }, [isMobile]);
 
   if (isMobile) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <MobileHeader title="Lifebook" />
-        
-        <div className="px-4 py-4 pb-20">
-          <Tabs value={selectedTab} onValueChange={setSelectedTab}>
-            <TabsContent value="overview" className="space-y-4 mt-0">
-              {/* Quick Actions */}
-              <div className="flex gap-3 mb-4">
-                <Button size="sm" className="flex-1">
-                  <QrCode className="w-4 h-4 mr-2" />
-                  Emergency Card
-                </Button>
-                <Button variant="outline" size="sm" className="flex-1">
-                  <Download className="w-4 h-4 mr-2" />
-                  Export Data
-                </Button>
+      <MobileAppLayout title="Health Dashboard" showTabBar={true}>
+        <div className="px-4 py-4 space-y-4">
+          {/* Quick Actions */}
+          <div className="flex gap-3 mb-4">
+            <Button size="sm" className="flex-1">
+              <QrCode className="w-4 h-4 mr-2" />
+              Emergency Card
+            </Button>
+            <Button variant="outline" size="sm" className="flex-1" onClick={handleUploadRecords}>
+              <FileText className="w-4 h-4 mr-2" />
+              Upload Records
+            </Button>
+          </div>
+
+          {/* Health Score Card */}
+          <MobileCard title="Health Score" subtitle="Your overall health assessment" icon={<Heart className="w-6 h-6 text-red-500" />}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center">
+                  <span className="text-2xl font-bold text-blue-600">87</span>
+                </div>
+                <div>
+                  <p className="font-semibold text-green-600">Excellent</p>
+                  <p className="text-sm text-gray-600">Keep it up!</p>
+                </div>
               </div>
+              <TrendingUp className="text-green-500" />
+            </div>
+          </MobileCard>
 
-              {/* Health Score Card */}
-              <MobileCard title="Health Score" subtitle="Your overall health assessment" icon={<Heart className="w-6 h-6" />}>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center">
-                      <span className="text-2xl font-bold text-blue-600">87</span>
-                    </div>
-                    <div>
-                      <p className="font-semibold text-green-600">Excellent</p>
-                      <p className="text-sm text-gray-600">Keep it up!</p>
-                    </div>
-                  </div>
-                  <TrendingUp className="text-green-500" />
+          {/* AI Health Summary - Mobile */}
+          <MobileCard title="AI Health Insights" subtitle="Personalized health analysis" icon={<TrendingUp className="w-6 h-6 text-blue-500" />}>
+            <div className="space-y-3">
+              <div className="flex items-start gap-3 p-2 rounded-lg bg-amber-50">
+                <AlertTriangle className="w-4 h-4 text-amber-500 mt-1" />
+                <div>
+                  <p className="text-sm font-medium">BP Pattern Alert</p>
+                  <p className="text-xs text-gray-600">Elevated 4x in 6 months</p>
                 </div>
-              </MobileCard>
-
-              {/* AI Health Summary - Mobile */}
-              <MobileCard title="AI Health Insights" subtitle="Personalized health analysis" icon={<TrendingUp className="w-6 h-6" />}>
-                <div className="space-y-3">
-                  <div className="flex items-start gap-3 p-2 rounded-lg bg-amber-50">
-                    <AlertTriangle className="w-4 h-4 text-amber-500 mt-1" />
-                    <div>
-                      <p className="text-sm font-medium">BP Pattern Alert</p>
-                      <p className="text-xs text-gray-600">Elevated 4x in 6 months</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3 p-2 rounded-lg bg-blue-50">
-                    <TrendingUp className="w-4 h-4 text-blue-500 mt-1" />
-                    <div>
-                      <p className="text-sm font-medium">Respiratory Pattern</p>
-                      <p className="text-xs text-gray-600">3 episodes since 2020</p>
-                    </div>
-                  </div>
-                </div>
-              </MobileCard>
-
-              {/* Health Alerts */}
-              <MobileCard title="Health Alerts" subtitle="AI-powered health recommendations" icon={<AlertTriangle className="w-6 h-6" />}>
-                <div className="space-y-3">
-                  {healthAlerts.slice(0, 2).map((alert, index) => (
-                    <div key={index} className="flex items-start gap-3 p-3 rounded-lg bg-gray-50">
-                      <Badge 
-                        variant={alert.type === 'urgent' ? 'destructive' : alert.type === 'warning' ? 'default' : 'secondary'}
-                        className="mt-0.5"
-                      >
-                        {alert.type}
-                      </Badge>
-                      <div className="flex-1">
-                        <p className="text-sm font-medium">{alert.message}</p>
-                        <p className="text-xs text-gray-500 mt-1">{alert.date}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </MobileCard>
-
-              {/* Quick Stats */}
-              <div className="grid grid-cols-2 gap-3">
-                <MobileCard title="Records" subtitle="" icon={<FileText className="w-6 h-6" />}>
-                  <div className="flex items-center justify-between">
-                    <span className="text-2xl font-bold">247</span>
-                    <FileText className="text-blue-500" />
-                  </div>
-                </MobileCard>
-                <MobileCard title="Family" subtitle="" icon={<Users className="w-6 h-6" />}>
-                  <div className="flex items-center justify-between">
-                    <span className="text-2xl font-bold">4</span>
-                    <Users className="text-green-500" />
-                  </div>
-                </MobileCard>
               </div>
-
-              {/* Recent Documents */}
-              <MobileCard title="Recent Records" subtitle="Latest uploaded documents" icon={<FileText className="w-6 h-6" />} showArrow>
-                <div className="space-y-3">
-                  {recentDocuments.slice(0, 3).map((doc, index) => (
-                    <div key={index} className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50">
-                      <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
-                        <FileText className="w-5 h-5 text-blue-600" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm truncate">{doc.name}</p>
-                        <p className="text-xs text-gray-600">{doc.doctor} • {doc.date}</p>
-                      </div>
-                    </div>
-                  ))}
+              <div className="flex items-start gap-3 p-2 rounded-lg bg-blue-50">
+                <TrendingUp className="w-4 h-4 text-blue-500 mt-1" />
+                <div>
+                  <p className="text-sm font-medium">Respiratory Pattern</p>
+                  <p className="text-xs text-gray-600">3 episodes since 2020</p>
                 </div>
-              </MobileCard>
-            </TabsContent>
+              </div>
+            </div>
+          </MobileCard>
 
-            <TabsContent value="timeline" className="mt-0">
-              <DynamicHealthTimeline />
-            </TabsContent>
+          {/* Health Alerts */}
+          <MobileCard title="Health Alerts" subtitle="AI-powered health recommendations" icon={<AlertTriangle className="w-6 h-6 text-amber-500" />}>
+            <div className="space-y-3">
+              {healthAlerts.slice(0, 2).map((alert, index) => (
+                <div key={index} className="flex items-start gap-3 p-3 rounded-lg bg-gray-50">
+                  <Badge 
+                    variant={alert.type === 'urgent' ? 'destructive' : alert.type === 'warning' ? 'default' : 'secondary'}
+                    className="mt-0.5"
+                  >
+                    {alert.type}
+                  </Badge>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium">{alert.message}</p>
+                    <p className="text-xs text-gray-500 mt-1">{alert.date}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </MobileCard>
 
-            <TabsContent value="family" className="mt-0">
-              <FamilyVault />
-            </TabsContent>
+          {/* Quick Stats */}
+          <div className="grid grid-cols-2 gap-3">
+            <MobileCard title="Records" subtitle="" icon={<FileText className="w-6 h-6 text-blue-500" />}>
+              <div className="flex items-center justify-between">
+                <span className="text-2xl font-bold">247</span>
+                <FileText className="text-blue-500" />
+              </div>
+            </MobileCard>
+            <MobileCard title="Family" subtitle="" icon={<Users className="w-6 h-6 text-green-500" />}>
+              <div className="flex items-center justify-between">
+                <span className="text-2xl font-bold">4</span>
+                <Users className="text-green-500" />
+              </div>
+            </MobileCard>
+          </div>
 
-            <TabsContent value="emergency" className="mt-0">
-              <EmergencyCard />
-            </TabsContent>
+          {/* Recent Documents */}
+          <MobileCard title="Recent Records" subtitle="Latest uploaded documents" icon={<FileText className="w-6 h-6 text-blue-500" />} showArrow>
+            <div className="space-y-3">
+              {recentDocuments.slice(0, 3).map((doc, index) => (
+                <div key={index} className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50">
+                  <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
+                    <FileText className="w-5 h-5 text-blue-600" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-sm truncate">{doc.name}</p>
+                    <p className="text-xs text-gray-600">{doc.doctor} • {doc.date}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </MobileCard>
 
-            <TabsContent value="insights" className="mt-0">
-              <HealthScore />
-            </TabsContent>
-
-            <TabsContent value="export" className="mt-0">
-              <DataExport />
-            </TabsContent>
-          </Tabs>
+          {/* Family Section */}
+          <MobileCard title="Family Health" subtitle="Manage family records" icon={<Users className="w-6 h-6 text-green-500" />} showArrow onClick={() => navigate('/family')}>
+            <div className="space-y-2">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
+                  <span className="text-sm font-bold text-green-600">M</span>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Mle</p>
+                  <p className="text-xs text-gray-600">Partner • Active</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+                  <span className="text-sm font-bold text-blue-600">S</span>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Swapnil</p>
+                  <p className="text-xs text-gray-600">Sibling • Active</p>
+                </div>
+              </div>
+            </div>
+          </MobileCard>
         </div>
-
-        <MobileTabBar activeTab={selectedTab} onTabChange={setSelectedTab} />
-      </div>
+      </MobileAppLayout>
     );
   }
 
