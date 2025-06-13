@@ -45,6 +45,9 @@ const Index = () => {
             <div className="text-center py-8">
               <Heart className="w-16 h-16 text-red-500 mx-auto mb-4" />
               <h1 className="text-3xl font-bold mb-2">Lifebook Health</h1>
+              <p className="text-lg font-medium text-blue-600 mb-4">
+                MediVault: Your lifetime health record vault—secure, smart, accessible anytime, anywhere.
+              </p>
               <p className="text-gray-600 mb-6">
                 Your lifelong health record, now optimized for mobile
               </p>
@@ -78,6 +81,9 @@ const Index = () => {
       <div className="text-center">
         <Heart className="w-16 h-16 text-red-500 mx-auto mb-4" />
         <h1 className="text-4xl font-bold mb-4">Welcome to Lifebook Health</h1>
+        <p className="text-xl font-semibold text-blue-600 mb-4">
+          MediVault: Your lifetime health record vault—secure, smart, accessible anytime, anywhere.
+        </p>
         <p className="text-xl text-muted-foreground mb-6">
           Your lifelong health record, all in one place
         </p>
