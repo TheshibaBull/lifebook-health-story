@@ -5,7 +5,13 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { User, FileText, Calendar, Shield, Edit3, Phone, Mail } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { useToast } from '@/hooks/use-toast';
+import { User, FileText, Calendar, Shield, Edit3, Phone, Mail, Plus, X } from 'lucide-react';
 
 interface FamilyMember {
   id: string;
@@ -33,10 +39,74 @@ interface FamilyMemberProfileProps {
 const FamilyMemberProfile = ({ member, onUpdateMember, onClose }: FamilyMemberProfileProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedMember, setEditedMember] = useState<FamilyMember>(member);
+  const [newCondition, setNewCondition] = useState('');
+  const [newAllergy, setNewAllergy] = useState('');
+  const [newMedication, setNewMedication] = useState('');
+  const { toast } = useToast();
 
   const handleSave = () => {
     onUpdateMember(editedMember);
     setIsEditing(false);
+    toast({
+      title: "Profile Updated",
+      description: "Family member profile has been updated successfully.",
+    });
+  };
+
+  const handleCancel = () => {
+    setEditedMember(member);
+    setIsEditing(false);
+  };
+
+  const addMedicalCondition = () => {
+    if (newCondition.trim()) {
+      setEditedMember(prev => ({
+        ...prev,
+        medicalConditions: [...(prev.medicalConditions || []), newCondition.trim()]
+      }));
+      setNewCondition('');
+    }
+  };
+
+  const removeMedicalCondition = (index: number) => {
+    setEditedMember(prev => ({
+      ...prev,
+      medicalConditions: prev.medicalConditions?.filter((_, i) => i !== index)
+    }));
+  };
+
+  const addAllergy = () => {
+    if (newAllergy.trim()) {
+      setEditedMember(prev => ({
+        ...prev,
+        allergies: [...(prev.allergies || []), newAllergy.trim()]
+      }));
+      setNewAllergy('');
+    }
+  };
+
+  const removeAllergy = (index: number) => {
+    setEditedMember(prev => ({
+      ...prev,
+      allergies: prev.allergies?.filter((_, i) => i !== index)
+    }));
+  };
+
+  const addMedication = () => {
+    if (newMedication.trim()) {
+      setEditedMember(prev => ({
+        ...prev,
+        medications: [...(prev.medications || []), newMedication.trim()]
+      }));
+      setNewMedication('');
+    }
+  };
+
+  const removeMedication = (index: number) => {
+    setEditedMember(prev => ({
+      ...prev,
+      medications: prev.medications?.filter((_, i) => i !== index)
+    }));
   };
 
   const recentRecords = [
@@ -75,14 +145,25 @@ const FamilyMemberProfile = ({ member, onUpdateMember, onClose }: FamilyMemberPr
               </div>
             </div>
             <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsEditing(!isEditing)}
-              >
-                <Edit3 className="w-4 h-4 mr-2" />
-                {isEditing ? 'Cancel' : 'Edit'}
-              </Button>
+              {isEditing ? (
+                <>
+                  <Button onClick={handleSave} size="sm">
+                    Save Changes
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={handleCancel}>
+                    Cancel
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsEditing(true)}
+                >
+                  <Edit3 className="w-4 h-4 mr-2" />
+                  Edit
+                </Button>
+              )}
               <Button variant="outline" size="sm" onClick={onClose}>
                 Close
               </Button>
@@ -109,28 +190,93 @@ const FamilyMemberProfile = ({ member, onUpdateMember, onClose }: FamilyMemberPr
                   Personal Information
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
+              <CardContent className="space-y-4">
                 <div>
-                  <label className="text-sm font-medium text-gray-600">Date of Birth</label>
-                  <p className="text-sm">{member.dateOfBirth || 'Not provided'}</p>
+                  <Label className="text-sm font-medium text-gray-600">Name</Label>
+                  {isEditing ? (
+                    <Input
+                      value={editedMember.name}
+                      onChange={(e) => setEditedMember(prev => ({ ...prev, name: e.target.value }))}
+                      className="mt-1"
+                    />
+                  ) : (
+                    <p className="text-sm mt-1">{member.name}</p>
+                  )}
                 </div>
+                
                 <div>
-                  <label className="text-sm font-medium text-gray-600">Email</label>
-                  <p className="text-sm flex items-center gap-2">
-                    <Mail className="w-4 h-4" />
-                    {member.email || 'Not provided'}
-                  </p>
+                  <Label className="text-sm font-medium text-gray-600">Relation</Label>
+                  {isEditing ? (
+                    <Input
+                      value={editedMember.relation}
+                      onChange={(e) => setEditedMember(prev => ({ ...prev, relation: e.target.value }))}
+                      className="mt-1"
+                    />
+                  ) : (
+                    <p className="text-sm mt-1">{member.relation}</p>
+                  )}
                 </div>
+
                 <div>
-                  <label className="text-sm font-medium text-gray-600">Phone</label>
-                  <p className="text-sm flex items-center gap-2">
-                    <Phone className="w-4 h-4" />
-                    {member.phone || 'Not provided'}
-                  </p>
+                  <Label className="text-sm font-medium text-gray-600">Date of Birth</Label>
+                  {isEditing ? (
+                    <Input
+                      type="date"
+                      value={editedMember.dateOfBirth || ''}
+                      onChange={(e) => setEditedMember(prev => ({ ...prev, dateOfBirth: e.target.value }))}
+                      className="mt-1"
+                    />
+                  ) : (
+                    <p className="text-sm mt-1">{member.dateOfBirth || 'Not provided'}</p>
+                  )}
                 </div>
-                {member.emergencyContact && (
-                  <Badge variant="destructive">Emergency Contact</Badge>
-                )}
+
+                <div>
+                  <Label className="text-sm font-medium text-gray-600">Email</Label>
+                  {isEditing ? (
+                    <Input
+                      type="email"
+                      value={editedMember.email || ''}
+                      onChange={(e) => setEditedMember(prev => ({ ...prev, email: e.target.value }))}
+                      className="mt-1"
+                    />
+                  ) : (
+                    <p className="text-sm flex items-center gap-2 mt-1">
+                      <Mail className="w-4 h-4" />
+                      {member.email || 'Not provided'}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <Label className="text-sm font-medium text-gray-600">Phone</Label>
+                  {isEditing ? (
+                    <Input
+                      type="tel"
+                      value={editedMember.phone || ''}
+                      onChange={(e) => setEditedMember(prev => ({ ...prev, phone: e.target.value }))}
+                      className="mt-1"
+                    />
+                  ) : (
+                    <p className="text-sm flex items-center gap-2 mt-1">
+                      <Phone className="w-4 h-4" />
+                      {member.phone || 'Not provided'}
+                    </p>
+                  )}
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="emergency"
+                    checked={editedMember.emergencyContact}
+                    onCheckedChange={(checked) => setEditedMember(prev => ({ 
+                      ...prev, 
+                      emergencyContact: checked as boolean 
+                    }))}
+                    disabled={!isEditing}
+                  />
+                  <Label htmlFor="emergency" className="text-sm">Emergency Contact</Label>
+                </div>
               </CardContent>
             </Card>
 
@@ -139,42 +285,116 @@ const FamilyMemberProfile = ({ member, onUpdateMember, onClose }: FamilyMemberPr
               <CardHeader>
                 <CardTitle>Medical Information</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
+              <CardContent className="space-y-4">
                 <div>
-                  <label className="text-sm font-medium text-gray-600">Medical Conditions</label>
-                  <div className="flex flex-wrap gap-1 mt-1">
-                    {member.medicalConditions?.length ? (
-                      member.medicalConditions.map((condition, index) => (
-                        <Badge key={index} variant="outline">{condition}</Badge>
-                      ))
-                    ) : (
+                  <Label className="text-sm font-medium text-gray-600">Medical Conditions</Label>
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {editedMember.medicalConditions?.map((condition, index) => (
+                      <div key={index} className="flex items-center gap-1">
+                        <Badge variant="outline">{condition}</Badge>
+                        {isEditing && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => removeMedicalCondition(index)}
+                            className="h-4 w-4 p-0"
+                          >
+                            <X className="w-3 h-3" />
+                          </Button>
+                        )}
+                      </div>
+                    ))}
+                    {(!editedMember.medicalConditions?.length && !isEditing) && (
                       <span className="text-sm text-gray-500">None recorded</span>
                     )}
                   </div>
+                  {isEditing && (
+                    <div className="flex gap-2 mt-2">
+                      <Input
+                        value={newCondition}
+                        onChange={(e) => setNewCondition(e.target.value)}
+                        placeholder="Add condition"
+                        className="text-sm"
+                      />
+                      <Button size="sm" onClick={addMedicalCondition}>
+                        <Plus className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  )}
                 </div>
+
                 <div>
-                  <label className="text-sm font-medium text-gray-600">Allergies</label>
-                  <div className="flex flex-wrap gap-1 mt-1">
-                    {member.allergies?.length ? (
-                      member.allergies.map((allergy, index) => (
-                        <Badge key={index} variant="destructive">{allergy}</Badge>
-                      ))
-                    ) : (
+                  <Label className="text-sm font-medium text-gray-600">Allergies</Label>
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {editedMember.allergies?.map((allergy, index) => (
+                      <div key={index} className="flex items-center gap-1">
+                        <Badge variant="destructive">{allergy}</Badge>
+                        {isEditing && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => removeAllergy(index)}
+                            className="h-4 w-4 p-0"
+                          >
+                            <X className="w-3 h-3" />
+                          </Button>
+                        )}
+                      </div>
+                    ))}
+                    {(!editedMember.allergies?.length && !isEditing) && (
                       <span className="text-sm text-gray-500">None recorded</span>
                     )}
                   </div>
+                  {isEditing && (
+                    <div className="flex gap-2 mt-2">
+                      <Input
+                        value={newAllergy}
+                        onChange={(e) => setNewAllergy(e.target.value)}
+                        placeholder="Add allergy"
+                        className="text-sm"
+                      />
+                      <Button size="sm" onClick={addAllergy}>
+                        <Plus className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  )}
                 </div>
+
                 <div>
-                  <label className="text-sm font-medium text-gray-600">Current Medications</label>
-                  <div className="flex flex-wrap gap-1 mt-1">
-                    {member.medications?.length ? (
-                      member.medications.map((medication, index) => (
-                        <Badge key={index} variant="secondary">{medication}</Badge>
-                      ))
-                    ) : (
+                  <Label className="text-sm font-medium text-gray-600">Current Medications</Label>
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {editedMember.medications?.map((medication, index) => (
+                      <div key={index} className="flex items-center gap-1">
+                        <Badge variant="secondary">{medication}</Badge>
+                        {isEditing && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => removeMedication(index)}
+                            className="h-4 w-4 p-0"
+                          >
+                            <X className="w-3 h-3" />
+                          </Button>
+                        )}
+                      </div>
+                    ))}
+                    {(!editedMember.medications?.length && !isEditing) && (
                       <span className="text-sm text-gray-500">None recorded</span>
                     )}
                   </div>
+                  {isEditing && (
+                    <div className="flex gap-2 mt-2">
+                      <Input
+                        value={newMedication}
+                        onChange={(e) => setNewMedication(e.target.value)}
+                        placeholder="Add medication"
+                        className="text-sm"
+                      />
+                      <Button size="sm" onClick={addMedication}>
+                        <Plus className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -218,32 +438,26 @@ const FamilyMemberProfile = ({ member, onUpdateMember, onClose }: FamilyMemberPr
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <label className="text-sm font-medium">Access Level</label>
-                <div className="mt-2 space-y-2">
+                <Label className="text-sm font-medium">Access Level</Label>
+                <RadioGroup
+                  value={editedMember.accessLevel}
+                  onValueChange={(value) => setEditedMember(prev => ({ 
+                    ...prev, 
+                    accessLevel: value as 'full' | 'limited' | 'view-only' 
+                  }))}
+                  disabled={!isEditing}
+                  className="mt-2"
+                >
                   {['full', 'limited', 'view-only'].map((level) => (
-                    <div key={level} className="flex items-center gap-2">
-                      <input
-                        type="radio"
-                        id={level}
-                        name="access"
-                        checked={editedMember.accessLevel === level}
-                        onChange={() => setEditedMember({
-                          ...editedMember,
-                          accessLevel: level as 'full' | 'limited' | 'view-only'
-                        })}
-                        disabled={!isEditing}
-                      />
-                      <label htmlFor={level} className="text-sm capitalize">
+                    <div key={level} className="flex items-center space-x-2">
+                      <RadioGroupItem value={level} id={level} />
+                      <Label htmlFor={level} className="text-sm capitalize">
                         {level.replace('-', ' ')} Access
-                      </label>
+                      </Label>
                     </div>
                   ))}
-                </div>
+                </RadioGroup>
               </div>
-              
-              {isEditing && (
-                <Button onClick={handleSave}>Save Changes</Button>
-              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -254,19 +468,6 @@ const FamilyMemberProfile = ({ member, onUpdateMember, onClose }: FamilyMemberPr
               <CardTitle>Emergency Information</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span>Emergency Contact</span>
-                <input
-                  type="checkbox"
-                  checked={editedMember.emergencyContact}
-                  onChange={(e) => setEditedMember({
-                    ...editedMember,
-                    emergencyContact: e.target.checked
-                  })}
-                  disabled={!isEditing}
-                />
-              </div>
-              
               <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
                 <h4 className="font-medium text-red-800 mb-2">Emergency Medical Information</h4>
                 <div className="space-y-2 text-sm">
