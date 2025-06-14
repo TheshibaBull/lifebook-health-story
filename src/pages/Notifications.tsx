@@ -6,7 +6,7 @@ import { MobileAppLayout } from '@/components/MobileAppLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Bell, ArrowLeft, CheckCircle, Clock, AlertCircle } from 'lucide-react';
+import { Bell, ArrowLeft, CheckCircle, Clock, AlertCircle, Settings } from 'lucide-react';
 import { NotificationModal } from '@/components/NotificationModal';
 
 const Notifications = () => {
@@ -55,40 +55,73 @@ const Notifications = () => {
   if (isMobile) {
     return (
       <MobileAppLayout title="Notifications" showTabBar={true}>
-        <div className="p-4 space-y-4">
-          <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold">Notifications</h1>
-            <NotificationModal />
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50">
+          {/* Header Section */}
+          <div className="bg-white/80 backdrop-blur-sm border-b border-gray-100 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">Notifications</h1>
+                <p className="text-sm text-gray-500 mt-1">Stay updated with your health</p>
+              </div>
+              <NotificationModal trigger={
+                <Button variant="outline" size="sm" className="bg-white/50 border-gray-200">
+                  <Settings className="w-4 h-4" />
+                </Button>
+              } />
+            </div>
           </div>
 
-          <div className="space-y-3">
-            {notifications.map((notification) => (
-              <Card key={notification.id} className={`${!notification.read ? 'border-blue-200 bg-blue-50' : ''}`}>
-                <CardContent className="p-4">
-                  <div className="flex items-start gap-3">
-                    {getNotificationIcon(notification.type)}
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between mb-1">
-                        <h3 className="font-medium text-sm">{notification.title}</h3>
+          {/* Notifications List */}
+          <div className="p-6 space-y-4">
+            {notifications.map((notification, index) => (
+              <Card 
+                key={notification.id} 
+                className={`
+                  transition-all duration-200 hover:shadow-md border-0 shadow-sm
+                  ${!notification.read 
+                    ? 'bg-gradient-to-r from-blue-50 to-blue-25 border-l-4 border-l-blue-400' 
+                    : 'bg-white'
+                  }
+                `}
+              >
+                <CardContent className="p-5">
+                  <div className="flex items-start gap-4">
+                    <div className="flex-shrink-0 mt-1">
+                      {getNotificationIcon(notification.type)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-3 mb-2">
+                        <h3 className="font-semibold text-gray-900 text-base leading-tight">
+                          {notification.title}
+                        </h3>
                         {!notification.read && (
-                          <Badge variant="secondary" className="text-xs">New</Badge>
+                          <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-700 border-blue-200 flex-shrink-0">
+                            New
+                          </Badge>
                         )}
                       </div>
-                      <p className="text-sm text-gray-600 mb-2">{notification.message}</p>
-                      <p className="text-xs text-gray-400">{notification.time}</p>
+                      <p className="text-sm text-gray-600 leading-relaxed mb-3">
+                        {notification.message}
+                      </p>
+                      <p className="text-xs text-gray-400 font-medium">
+                        {notification.time}
+                      </p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
             ))}
-          </div>
 
-          {notifications.length === 0 && (
-            <div className="text-center py-12">
-              <Bell className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-500">No notifications yet</p>
-            </div>
-          )}
+            {notifications.length === 0 && (
+              <div className="text-center py-16 px-4">
+                <div className="bg-white rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6 shadow-sm">
+                  <Bell className="w-10 h-10 text-gray-300" />
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No notifications yet</h3>
+                <p className="text-gray-500 text-sm">You're all caught up! New notifications will appear here.</p>
+              </div>
+            )}
+          </div>
         </div>
       </MobileAppLayout>
     );
@@ -96,43 +129,71 @@ const Notifications = () => {
 
   // Desktop version
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-4xl mx-auto">
-        <div className="flex items-center gap-4 mb-6">
-          <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+      <div className="max-w-4xl mx-auto p-8">
+        {/* Header */}
+        <div className="flex items-center gap-4 mb-8">
+          <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="hover:bg-white/80">
             <ArrowLeft className="w-4 h-4" />
           </Button>
-          <h1 className="text-3xl font-bold">Notifications</h1>
+          <div className="flex-1">
+            <h1 className="text-3xl font-bold text-gray-900">Notifications</h1>
+            <p className="text-gray-600 mt-1">Manage your health alerts and reminders</p>
+          </div>
         </div>
 
-        <div className="grid gap-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span>Notification Settings</span>
+        <div className="grid gap-6">
+          {/* Settings Card */}
+          <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-sm">
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center justify-between text-lg">
+                <span className="flex items-center gap-2">
+                  <Settings className="w-5 h-5" />
+                  Notification Settings
+                </span>
                 <NotificationModal />
               </CardTitle>
             </CardHeader>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Recent Notifications</CardTitle>
+          {/* Notifications Card */}
+          <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-sm">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-lg">Recent Notifications</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               {notifications.map((notification) => (
-                <div key={notification.id} className={`p-4 rounded-lg border ${!notification.read ? 'border-blue-200 bg-blue-50' : 'border-gray-200'}`}>
-                  <div className="flex items-start gap-3">
-                    {getNotificationIcon(notification.type)}
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between mb-1">
-                        <h3 className="font-medium">{notification.title}</h3>
+                <div 
+                  key={notification.id} 
+                  className={`
+                    p-5 rounded-xl border transition-all duration-200 hover:shadow-sm
+                    ${!notification.read 
+                      ? 'border-blue-200 bg-gradient-to-r from-blue-50 to-blue-25 border-l-4 border-l-blue-400' 
+                      : 'border-gray-200 bg-white hover:bg-gray-50'
+                    }
+                  `}
+                >
+                  <div className="flex items-start gap-4">
+                    <div className="flex-shrink-0 mt-1">
+                      {getNotificationIcon(notification.type)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-3 mb-2">
+                        <h3 className="font-semibold text-gray-900 leading-tight">
+                          {notification.title}
+                        </h3>
                         {!notification.read && (
-                          <Badge variant="secondary">New</Badge>
+                          <Badge variant="secondary" className="bg-blue-100 text-blue-700 border-blue-200 flex-shrink-0">
+                            New
+                          </Badge>
                         )}
                       </div>
-                      <p className="text-gray-600 mb-2">{notification.message}</p>
-                      <p className="text-sm text-gray-400">{notification.time}</p>
+                      <p className="text-gray-600 mb-3 leading-relaxed">
+                        {notification.message}
+                      </p>
+                      <p className="text-sm text-gray-400 font-medium">
+                        {notification.time}
+                      </p>
                     </div>
                   </div>
                 </div>
