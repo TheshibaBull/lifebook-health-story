@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -32,17 +31,60 @@ const Dashboard = () => {
   if (isMobile) {
     return (
       <MobileAppLayout title="Health Dashboard" showTabBar={true}>
-        <div className="px-6 py-8 space-y-6 bg-gradient-to-b from-blue-50/30 to-white min-h-screen">
+        <div className="px-4 py-6 space-y-4 bg-gradient-to-b from-blue-50/30 to-white min-h-screen">
+          {/* Health Stats Cards - Mobile Optimized */}
+          <div className="grid grid-cols-3 gap-3 mb-4">
+            <Card className="border-0 shadow-md bg-gradient-to-br from-blue-500 to-blue-600 text-white overflow-hidden relative p-3">
+              <div className="absolute top-0 right-0 w-16 h-16 bg-white/10 rounded-full -translate-y-8 translate-x-8"></div>
+              <CardContent className="p-0 relative z-10">
+                <div className="flex flex-col items-center text-center">
+                  <Heart className="w-4 h-4 mb-1" />
+                  <div className="text-lg font-bold">87</div>
+                  <div className="text-xs opacity-90">Health</div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-0 shadow-md bg-gradient-to-br from-emerald-500 to-emerald-600 text-white overflow-hidden relative p-3">
+              <div className="absolute top-0 right-0 w-16 h-16 bg-white/10 rounded-full -translate-y-8 translate-x-8"></div>
+              <CardContent className="p-0 relative z-10">
+                <div className="flex flex-col items-center text-center">
+                  <TrendingUp className="w-4 h-4 mb-1" />
+                  <div className="text-lg font-bold">↗ 5%</div>
+                  <div className="text-xs opacity-90">Trends</div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-0 shadow-md bg-gradient-to-br from-violet-500 to-violet-600 text-white overflow-hidden relative p-3">
+              <div className="absolute top-0 right-0 w-16 h-16 bg-white/10 rounded-full -translate-y-8 translate-x-8"></div>
+              <CardContent className="p-0 relative z-10">
+                <div className="flex flex-col items-center text-center">
+                  <Calendar className="w-4 h-4 mb-1" />
+                  <div className="text-lg font-bold">3</div>
+                  <div className="text-xs opacity-90">Upcoming</div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
           {/* Health Score Card */}
           <Card className="border-0 shadow-lg bg-white">
-            <CardContent className="p-6">
+            <CardContent className="p-4">
               <HealthScore />
             </CardContent>
           </Card>
 
           {/* Emergency Access */}
           <Card className="border-0 shadow-lg bg-white">
-            <CardContent className="p-6">
+            <CardHeader className="pb-3 text-center">
+              <CardTitle className="text-lg font-semibold text-gray-800 flex items-center gap-2 justify-center">
+                <Shield className="w-5 h-5 text-red-500" />
+                Emergency Access
+              </CardTitle>
+              <p className="text-gray-600 text-xs mt-1">Quick access to critical health information</p>
+            </CardHeader>
+            <CardContent className="p-4 pt-0">
               <QuickEmergencyAccess />
             </CardContent>
           </Card>
