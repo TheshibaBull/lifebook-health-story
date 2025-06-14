@@ -29,36 +29,25 @@ const HealthScore = () => {
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'high': return 'text-red-500 bg-red-50 border-red-200';
-      case 'medium': return 'text-amber-500 bg-amber-50 border-amber-200';
-      case 'low': return 'text-green-500 bg-green-50 border-green-200';
-      default: return 'text-gray-500 bg-gray-50 border-gray-200';
-    }
-  };
-
-  const getPriorityIcon = (priority: string) => {
-    switch (priority) {
-      case 'high': return 'w-4 h-4 text-red-500';
-      case 'medium': return 'w-4 h-4 text-amber-500';
-      case 'low': return 'w-4 h-4 text-green-500';
-      default: return 'w-4 h-4 text-gray-500';
+      case 'high': return 'text-red-500';
+      case 'medium': return 'text-amber-500';
+      case 'low': return 'text-green-500';
+      default: return 'text-gray-500';
     }
   };
 
   return (
-    <div className="space-y-8">
-      <Card className="border-0 shadow-sm">
-        <CardHeader className="pb-6">
-          <CardTitle className="flex items-center gap-3 text-xl">
-            <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-              <TrendingUp className="w-4 h-4 text-blue-600" />
-            </div>
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <TrendingUp className="text-blue-500" />
             HealthScore Dashboard
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="text-center">
-            <div className="relative w-32 h-32 mx-auto mb-6">
+        <CardContent>
+          <div className="text-center space-y-4">
+            <div className="relative w-32 h-32 mx-auto">
               {/* Circular progress indicator */}
               <svg className="w-32 h-32 transform -rotate-90" viewBox="0 0 120 120">
                 <circle 
@@ -89,65 +78,49 @@ const HealthScore = () => {
               </div>
             </div>
             
-            <div className="mb-8">
+            <div>
               <p className="text-lg font-semibold text-gray-800">Excellent Health</p>
               <p className="text-sm text-gray-600">Your overall health score based on recent data</p>
             </div>
 
-            <div className="grid grid-cols-3 gap-6">
-              <div className="text-center p-4 bg-green-50 rounded-lg border border-green-100">
-                <div className="text-2xl font-bold text-green-600">85%</div>
-                <div className="text-sm text-gray-600 mt-1">Physical</div>
+            <div className="grid grid-cols-3 gap-4 mt-6">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-green-500">85%</div>
+                <div className="text-xs text-gray-500">Physical</div>
               </div>
-              <div className="text-center p-4 bg-blue-50 rounded-lg border border-blue-100">
-                <div className="text-2xl font-bold text-blue-600">92%</div>
-                <div className="text-sm text-gray-600 mt-1">Mental</div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-blue-500">92%</div>
+                <div className="text-xs text-gray-500">Mental</div>
               </div>
-              <div className="text-center p-4 bg-purple-50 rounded-lg border border-purple-100">
-                <div className="text-2xl font-bold text-purple-600">84%</div>
-                <div className="text-sm text-gray-600 mt-1">Preventive</div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-purple-500">84%</div>
+                <div className="text-xs text-gray-500">Preventive</div>
               </div>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      <Card className="border-0 shadow-sm">
-        <CardHeader className="pb-6">
-          <CardTitle className="flex items-center gap-3 text-xl">
-            <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
-              <Heart className="w-4 h-4 text-red-600" />
-            </div>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Heart className="text-red-500" />
             AI Health Suggestions
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
             {suggestions.map((suggestion, index) => (
-              <div 
-                key={index} 
-                className={`border rounded-xl p-5 transition-all duration-200 hover:shadow-md ${getPriorityColor(suggestion.priority)}`}
-              >
-                <div className="flex items-start justify-between gap-4">
+              <div key={index} className="border rounded-lg p-4 hover:bg-gray-50">
+                <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-3">
-                      <AlertTriangle className={getPriorityIcon(suggestion.priority)} />
-                      <h3 className="font-semibold text-gray-900">{suggestion.title}</h3>
-                      <span className={`px-2 py-1 text-xs font-medium rounded-full capitalize ${
-                        suggestion.priority === 'high' ? 'bg-red-100 text-red-700' :
-                        suggestion.priority === 'medium' ? 'bg-amber-100 text-amber-700' :
-                        'bg-green-100 text-green-700'
-                      }`}>
-                        {suggestion.priority}
-                      </span>
+                    <div className="flex items-center gap-2 mb-2">
+                      <AlertTriangle className={`w-4 h-4 ${getPriorityColor(suggestion.priority)}`} />
+                      <h3 className="font-semibold">{suggestion.title}</h3>
                     </div>
-                    <p className="text-sm text-gray-700 leading-relaxed">{suggestion.description}</p>
+                    <p className="text-sm text-gray-600 mb-3">{suggestion.description}</p>
                   </div>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="shrink-0 hover:bg-white hover:shadow-sm border-gray-300"
-                  >
+                  <Button variant="outline" size="sm">
                     {suggestion.action}
                   </Button>
                 </div>
