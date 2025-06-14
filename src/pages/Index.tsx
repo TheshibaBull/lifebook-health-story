@@ -15,14 +15,19 @@ const Index = () => {
   const isMobile = useIsMobile();
 
   useEffect(() => {
-    // Check if user should be redirected to onboarding or dashboard
-    const hasCompletedOnboarding = localStorage.getItem('onboarding-completed');
+    // Check authentication and redirect accordingly
     const isAuthenticated = localStorage.getItem('user-authenticated');
+    const hasCompletedOnboarding = localStorage.getItem('onboarding-completed');
+    const hasCompletedProfile = localStorage.getItem('user-profile');
     
-    if (!hasCompletedOnboarding) {
+    if (isAuthenticated) {
+      if (hasCompletedProfile) {
+        navigate('/dashboard');
+      } else {
+        navigate('/create-profile');
+      }
+    } else if (!hasCompletedOnboarding) {
       navigate('/onboarding');
-    } else if (isAuthenticated) {
-      navigate('/dashboard');
     }
   }, [navigate]);
 

@@ -6,19 +6,91 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Heart } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useToast } from '@/hooks/use-toast';
 
 const Auth = () => {
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const { toast } = useToast();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isSignUp) {
-      navigate('/create-profile');
-    } else {
-      navigate('/dashboard');
+    setIsLoading(true);
+
+    // Basic validation
+    if (!email || !password) {
+      toast({
+        title: "Error",
+        description: "Please fill in all fields",
+        variant: "destructive"
+      });
+      setIsLoading(false);
+      return;
+    }
+
+    // Simulate authentication delay
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    try {
+      if (isSignUp) {
+        // Store user data for sign up
+        const userData = {
+          email,
+          id: Date.now().toString(),
+          createdAt: new Date().toISOString(),
+          hasCompletedProfile: false
+        };
+        
+        localStorage.setItem('user-authenticated', 'true');
+        localStorage.setItem('user-data', JSON.stringify(userData));
+        
+        toast({
+          title: "Account Created",
+          description: "Welcome to Lifebook Health! Please complete your profile.",
+        });
+        
+        navigate('/create-profile');
+      } else {
+        // For sign in, check if user has existing data
+        const existingUserData = localStorage.getItem('user-data');
+        const hasCompletedProfile = localStorage.getItem('user-profile');
+        
+        if (!existingUserData) {
+          // New user signing in - create basic data
+          const userData = {
+            email,
+            id: Date.now().toString(),
+            createdAt: new Date().toISOString(),
+            hasCompletedProfile: !!hasCompletedProfile
+          };
+          localStorage.setItem('user-data', JSON.stringify(userData));
+        }
+        
+        localStorage.setItem('user-authenticated', 'true');
+        
+        toast({
+          title: "Welcome Back",
+          description: "Successfully signed in to your account.",
+        });
+        
+        // Navigate based on profile completion status
+        if (hasCompletedProfile) {
+          navigate('/dashboard');
+        } else {
+          navigate('/create-profile');
+        }
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Something went wrong. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -45,6 +117,7 @@ const Auth = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                disabled={isLoading}
               />
             </div>
             <div className="space-y-2">
@@ -56,19 +129,20 @@ const Auth = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                disabled={isLoading}
               />
             </div>
             
             {!isSignUp && (
               <div className="text-right">
-                <Button variant="link" className="px-0 text-sm">
+                <Button variant="link" className="px-0 text-sm" type="button">
                   Forgot password?
                 </Button>
               </div>
             )}
 
-            <Button type="submit" className="w-full">
-              {isSignUp ? 'Create Account' : 'Sign In'}
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? 'Please wait...' : (isSignUp ? 'Create Account' : 'Sign In')}
             </Button>
           </form>
 
@@ -79,6 +153,7 @@ const Auth = () => {
                 variant="link"
                 className="px-2"
                 onClick={() => setIsSignUp(!isSignUp)}
+                disabled={isLoading}
               >
                 {isSignUp ? 'Sign in' : 'Sign up'}
               </Button>

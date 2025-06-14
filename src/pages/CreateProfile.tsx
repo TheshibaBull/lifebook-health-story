@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Heart } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useToast } from '@/hooks/use-toast';
 
 const CreateProfile = () => {
   const [formData, setFormData] = useState({
@@ -15,15 +16,64 @@ const CreateProfile = () => {
     gender: '',
     bloodGroup: ''
   });
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    navigate('/upload-record');
+    setIsLoading(true);
+
+    // Validate required fields
+    if (!formData.fullName || !formData.dateOfBirth) {
+      toast({
+        title: "Error",
+        description: "Please fill in all required fields",
+        variant: "destructive"
+      });
+      setIsLoading(false);
+      return;
+    }
+
+    // Simulate saving delay
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    try {
+      // Save profile data
+      const profileData = {
+        ...formData,
+        completedAt: new Date().toISOString()
+      };
+      
+      localStorage.setItem('user-profile', JSON.stringify(profileData));
+      
+      // Update user data to mark profile as completed
+      const existingUserData = localStorage.getItem('user-data');
+      if (existingUserData) {
+        const userData = JSON.parse(existingUserData);
+        userData.hasCompletedProfile = true;
+        localStorage.setItem('user-data', JSON.stringify(userData));
+      }
+
+      toast({
+        title: "Profile Created",
+        description: "Your profile has been successfully created!",
+      });
+
+      navigate('/dashboard');
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to save profile. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -38,30 +88,32 @@ const CreateProfile = () => {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="fullName">Full Name</Label>
+              <Label htmlFor="fullName">Full Name *</Label>
               <Input
                 id="fullName"
                 placeholder="Enter your full name"
                 value={formData.fullName}
                 onChange={(e) => handleInputChange('fullName', e.target.value)}
                 required
+                disabled={isLoading}
               />
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="dateOfBirth">Date of Birth</Label>
+              <Label htmlFor="dateOfBirth">Date of Birth *</Label>
               <Input
                 id="dateOfBirth"
                 type="date"
                 value={formData.dateOfBirth}
                 onChange={(e) => handleInputChange('dateOfBirth', e.target.value)}
                 required
+                disabled={isLoading}
               />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="gender">Gender</Label>
-              <Select onValueChange={(value) => handleInputChange('gender', value)}>
+              <Select onValueChange={(value) => handleInputChange('gender', value)} disabled={isLoading}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select gender" />
                 </SelectTrigger>
@@ -76,7 +128,7 @@ const CreateProfile = () => {
 
             <div className="space-y-2">
               <Label htmlFor="bloodGroup">Blood Group</Label>
-              <Select onValueChange={(value) => handleInputChange('bloodGroup', value)}>
+              <Select onValueChange={(value) => handleInputChange('bloodGroup', value)} disabled={isLoading}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select blood group" />
                 </SelectTrigger>
@@ -93,8 +145,8 @@ const CreateProfile = () => {
               </Select>
             </div>
 
-            <Button type="submit" className="w-full">
-              Continue
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? 'Creating Profile...' : 'Continue'}
             </Button>
           </form>
         </CardContent>
