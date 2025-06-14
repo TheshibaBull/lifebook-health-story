@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -24,7 +23,8 @@ import {
   Type,
   Database,
   ChevronRight,
-  ArrowLeft
+  ArrowLeft,
+  LogOut
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
@@ -230,6 +230,20 @@ const Settings = () => {
       });
       navigate('/');
     }
+  };
+
+  const handleLogout = () => {
+    // Clear all authentication and user data
+    localStorage.removeItem('user-authenticated');
+    localStorage.removeItem('onboarding-completed');
+    localStorage.removeItem('user-profile');
+    
+    toast({
+      title: "Logged Out",
+      description: "You have been successfully logged out.",
+    });
+    
+    navigate('/');
   };
 
   const renderMobileSettings = () => {
@@ -647,6 +661,16 @@ const Settings = () => {
                       Export
                     </Button>
                   </div>
+                  <div className="flex items-center justify-between p-3 border rounded-lg border-blue-200">
+                    <div>
+                      <h4 className="font-medium text-blue-600">Logout</h4>
+                      <p className="text-sm text-gray-600">Sign out of your account</p>
+                    </div>
+                    <Button variant="outline" onClick={handleLogout} size="sm">
+                      <LogOut className="w-4 h-4 mr-2" />
+                      Logout
+                    </Button>
+                  </div>
                   <div className="flex items-center justify-between p-3 border rounded-lg border-red-200">
                     <div>
                       <h4 className="font-medium text-red-600">Delete Account</h4>
@@ -781,6 +805,16 @@ const Settings = () => {
                   <Button variant="outline" onClick={handleExportData} className="flex items-center gap-2">
                     <Download className="w-4 h-4" />
                     Export
+                  </Button>
+                </div>
+                <div className="flex items-center justify-between pt-4 border-t">
+                  <div>
+                    <h4 className="font-medium text-blue-600">Logout</h4>
+                    <p className="text-sm text-gray-600">Sign out of your account</p>
+                  </div>
+                  <Button variant="outline" onClick={handleLogout} className="flex items-center gap-2">
+                    <LogOut className="w-4 h-4" />
+                    Logout
                   </Button>
                 </div>
                 <div className="flex items-center justify-between pt-4 border-t">
