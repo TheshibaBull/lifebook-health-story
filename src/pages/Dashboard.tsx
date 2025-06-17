@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,7 +10,6 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
-import { HealthScore } from '@/components/HealthScore';
 import { QuickEmergencyAccess } from '@/components/QuickEmergencyAccess';
 import { MobileAppLayout } from '@/components/MobileAppLayout';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -28,13 +28,20 @@ const Dashboard = () => {
     }
   }, []);
 
+  const navigateToHealthScore = () => {
+    navigate('/health-score');
+  };
+
   if (isMobile) {
     return (
       <MobileAppLayout title="Health Dashboard" showTabBar={true}>
         <div className="px-4 py-6 space-y-4 bg-gradient-to-b from-blue-50/30 to-white min-h-screen">
           {/* Health Stats Cards - Mobile Optimized */}
           <div className="grid grid-cols-3 gap-3 mb-4">
-            <Card className="border-0 shadow-md bg-gradient-to-br from-blue-500 to-blue-600 text-white overflow-hidden relative p-3">
+            <Card 
+              className="border-0 shadow-md bg-gradient-to-br from-blue-500 to-blue-600 text-white overflow-hidden relative p-3 cursor-pointer hover:shadow-lg transition-shadow"
+              onClick={navigateToHealthScore}
+            >
               <div className="absolute top-0 right-0 w-16 h-16 bg-white/10 rounded-full -translate-y-8 translate-x-8"></div>
               <CardContent className="p-0 relative z-10">
                 <div className="flex flex-col items-center text-center">
@@ -67,13 +74,6 @@ const Dashboard = () => {
               </CardContent>
             </Card>
           </div>
-
-          {/* Health Score Card */}
-          <Card className="border-0 shadow-lg bg-white">
-            <CardContent className="p-4">
-              <HealthScore />
-            </CardContent>
-          </Card>
 
           {/* Emergency Access */}
           <Card className="border-0 shadow-lg bg-white">
@@ -110,7 +110,10 @@ const Dashboard = () => {
           <div className="xl:col-span-2 space-y-8">
             {/* Health Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <Card className="group border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-blue-500 to-blue-600 text-white overflow-hidden relative">
+              <Card 
+                className="group border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-blue-500 to-blue-600 text-white overflow-hidden relative cursor-pointer"
+                onClick={navigateToHealthScore}
+              >
                 <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -translate-y-12 translate-x-12"></div>
                 <CardHeader className="relative z-10 pb-4">
                   <CardTitle className="text-lg font-semibold flex items-center gap-3">
@@ -158,13 +161,6 @@ const Dashboard = () => {
                 </CardContent>
               </Card>
             </div>
-
-            {/* Detailed Health Score */}
-            <Card className="border-0 shadow-lg bg-white">
-              <CardContent className="p-8">
-                <HealthScore />
-              </CardContent>
-            </Card>
           </div>
 
           {/* Right Column - Emergency Access */}

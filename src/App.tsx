@@ -16,6 +16,7 @@ import Auth from "./pages/Auth";
 import CreateProfile from "./pages/CreateProfile";
 import Notifications from "./pages/Notifications";
 import NotFound from "./pages/NotFound";
+import HealthScore from "./pages/HealthScore";
 
 const queryClient = new QueryClient();
 
@@ -31,6 +32,7 @@ const App = () => (
           <Route path="/auth" element={<Auth />} />
           <Route path="/create-profile" element={<CreateProfile />} />
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/health-score" element={<HealthScore />} />
           <Route path="/upload-record" element={<UploadRecord />} />
           <Route path="/search" element={<Search />} />
           <Route path="/family" element={<Family />} />
