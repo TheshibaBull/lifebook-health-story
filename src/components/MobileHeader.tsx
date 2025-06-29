@@ -1,9 +1,10 @@
 
-import { ArrowLeft, Menu, Bell, Search } from 'lucide-react';
+import { ArrowLeft, Bell, Search } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { MainNavigation } from './MainNavigation';
 
 interface MobileHeaderProps {
   title?: string;
@@ -54,14 +55,7 @@ const MobileHeader = ({
               <ArrowLeft className="w-5 h-5" />
             </Button>
           ) : showMenu ? (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onMenuClick}
-              className="p-2"
-            >
-              <Menu className="w-5 h-5" />
-            </Button>
+            <MainNavigation />
           ) : null}
           
           <h1 className="text-lg font-semibold text-gray-900 truncate">
