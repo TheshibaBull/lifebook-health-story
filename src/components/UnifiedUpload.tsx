@@ -16,6 +16,8 @@ import {
   X
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { AIDocumentProcessor } from '@/services/aiDocumentProcessor';
+import { FileStorageService } from '@/services/fileStorageService';
 
 interface UploadFile {
   id: string;
@@ -129,7 +131,16 @@ const UnifiedUpload = () => {
 
   const syncSingleFile = async (file: UploadFile) => {
     try {
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Convert base64 back to File object for processing
+      const response = await fetch(file.data);
+      const blob = await response.blob();
+      const originalFile = new File([blob], file.name, { type: file.type });
+      
+      // Process with AI
+      const analysis = await AIDocumentProcessor.analyzeDocument(originalFile);
+      
+      // Save to storage
+      const storedFile = await FileStorageService.saveFile(originalFile, analysis);
       
       const updatedFiles = pendingFiles.map(f => 
         f.id === file.id ? { ...f, status: 'synced' as const } : f
@@ -138,15 +149,22 @@ const UnifiedUpload = () => {
       saveToLocalStorage(updatedFiles);
 
       toast({
-        title: "File Synced",
-        description: `${file.name} has been uploaded successfully`,
+        title: "Document Processed",
+        description: `${file.name} categorized as ${analysis.category}`,
       });
     } catch (error) {
+      console.error('Error processing file:', error);
       const updatedFiles = pendingFiles.map(f => 
         f.id === file.id ? { ...f, status: 'failed' as const } : f
       );
       setPendingFiles(updatedFiles);
       saveToLocalStorage(updatedFiles);
+      
+      toast({
+        title: "Processing Failed",
+        description: `Failed to process ${file.name}`,
+        variant: "destructive"
+      });
     }
   };
 
