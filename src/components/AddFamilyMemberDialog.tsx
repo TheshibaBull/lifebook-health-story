@@ -18,6 +18,7 @@ const AddFamilyMemberDialog = ({ onAddMember }: AddFamilyMemberDialogProps) => {
     name: '',
     relation: '',
     email: '',
+    phone: '',
     dateOfBirth: '',
     emergencyContact: false
   });
@@ -26,10 +27,10 @@ const AddFamilyMemberDialog = ({ onAddMember }: AddFamilyMemberDialogProps) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.name || !formData.relation) {
+    if (!formData.name || !formData.relation || !formData.phone) {
       toast({
         title: "Missing Information",
-        description: "Please fill in the required fields (Name and Relationship).",
+        description: "Please fill in the required fields (Name, Relationship, and Phone Number).",
         variant: "destructive",
       });
       return;
@@ -40,6 +41,7 @@ const AddFamilyMemberDialog = ({ onAddMember }: AddFamilyMemberDialogProps) => {
       name: formData.name,
       relation: formData.relation,
       email: formData.email,
+      phone: formData.phone,
       dateOfBirth: formData.dateOfBirth,
       avatar: formData.name.charAt(0).toUpperCase(),
       status: 'Active',
@@ -58,6 +60,7 @@ const AddFamilyMemberDialog = ({ onAddMember }: AddFamilyMemberDialogProps) => {
       name: '',
       relation: '',
       email: '',
+      phone: '',
       dateOfBirth: '',
       emergencyContact: false
     });
@@ -108,6 +111,18 @@ const AddFamilyMemberDialog = ({ onAddMember }: AddFamilyMemberDialogProps) => {
                 <SelectItem value="Other">Other</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="phone">Phone Number *</Label>
+            <Input
+              id="phone"
+              type="tel"
+              value={formData.phone}
+              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+              placeholder="Enter phone number"
+              required
+            />
           </div>
 
           <div className="space-y-2">
