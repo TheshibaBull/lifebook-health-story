@@ -13,7 +13,9 @@ import {
   CloudOff, 
   CheckCircle, 
   Clock,
-  X
+  X,
+  Heart,
+  Brain
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { AIDocumentProcessor } from '@/services/aiDocumentProcessor';
@@ -131,6 +133,12 @@ const UnifiedUpload = () => {
 
   const syncSingleFile = async (file: UploadFile) => {
     try {
+      // Show AI processing toast
+      toast({
+        title: "AI Processing Started",
+        description: `Analyzing ${file.name} with AI...`,
+      });
+
       // Convert base64 back to File object for processing
       const response = await fetch(file.data);
       const blob = await response.blob();
@@ -149,7 +157,7 @@ const UnifiedUpload = () => {
       saveToLocalStorage(updatedFiles);
 
       toast({
-        title: "Document Processed",
+        title: "AI Processing Complete",
         description: `${file.name} categorized as ${analysis.category}`,
       });
     } catch (error) {
@@ -161,7 +169,7 @@ const UnifiedUpload = () => {
       saveToLocalStorage(updatedFiles);
       
       toast({
-        title: "Processing Failed",
+        title: "AI Processing Failed",
         description: `Failed to process ${file.name}`,
         variant: "destructive"
       });
@@ -194,7 +202,12 @@ const UnifiedUpload = () => {
   const getStatusIcon = (status: UploadFile['status']) => {
     switch (status) {
       case 'pending': return <Clock className="w-3 h-3" />;
-      case 'syncing': return <Upload className="w-3 h-3" />;
+      case 'syncing': return (
+        <div className="flex items-center gap-1">
+          <Heart className="w-3 h-3 text-red-500 animate-pulse" />
+          <Brain className="w-3 h-3 text-blue-500 animate-pulse" />
+        </div>
+      );
       case 'synced': return <CheckCircle className="w-3 h-3" />;
       case 'failed': return <CloudOff className="w-3 h-3" />;
     }
