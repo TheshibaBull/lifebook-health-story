@@ -58,7 +58,7 @@ const Welcome = () => {
   ];
 
   const handleGetStarted = () => {
-    navigate('/onboarding');
+    navigate('/auth');
   };
 
   return (

@@ -28,7 +28,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
-import { MobileAppLayout } from '@/components/MobileAppLayout';
+import { AppLayout } from '@/components/AppLayout';
 import { MobileCard } from '@/components/MobileCard';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -696,17 +696,18 @@ const Settings = () => {
 
   if (isMobile) {
     return (
-      <MobileAppLayout title="Settings" showTabBar={true}>
+      <AppLayout title="Settings" showTabBar={true}>
         <div className="px-4 py-4">
           {renderMobileSettings()}
         </div>
-      </MobileAppLayout>
+      </AppLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background p-4">
-      <div className="max-w-4xl mx-auto">
+    <AppLayout title="Settings" showTabBar={true}>
+      <div className="min-h-screen bg-background p-4">
+        <div className="max-w-4xl mx-auto">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
             <SettingsIcon className="w-8 h-8 text-blue-500" />
@@ -1058,8 +1059,9 @@ const Settings = () => {
             </Card>
           </TabsContent>
         </Tabs>
+        </div>
       </div>
-    </div>
+    </AppLayout>
   );
 };
 
