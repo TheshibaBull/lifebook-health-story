@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Code Generator - Lifebook Health</title>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            text-align: center;
+            max-width: 400px;
+            width: 100%;
+        }
+        .logo {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #ef4444, #ec4899);
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+        }
+        .heart {
+            color: white;
+            font-size: 30px;
+        }
+        h1 {
+            color: #1f2937;
+            margin-bottom: 10px;
+            font-size: 28px;
+            font-weight: 700;
+        }
+        .subtitle {
+            color: #6b7280;
+            margin-bottom: 30px;
+            font-size: 16px;
+        }
+        #qrcode {
+            margin: 30px auto;
+            padding: 20px;
+            background: #f9fafb;
+            border-radius: 15px;
+            display: inline-block;
+        }
+        .url-display {
+            background: #f3f4f6;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            font-family: monospace;
+            font-size: 14px;
+            color: #374151;
+            word-break: break-all;
+        }
+        .instructions {
+            color: #6b7280;
+            font-size: 14px;
+            line-height: 1.5;
+            margin-top: 20px;
+        }
+        .copy-btn {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-top: 10px;
+            transition: background 0.2s;
+        }
+        .copy-btn:hover {
+            background: #2563eb;
+        }
+        .copy-btn:active {
+            background: #1d4ed8;
+        }
+        .success {
+            color: #059669;
+            font-size: 12px;
+            margin-top: 5px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .success.show {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">
+            <span class="heart">❤️</span>
+        </div>
+        <h1>Lifebook Health</h1>
+        <p class="subtitle">Scan to access on your mobile device</p>
+        
+        <div id="qrcode"></div>
+        
+        <div class="url-display" id="urlDisplay">
+            Loading URL...
+        </div>
+        
+        <button class="copy-btn" onclick="copyUrl()">
+            Copy URL
+        </button>
+        <div class="success" id="copySuccess">URL copied to clipboard!</div>
+        
+        <div class="instructions">
+            <strong>Instructions:</strong><br>
+            1. Open your phone's camera app<br>
+            2. Point it at the QR code above<br>
+            3. Tap the notification to open the app<br>
+            4. Or copy the URL and paste it in your mobile browser
+        </div>
+    </div>
+
+    <script>
+        // Get the current URL and generate QR code
+        const currentUrl = window.location.origin;
+        const urlDisplay = document.getElementById('urlDisplay');
+        
+        // Display the URL
+        urlDisplay.textContent = currentUrl;
+        
+        // Generate QR code
+        QRCode.toCanvas(document.getElementById('qrcode'), currentUrl, {
+            width: 200,
+            height: 200,
+            colorDark: '#1f2937',
+            colorLight: '#ffffff',
+            margin: 2,
+            errorCorrectionLevel: 'M'
+        }, function (error) {
+            if (error) {
+                console.error('QR Code generation failed:', error);
+                document.getElementById('qrcode').innerHTML = '<p style="color: red;">QR Code generation failed</p>';
+            }
+        });
+        
+        // Copy URL function
+        function copyUrl() {
+            navigator.clipboard.writeText(currentUrl).then(function() {
+                const success = document.getElementById('copySuccess');
+                success.classList.add('show');
+                setTimeout(() => {
+                    success.classList.remove('show');
+                }, 2000);
+            }).catch(function(err) {
+                console.error('Could not copy text: ', err);
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = currentUrl;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                
+                const success = document.getElementById('copySuccess');
+                success.classList.add('show');
+                setTimeout(() => {
+                    success.classList.remove('show');
+                }, 2000);
+            });
+        }
+        
+        // Auto-refresh QR code every 30 seconds to ensure it's always current
+        setInterval(() => {
+            const newUrl = window.location.origin;
+            if (newUrl !== currentUrl) {
+                location.reload();
+            }
+        }, 30000);
+    </script>
+</body>
+</html>
