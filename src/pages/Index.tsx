@@ -1,4 +1,3 @@
-
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -13,24 +12,22 @@ const Index = () => {
   useEffect(() => {
     // Check authentication and redirect accordingly
     const isAuthenticated = localStorage.getItem('user-authenticated');
-    const hasCompletedOnboarding = localStorage.getItem('onboarding-completed');
     const hasCompletedProfile = localStorage.getItem('user-profile');
     
+    // Only redirect if user is authenticated - let unauthenticated users see the landing page
     if (isAuthenticated) {
       if (hasCompletedProfile) {
         navigate('/dashboard');
       } else {
         navigate('/create-profile');
       }
-    } else if (!hasCompletedOnboarding) {
-      navigate('/onboarding');
     }
+    // Remove the onboarding check - let users see the main landing page
   }, [navigate]);
 
-  const handleRefresh = async () => {
-    // Simulate refresh action
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    window.location.reload();
+  const handleGetStarted = () => {
+    // Navigate directly to the dashboard (app homepage)
+    navigate('/dashboard');
   };
 
   const content = isMobile ? (
@@ -46,7 +43,7 @@ const Index = () => {
           <p className="text-gray-600 mb-6">
             Your lifelong health record, now optimized for mobile
           </p>
-          <Button onClick={() => navigate('/auth')} className="w-full">
+          <Button onClick={handleGetStarted} className="w-full">
             Get Started
             <ArrowRight className="w-4 h-4 ml-2" />
           </Button>
@@ -88,7 +85,7 @@ const Index = () => {
         <p className="text-xl text-muted-foreground mb-6">
           Your lifelong health record, all in one place
         </p>
-        <Button onClick={() => navigate('/auth')} size="lg">
+        <Button onClick={handleGetStarted} size="lg">
           Get Started
           <ArrowRight className="w-5 h-5 ml-2" />
         </Button>
