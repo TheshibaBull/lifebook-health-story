@@ -1,8 +1,19 @@
 import { supabase } from '@/lib/supabase'
+import { UserProfileService } from './userProfileService'
 import type { User } from '@supabase/supabase-js'
 
+interface SignUpProfileData {
+  firstName: string;
+  lastName: string;
+  phone?: string;
+  gender: string;
+  dateOfBirth: string;
+  bloodGroup?: string;
+  allergies?: string[];
+}
+
 export class AuthService {
-  static async signUp(email: string, password: string) {
+  static async signUp(email: string, password: string, profileData?: SignUpProfileData) {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -19,18 +30,36 @@ export class AuthService {
     // If user is created successfully, create their profile
     if (data.user) {
       try {
-        const { error: profileError } = await supabase
-          .from('user_profiles')
+        // Create comprehensive user profile
+        await UserProfileService.createProfile({
+          id: data.user.id,
+          first_name: profileData?.firstName || '',
+          last_name: profileData?.lastName || '',
+          email: email,
+          phone: profileData?.phone || '',
+          gender: profileData?.gender || '',
+          date_of_birth: profileData?.dateOfBirth || '',
+          blood_group: profileData?.bloodGroup || '',
+          allergies: profileData?.allergies || [],
+          profile_completed: !!profileData
+        })
+
+        // Create user credentials record for login tracking
+        const { error: credentialsError } = await supabase
+          .from('user_credentials')
           .insert({
-            id: data.user.id,
+            user_id: data.user.id,
+            email: email,
+            login_attempts: 0,
+            failed_login_attempts: 0
           })
         
-        if (profileError) {
-          console.error('Failed to create user profile:', profileError)
+        if (credentialsError) {
+          console.error('Failed to create user credentials:', credentialsError)
           // Don't throw here as the user account was created successfully
         }
-      } catch (profileError) {
-        console.error('Error creating user profile:', profileError)
+      } catch (error) {
+        console.error('Error creating user profile and credentials:', error)
       }
     }
 
@@ -38,6 +67,19 @@ export class AuthService {
   }
 
   static async signIn(email: string, password: string) {
+    // Update login attempt tracking
+    try {
+      await supabase
+        .from('user_credentials')
+        .update({
+          login_attempts: supabase.sql`login_attempts + 1`,
+          last_login_at: new Date().toISOString()
+        })
+        .eq('email', email)
+    } catch (error) {
+      console.error('Failed to update login tracking:', error)
+    }
+
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,

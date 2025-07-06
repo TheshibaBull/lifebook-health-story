@@ -10,18 +10,38 @@ if (!supabaseUrl || !supabaseAnonKey) {
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
 // Database types
+export interface UserCredentials {
+  id: string
+  user_id: string
+  email: string
+  login_attempts: number
+  last_login_at?: string
+  last_login_ip?: string
+  failed_login_attempts: number
+  last_failed_login_at?: string
+  account_locked_until?: string
+  password_changed_at: string
+  created_at: string
+  updated_at: string
+}
+
 export interface UserProfile {
   id: string
-  full_name?: string
-  date_of_birth?: string
-  gender?: string
-  blood_group?: string
+  first_name: string
+  last_name: string
+  email: string
   phone?: string
+  gender?: string
+  date_of_birth?: string
+  age?: number
+  blood_group?: string
   emergency_contact_name?: string
   emergency_contact_phone?: string
   medical_conditions?: string[]
   allergies?: string[]
   medications?: string[]
+  profile_completed: boolean
+  account_status: string
   created_at: string
   updated_at: string
 }
