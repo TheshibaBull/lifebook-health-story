@@ -31,6 +31,7 @@ import { useNavigate } from 'react-router-dom';
 import { MobileAppLayout } from '@/components/MobileAppLayout';
 import { MobileCard } from '@/components/MobileCard';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { AllergiesSelector } from '@/components/AllergiesSelector';
 
 interface UserSettings {
   // Profile
@@ -60,6 +61,7 @@ interface UserSettings {
   theme: 'light' | 'dark';
   fontSize: 'small' | 'medium' | 'large';
   colorScheme: 'blue' | 'green' | 'purple' | 'orange';
+  allergies: string[];
 }
 
 const Settings = () => {
@@ -81,7 +83,8 @@ const Settings = () => {
     reducedMotion: false,
     theme: 'light',
     fontSize: 'medium',
-    colorScheme: 'blue'
+    colorScheme: 'blue',
+    allergies: []
   });
   const [hasChanges, setHasChanges] = useState(false);
   const [currentView, setCurrentView] = useState('main');
@@ -394,6 +397,12 @@ const Settings = () => {
                       className="mt-1"
                     />
                   </div>
+                  <AllergiesSelector
+                    value={settings.allergies}
+                    onChange={(allergies) => handleSettingChange('allergies', allergies)}
+                    disabled={isLoading}
+                    label="Allergies"
+                  />
                 </div>
               </MobileCard>
             </div>
@@ -789,6 +798,11 @@ const Settings = () => {
                     aria-label="Phone Number"
                   />
                 </div>
+                <AllergiesSelector
+                  value={settings.allergies}
+                  onChange={(allergies) => handleSettingChange('allergies', allergies)}
+                  label="Allergies"
+                />
               </CardContent>
             </Card>
 

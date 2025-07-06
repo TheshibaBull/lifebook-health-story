@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Users, Plus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { AllergiesSelector } from '@/components/AllergiesSelector';
 
 interface AddFamilyMemberDialogProps {
   onAddMember: (member: any) => void;
@@ -19,7 +20,8 @@ const AddFamilyMemberDialog = ({ onAddMember }: AddFamilyMemberDialogProps) => {
     relation: '',
     email: '',
     dateOfBirth: '',
-    emergencyContact: false
+    emergencyContact: false,
+    allergies: []
   });
   const { toast } = useToast();
 
@@ -42,6 +44,7 @@ const AddFamilyMemberDialog = ({ onAddMember }: AddFamilyMemberDialogProps) => {
       email: formData.email,
       dateOfBirth: formData.dateOfBirth,
       avatar: formData.name.charAt(0).toUpperCase(),
+      allergies: formData.allergies,
       status: 'Active',
       lastUpdate: 'Just added',
       emergencyContact: formData.emergencyContact
@@ -59,7 +62,8 @@ const AddFamilyMemberDialog = ({ onAddMember }: AddFamilyMemberDialogProps) => {
       relation: '',
       email: '',
       dateOfBirth: '',
-      emergencyContact: false
+      emergencyContact: false,
+      allergies: []
     });
     setOpen(false);
   };
@@ -130,6 +134,12 @@ const AddFamilyMemberDialog = ({ onAddMember }: AddFamilyMemberDialogProps) => {
               onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })}
             />
           </div>
+
+          <AllergiesSelector
+            value={formData.allergies}
+            onChange={(allergies) => setFormData({ ...formData, allergies })}
+            label="Allergies (Optional)"
+          />
 
           <div className="flex items-center space-x-2">
             <input

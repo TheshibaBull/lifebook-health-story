@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,6 +11,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
 import { User, FileText, Calendar, Shield, Edit3, Phone, Mail, Plus, X } from 'lucide-react';
+import { AllergiesSelector } from '@/components/AllergiesSelector';
 
 interface FamilyMember {
   id: string;
@@ -323,42 +323,25 @@ const FamilyMemberProfile = ({ member, onUpdateMember, onClose }: FamilyMemberPr
                   )}
                 </div>
 
-                <div>
-                  <Label className="text-sm font-medium text-gray-600">Allergies</Label>
-                  <div className="flex flex-wrap gap-1 mt-2">
-                    {editedMember.allergies?.map((allergy, index) => (
-                      <div key={index} className="flex items-center gap-1">
-                        <Badge variant="destructive">{allergy}</Badge>
-                        {isEditing && (
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => removeAllergy(index)}
-                            className="h-4 w-4 p-0"
-                          >
-                            <X className="w-3 h-3" />
-                          </Button>
-                        )}
-                      </div>
-                    ))}
-                    {(!editedMember.allergies?.length && !isEditing) && (
-                      <span className="text-sm text-gray-500">None recorded</span>
-                    )}
-                  </div>
-                  {isEditing && (
-                    <div className="flex gap-2 mt-2">
-                      <Input
-                        value={newAllergy}
-                        onChange={(e) => setNewAllergy(e.target.value)}
-                        placeholder="Add allergy"
-                        className="text-sm"
-                      />
-                      <Button size="sm" onClick={addAllergy}>
-                        <Plus className="w-4 h-4" />
-                      </Button>
+                {isEditing ? (
+                  <AllergiesSelector
+                    value={editedMember.allergies || []}
+                    onChange={(allergies) => setEditedMember(prev => ({ ...prev, allergies }))}
+                    label="Allergies"
+                  />
+                ) : (
+                  <div>
+                    <Label className="text-sm font-medium text-gray-600">Allergies</Label>
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {editedMember.allergies?.map((allergy, index) => (
+                        <Badge key={index} variant="destructive">{allergy}</Badge>
+                      ))}
+                      {!editedMember.allergies?.length && (
+                        <span className="text-sm text-gray-500">None recorded</span>
+                      )}
                     </div>
-                  )}
-                </div>
+                  </div>
+                )}
 
                 <div>
                   <Label className="text-sm font-medium text-gray-600">Current Medications</Label>
