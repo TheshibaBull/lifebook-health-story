@@ -236,7 +236,7 @@ const BookTest = () => {
                             <div className="flex items-start gap-3">
                               <Checkbox
                                 checked={selectedTests.includes(test.id)}
-                                onChange={(checked) => handleTestSelection(test.id, checked)}
+                                onCheckedChange={(checked) => handleTestSelection(test.id, checked === true)}
                                 className="mt-1"
                               />
                               <div className="flex-1">
