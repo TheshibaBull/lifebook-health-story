@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Heart, Eye, EyeOff } from 'lucide-react';
+import { AllergiesSelector } from '@/components/AllergiesSelector';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
@@ -19,7 +20,7 @@ interface SignUpFormData {
   gender: string;
   dateOfBirth: string;
   bloodGroup: string;
-  allergies: string;
+  allergies: string[];
   password: string;
   confirmPassword: string;
   agreeToTerms: boolean;
@@ -46,7 +47,7 @@ const Auth = () => {
     gender: '',
     dateOfBirth: '',
     bloodGroup: '',
-    allergies: '',
+    allergies: [],
     password: '',
     confirmPassword: '',
     agreeToTerms: false
@@ -194,7 +195,7 @@ const Auth = () => {
           gender: signUpData.gender,
           dateOfBirth: signUpData.dateOfBirth,
           bloodGroup: signUpData.bloodGroup,
-          allergies: signUpData.allergies ? signUpData.allergies.split(',').map(a => a.trim()) : []
+          allergies: signUpData.allergies
         });
 
         toast({
@@ -215,7 +216,7 @@ const Auth = () => {
           gender: '',
           dateOfBirth: '',
           bloodGroup: '',
-          allergies: '',
+          allergies: [],
           password: '',
           confirmPassword: '',
           agreeToTerms: false
@@ -375,17 +376,11 @@ const Auth = () => {
                   </Select>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="allergies">Allergies (Optional)</Label>
-                  <Input
-                    id="allergies"
-                    placeholder="Enter allergies separated by commas"
-                    value={signUpData.allergies}
-                    onChange={(e) => setSignUpData({ ...signUpData, allergies: e.target.value })}
-                    disabled={isLoading}
-                  />
-                  <p className="text-xs text-gray-500">Example: Peanuts, Shellfish, Penicillin</p>
-                </div>
+                <AllergiesSelector
+                  value={signUpData.allergies}
+                  onChange={(allergies) => setSignUpData({ ...signUpData, allergies })}
+                  disabled={isLoading}
+                />
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
@@ -530,7 +525,7 @@ const Auth = () => {
                     gender: '',
                     dateOfBirth: '',
                     bloodGroup: '',
-                    allergies: '',
+                    allergies: [],
                     password: '',
                     confirmPassword: '',
                     agreeToTerms: false
