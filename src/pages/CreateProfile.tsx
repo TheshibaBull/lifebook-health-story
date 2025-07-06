@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,17 +7,23 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Heart } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
+import { UserProfileService } from '@/services/userProfileService';
 
 const CreateProfile = () => {
   const [formData, setFormData] = useState({
-    fullName: '',
-    dateOfBirth: '',
+    full_name: '',
+    date_of_birth: '',
     gender: '',
-    bloodGroup: ''
+    blood_group: '',
+    phone: '',
+    emergency_contact_name: '',
+    emergency_contact_phone: ''
   });
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -29,7 +34,7 @@ const CreateProfile = () => {
     setIsLoading(true);
 
     // Validate required fields
-    if (!formData.fullName || !formData.dateOfBirth) {
+    if (!formData.full_name || !formData.date_of_birth) {
       toast({
         title: "Error",
         description: "Please fill in all required fields",
@@ -39,25 +44,21 @@ const CreateProfile = () => {
       return;
     }
 
-    // Simulate saving delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    if (!user) {
+      toast({
+        title: "Error",
+        description: "You must be logged in to create a profile",
+        variant: "destructive"
+      });
+      setIsLoading(false);
+      return;
+    }
 
     try {
-      // Save profile data
-      const profileData = {
-        ...formData,
-        completedAt: new Date().toISOString()
-      };
-      
-      localStorage.setItem('user-profile', JSON.stringify(profileData));
-      
-      // Update user data to mark profile as completed
-      const existingUserData = localStorage.getItem('user-data');
-      if (existingUserData) {
-        const userData = JSON.parse(existingUserData);
-        userData.hasCompletedProfile = true;
-        localStorage.setItem('user-data', JSON.stringify(userData));
-      }
+      await UserProfileService.createProfile({
+        id: user.id,
+        ...formData
+      });
 
       toast({
         title: "Profile Created",
@@ -65,10 +66,10 @@ const CreateProfile = () => {
       });
 
       navigate('/dashboard');
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Error",
-        description: "Failed to save profile. Please try again.",
+        description: error.message || "Failed to save profile. Please try again.",
         variant: "destructive"
       });
     } finally {
@@ -88,24 +89,24 @@ const CreateProfile = () => {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="fullName">Full Name *</Label>
+              <Label htmlFor="full_name">Full Name *</Label>
               <Input
-                id="fullName"
+                id="full_name"
                 placeholder="Enter your full name"
-                value={formData.fullName}
-                onChange={(e) => handleInputChange('fullName', e.target.value)}
+                value={formData.full_name}
+                onChange={(e) => handleInputChange('full_name', e.target.value)}
                 required
                 disabled={isLoading}
               />
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="dateOfBirth">Date of Birth *</Label>
+              <Label htmlFor="date_of_birth">Date of Birth *</Label>
               <Input
-                id="dateOfBirth"
+                id="date_of_birth"
                 type="date"
-                value={formData.dateOfBirth}
-                onChange={(e) => handleInputChange('dateOfBirth', e.target.value)}
+                value={formData.date_of_birth}
+                onChange={(e) => handleInputChange('date_of_birth', e.target.value)}
                 required
                 disabled={isLoading}
               />
@@ -127,8 +128,8 @@ const CreateProfile = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="bloodGroup">Blood Group</Label>
-              <Select onValueChange={(value) => handleInputChange('bloodGroup', value)} disabled={isLoading}>
+              <Label htmlFor="blood_group">Blood Group</Label>
+              <Select onValueChange={(value) => handleInputChange('blood_group', value)} disabled={isLoading}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select blood group" />
                 </SelectTrigger>
@@ -143,6 +144,41 @@ const CreateProfile = () => {
                   <SelectItem value="O-">O-</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="phone">Phone Number</Label>
+              <Input
+                id="phone"
+                type="tel"
+                placeholder="Enter phone number"
+                value={formData.phone}
+                onChange={(e) => handleInputChange('phone', e.target.value)}
+                disabled={isLoading}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="emergency_contact_name">Emergency Contact Name</Label>
+              <Input
+                id="emergency_contact_name"
+                placeholder="Enter emergency contact name"
+                value={formData.emergency_contact_name}
+                onChange={(e) => handleInputChange('emergency_contact_name', e.target.value)}
+                disabled={isLoading}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="emergency_contact_phone">Emergency Contact Phone</Label>
+              <Input
+                id="emergency_contact_phone"
+                type="tel"
+                placeholder="Enter emergency contact phone"
+                value={formData.emergency_contact_phone}
+                onChange={(e) => handleInputChange('emergency_contact_phone', e.target.value)}
+                disabled={isLoading}
+              />
             </div>
 
             <Button type="submit" className="w-full" disabled={isLoading}>

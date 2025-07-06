@@ -12,31 +12,96 @@ import { useToast } from '@/hooks/use-toast';
 import { QuickEmergencyAccess } from '@/components/QuickEmergencyAccess';
 import { AppLayout } from '@/components/AppLayout';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useAuth } from '@/hooks/useAuth';
+import { UserProfileService } from '@/services/userProfileService';
+import { HealthRecordsService } from '@/services/healthRecordsService';
+import { HealthMetricsService } from '@/services/healthMetricsService';
+import { NotificationsService } from '@/services/notificationsService';
+import type { UserProfile, HealthRecord } from '@/lib/supabase';
 
 const Dashboard = () => {
-  const [healthRecords, setHealthRecords] = useState<any[]>([]);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [healthRecords, setHealthRecords] = useState<HealthRecord[]>([]);
+  const [healthScore, setHealthScore] = useState(87);
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const { toast } = useToast();
   const isMobile = useIsMobile();
+  const { user, isAuthenticated } = useAuth();
 
   useEffect(() => {
-    // Load health records from localStorage
-    const stored = localStorage.getItem('health-records');
-    if (stored) {
-      setHealthRecords(JSON.parse(stored));
+    if (!isAuthenticated) {
+      navigate('/auth');
+      return;
     }
-  }, []);
+
+    loadDashboardData();
+  }, [user, isAuthenticated, navigate]);
+
+  const loadDashboardData = async () => {
+    if (!user) return;
+
+    try {
+      setLoading(true);
+
+      // Load user profile
+      const userProfile = await UserProfileService.getCurrentUserProfile();
+      if (!userProfile) {
+        navigate('/create-profile');
+        return;
+      }
+      setProfile(userProfile);
+
+      // Load health records
+      const records = await HealthRecordsService.getRecords(user.id);
+      setHealthRecords(records);
+
+      // Calculate health score
+      const score = await HealthMetricsService.calculateHealthScore(user.id);
+      setHealthScore(score);
+
+      // Get unread notifications count
+      const unreadCount = await NotificationsService.getUnreadCount(user.id);
+      setUnreadNotifications(unreadCount);
+
+    } catch (error: any) {
+      console.error('Error loading dashboard data:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load dashboard data. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const navigateToHealthScore = () => {
     navigate('/health-score');
   };
+
+  if (loading) {
+    return (
+      <AppLayout title="Health Dashboard" showTabBar={true}>
+        <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-card flex items-center justify-center">
+          <div className="text-center">
+            <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Loading your health dashboard...</p>
+          </div>
+        </div>
+      </AppLayout>
+    );
+  }
 
   const dashboardContent = isMobile ? (
     <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-card">
       {/* Welcome Header */}
       <div className="px-6 pt-8 pb-6">
         <div className="text-center mb-6">
-          <h1 className="text-2xl font-bold text-foreground mb-2">Good Morning!</h1>
+          <h1 className="text-2xl font-bold text-foreground mb-2">
+            Good Morning{profile?.full_name ? `, ${profile.full_name.split(' ')[0]}` : ''}!
+          </h1>
           <p className="text-muted-foreground text-sm">Here's your health overview today</p>
         </div>
       </div>
@@ -54,9 +119,12 @@ const Dashboard = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <Heart className="w-8 h-8 mb-3 opacity-90" />
-                  <div className="text-3xl font-bold mb-1">87</div>
+                  <div className="text-3xl font-bold mb-1">{healthScore}</div>
                   <div className="text-sm opacity-90">Health Score</div>
-                  <div className="text-xs opacity-75 mt-1">Excellent condition</div>
+                  <div className="text-xs opacity-75 mt-1">
+                    {healthScore >= 80 ? 'Excellent condition' : 
+                     healthScore >= 60 ? 'Good condition' : 'Needs attention'}
+                  </div>
                 </div>
                 <div className="text-right opacity-60">
                   <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center">
@@ -73,9 +141,9 @@ const Dashboard = () => {
               <CardContent className="p-4 relative z-10">
                 <div className="text-center">
                   <TrendingUp className="w-6 h-6 mb-2 mx-auto opacity-90" />
-                  <div className="text-xl font-bold mb-1">↗ 5%</div>
-                  <div className="text-xs opacity-90">Trends</div>
-                  <div className="text-xs opacity-75 mt-1">Improving</div>
+                  <div className="text-xl font-bold mb-1">{healthRecords.length}</div>
+                  <div className="text-xs opacity-90">Records</div>
+                  <div className="text-xs opacity-75 mt-1">Total uploaded</div>
                 </div>
               </CardContent>
             </Card>
@@ -85,9 +153,9 @@ const Dashboard = () => {
               <CardContent className="p-4 relative z-10">
                 <div className="text-center">
                   <Calendar className="w-6 h-6 mb-2 mx-auto opacity-90" />
-                  <div className="text-xl font-bold mb-1">3</div>
-                  <div className="text-xs opacity-90">Upcoming</div>
-                  <div className="text-xs opacity-75 mt-1">This week</div>
+                  <div className="text-xl font-bold mb-1">{unreadNotifications}</div>
+                  <div className="text-xs opacity-90">Notifications</div>
+                  <div className="text-xs opacity-75 mt-1">Unread</div>
                 </div>
               </CardContent>
             </Card>
@@ -143,7 +211,9 @@ const Dashboard = () => {
       <div className="max-w-7xl mx-auto px-6 py-12">
         {/* Welcome Header */}
         <div className="text-center mb-16">
-          <h1 className="text-5xl font-bold text-gray-900 mb-4">Health Dashboard</h1>
+          <h1 className="text-5xl font-bold text-gray-900 mb-4">
+            Welcome back{profile?.full_name ? `, ${profile.full_name.split(' ')[0]}` : ''}!
+          </h1>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
             Your comprehensive health overview at a glance
           </p>
@@ -169,8 +239,11 @@ const Dashboard = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="relative z-10 pt-0">
-                  <div className="text-3xl font-bold mb-2">87</div>
-                  <p className="text-sm text-white/90">Excellent condition</p>
+                  <div className="text-3xl font-bold mb-2">{healthScore}</div>
+                  <p className="text-sm text-white/90">
+                    {healthScore >= 80 ? 'Excellent condition' : 
+                     healthScore >= 60 ? 'Good condition' : 'Needs attention'}
+                  </p>
                 </CardContent>
               </Card>
 
@@ -181,12 +254,12 @@ const Dashboard = () => {
                     <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
                       <TrendingUp className="w-5 h-5" />
                     </div>
-                    Trends
+                    Records
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="relative z-10 pt-0">
-                  <div className="text-3xl font-bold mb-2">↗ 5%</div>
-                  <p className="text-sm text-white/90">Improving daily</p>
+                  <div className="text-3xl font-bold mb-2">{healthRecords.length}</div>
+                  <p className="text-sm text-white/90">Total uploaded</p>
                 </CardContent>
               </Card>
 
@@ -197,12 +270,12 @@ const Dashboard = () => {
                     <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
                       <Calendar className="w-5 h-5" />
                     </div>
-                    Upcoming
+                    Notifications
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="relative z-10 pt-0">
-                  <div className="text-3xl font-bold mb-2">3</div>
-                  <p className="text-sm text-white/90">This week</p>
+                  <div className="text-3xl font-bold mb-2">{unreadNotifications}</div>
+                  <p className="text-sm text-white/90">Unread</p>
                 </CardContent>
               </Card>
             </div>

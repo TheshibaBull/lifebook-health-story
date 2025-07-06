@@ -7,107 +7,97 @@ import { Users, BarChart3, Settings, Plus } from 'lucide-react';
 import { AddFamilyMemberDialog } from '@/components/AddFamilyMemberDialog';
 import { FamilyMemberProfile } from '@/components/FamilyMemberProfile';
 import { FamilyHealthAnalytics } from '@/components/FamilyHealthAnalytics';
-import { OfflineDataSync } from '@/services/offlineDataSync';
 import { useIsMobile } from '@/hooks/use-mobile';
-
-interface FamilyMember {
-  id: string;
-  name: string;
-  relation: string;
-  avatar: string;
-  status: string;
-  lastUpdate: string;
-  dateOfBirth?: string;
-  email?: string;
-  phone?: string;
-  emergencyContact?: boolean;
-  medicalConditions?: string[];
-  allergies?: string[];
-  medications?: string[];
-  accessLevel: 'full' | 'limited' | 'view-only';
-}
+import { useAuth } from '@/hooks/useAuth';
+import { FamilyMembersService } from '@/services/familyMembersService';
+import { useToast } from '@/hooks/use-toast';
+import type { FamilyMember } from '@/lib/supabase';
 
 const FamilyVault = () => {
   const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
   const [selectedMember, setSelectedMember] = useState<FamilyMember | null>(null);
   const [activeTab, setActiveTab] = useState('members');
+  const [loading, setLoading] = useState(true);
   const isMobile = useIsMobile();
+  const { user } = useAuth();
+  const { toast } = useToast();
 
   useEffect(() => {
-    // Load family members from localStorage with persistence
-    const stored = localStorage.getItem('family-members');
-    if (stored) {
-      setFamilyMembers(JSON.parse(stored));
-    } else {
-      // Initialize with sample data
-      const initialMembers: FamilyMember[] = [
-        { 
-          id: '1', 
-          name: 'Mle', 
-          relation: 'Partner', 
-          avatar: 'M',
-          status: 'Active',
-          lastUpdate: '2 days ago',
-          email: 'mle@example.com',
-          phone: '+1234567890',
-          emergencyContact: true,
-          accessLevel: 'full',
-          medicalConditions: ['Hypertension'],
-          allergies: ['Peanuts'],
-          medications: ['Lisinopril']
-        },
-        { 
-          id: '2', 
-          name: 'Swapnil', 
-          relation: 'Sibling', 
-          avatar: 'S',
-          status: 'Active',
-          lastUpdate: '1 week ago',
-          email: 'swapnil@example.com',
-          accessLevel: 'limited',
-          medicalConditions: ['Diabetes Type 2'],
-          medications: ['Metformin']
-        },
-      ];
-      setFamilyMembers(initialMembers);
-      localStorage.setItem('family-members', JSON.stringify(initialMembers));
+    if (user) {
+      loadFamilyMembers();
     }
-  }, []);
+  }, [user]);
 
-  const handleAddMember = (newMemberData: any) => {
-    const newMember: FamilyMember = {
-      id: crypto.randomUUID(),
-      ...newMemberData,
-      status: 'Active',
-      lastUpdate: 'Just now',
-      accessLevel: 'view-only' as const
-    };
+  const loadFamilyMembers = async () => {
+    if (!user) return;
 
-    const updatedMembers = [...familyMembers, newMember];
-    setFamilyMembers(updatedMembers);
-    localStorage.setItem('family-members', JSON.stringify(updatedMembers));
-
-    OfflineDataSync.addToSyncQueue({
-      type: 'family_member',
-      action: 'create',
-      data: newMember
-    });
+    try {
+      setLoading(true);
+      const members = await FamilyMembersService.getFamilyMembers(user.id);
+      setFamilyMembers(members);
+    } catch (error: any) {
+      console.error('Error loading family members:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load family members. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleUpdateMember = (updatedMember: FamilyMember) => {
-    const updatedMembers = familyMembers.map(member => 
-      member.id === updatedMember.id ? updatedMember : member
-    );
-    setFamilyMembers(updatedMembers);
-    localStorage.setItem('family-members', JSON.stringify(updatedMembers));
+  const handleAddMember = async (memberData: any) => {
+    if (!user) return;
 
-    OfflineDataSync.addToSyncQueue({
-      type: 'family_member',
-      action: 'update',
-      data: updatedMember
-    });
+    try {
+      const newMember = await FamilyMembersService.createFamilyMember({
+        user_id: user.id,
+        name: memberData.name,
+        relation: memberData.relation,
+        email: memberData.email,
+        phone: memberData.phone,
+        date_of_birth: memberData.dateOfBirth,
+        emergency_contact: memberData.emergencyContact || false,
+        access_level: 'view-only'
+      });
 
-    setSelectedMember(null);
+      setFamilyMembers(prev => [...prev, newMember]);
+      
+      toast({
+        title: "Family Member Added",
+        description: `${memberData.name} has been added to your family vault.`,
+      });
+    } catch (error: any) {
+      console.error('Error adding family member:', error);
+      toast({
+        title: "Error",
+        description: "Failed to add family member. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleUpdateMember = async (updatedMember: FamilyMember) => {
+    try {
+      const updated = await FamilyMembersService.updateFamilyMember(updatedMember.id, updatedMember);
+      setFamilyMembers(prev => prev.map(member => 
+        member.id === updated.id ? updated : member
+      ));
+      setSelectedMember(null);
+      
+      toast({
+        title: "Member Updated",
+        description: "Family member information has been updated.",
+      });
+    } catch (error: any) {
+      console.error('Error updating family member:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update family member. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   const getAccessLevelColor = (level: string) => {
@@ -118,6 +108,17 @@ const FamilyVault = () => {
       default: return 'text-gray-600';
     }
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading family members...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (selectedMember) {
     return (
@@ -149,18 +150,17 @@ const FamilyVault = () => {
                   <CardContent className="p-6">
                     <div className="flex items-start gap-4">
                       <div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center text-white font-bold text-lg flex-shrink-0 shadow-lg">
-                        {member.avatar}
+                        {member.name.charAt(0).toUpperCase()}
                       </div>
                       <div className="flex-1 min-w-0">
                         <h3 className="font-semibold text-lg text-foreground mb-1">{member.name}</h3>
                         <p className="text-muted-foreground text-sm mb-2">{member.relation}</p>
-                        <p className="text-xs text-muted-foreground/80 mb-3">Last updated: {member.lastUpdate}</p>
+                        <p className="text-xs text-muted-foreground/80 mb-3">
+                          Added: {new Date(member.created_at).toLocaleDateString()}
+                        </p>
                         
                         <div className="flex flex-wrap items-center gap-2 mb-3">
-                          <Badge variant="secondary" className="text-xs bg-secondary/50">
-                            {member.status}
-                          </Badge>
-                          {member.emergencyContact && (
+                          {member.emergency_contact && (
                             <Badge variant="destructive" className="text-xs bg-destructive/10 text-destructive border-destructive/20">
                               Emergency Contact
                             </Badge>
@@ -169,11 +169,11 @@ const FamilyVault = () => {
                         
                         <div className="flex items-center gap-2">
                           <div className={`w-2 h-2 rounded-full ${
-                            member.accessLevel === 'full' ? 'bg-green-500' :
-                            member.accessLevel === 'limited' ? 'bg-yellow-500' : 'bg-blue-500'
+                            member.access_level === 'full' ? 'bg-green-500' :
+                            member.access_level === 'limited' ? 'bg-yellow-500' : 'bg-blue-500'
                           }`}></div>
                           <p className="text-xs text-muted-foreground">
-                            {member.accessLevel.replace('-', ' ')} access
+                            {member.access_level.replace('-', ' ')} access
                           </p>
                         </div>
                       </div>
@@ -308,14 +308,16 @@ const FamilyVault = () => {
               >
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center text-white font-semibold">
-                    {member.avatar}
+                    {member.name.charAt(0).toUpperCase()}
                   </div>
                   <div>
                     <p className="font-medium text-lg">{member.name}</p>
                     <p className="text-sm text-gray-600">{member.relation}</p>
                     <div className="flex items-center gap-2 mt-1">
-                      <p className="text-xs text-gray-500">Last updated: {member.lastUpdate}</p>
-                      {member.emergencyContact && (
+                      <p className="text-xs text-gray-500">
+                        Added: {new Date(member.created_at).toLocaleDateString()}
+                      </p>
+                      {member.emergency_contact && (
                         <Badge variant="destructive" className="text-xs">Emergency Contact</Badge>
                       )}
                     </div>
@@ -323,9 +325,8 @@ const FamilyVault = () => {
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="text-right">
-                    <Badge variant="secondary">{member.status}</Badge>
-                    <p className={`text-xs mt-1 ${getAccessLevelColor(member.accessLevel)}`}>
-                      {member.accessLevel.replace('-', ' ')} access
+                    <p className={`text-xs mt-1 ${getAccessLevelColor(member.access_level)}`}>
+                      {member.access_level.replace('-', ' ')} access
                     </p>
                   </div>
                   <Button variant="outline" size="sm">View Profile</Button>

@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,8 +7,9 @@ import { Heart, FileText, Brain, CloudOff, CheckCircle, AlertCircle } from 'luci
 import { useNavigate } from 'react-router-dom';
 import { OfflineUpload } from '@/components/OfflineUpload';
 import { AIDocumentProcessor } from '@/services/aiDocumentProcessor';
-import { FileStorageService } from '@/services/fileStorageService';
+import { HealthRecordsService } from '@/services/healthRecordsService';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 
 const UploadRecord = () => {
   const [isDragging, setIsDragging] = useState(false);
@@ -18,6 +18,7 @@ const UploadRecord = () => {
   const [processedFiles, setProcessedFiles] = useState<string[]>([]);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -46,6 +47,16 @@ const UploadRecord = () => {
   };
 
   const handleFileUpload = async (files: File[]) => {
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to upload files.",
+        variant: "destructive"
+      });
+      navigate('/auth');
+      return;
+    }
+
     setIsProcessing(true);
     setUploadProgress(0);
     const processed: string[] = [];
@@ -55,7 +66,7 @@ const UploadRecord = () => {
       
       try {
         // Update progress
-        setUploadProgress((i / files.length) * 50);
+        setUploadProgress((i / files.length) * 25);
         
         // Validate file
         if (file.size > 10 * 1024 * 1024) { // 10MB limit
@@ -74,15 +85,34 @@ const UploadRecord = () => {
         });
 
         const analysis = await AIDocumentProcessor.analyzeDocument(file);
-        
-        // Update progress
-        setUploadProgress(((i + 0.5) / files.length) * 100);
-        
-        // Save to storage
-        const storedFile = await FileStorageService.saveFile(file, analysis);
-        processed.push(storedFile.name);
-        
-        // Update progress
+        setUploadProgress(((i + 0.5) / files.length) * 50);
+
+        // Upload file to Supabase Storage
+        const fileName = `${user.id}/${Date.now()}-${file.name}`;
+        const uploadResult = await HealthRecordsService.uploadFile(file, fileName);
+        setUploadProgress(((i + 0.75) / files.length) * 75);
+
+        // Create health record in database
+        const healthRecord = await HealthRecordsService.createRecord({
+          user_id: user.id,
+          title: file.name,
+          category: analysis.category,
+          tags: analysis.tags,
+          file_name: file.name,
+          file_path: uploadResult.path,
+          file_size: file.size,
+          file_type: file.type,
+          extracted_text: analysis.extractedText,
+          medical_entities: analysis.medicalEntities,
+          ai_analysis: {
+            confidence: analysis.confidence,
+            category: analysis.category,
+            tags: analysis.tags
+          },
+          date_of_record: new Date().toISOString().split('T')[0]
+        });
+
+        processed.push(file.name);
         setUploadProgress(((i + 1) / files.length) * 100);
         
         toast({
@@ -90,11 +120,11 @@ const UploadRecord = () => {
           description: `${file.name} categorized as ${analysis.category}`,
         });
         
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error processing file:', error);
         toast({
           title: "Processing Failed",
-          description: `Failed to process ${file.name}`,
+          description: `Failed to process ${file.name}: ${error.message}`,
           variant: "destructive"
         });
       }
@@ -165,7 +195,7 @@ const UploadRecord = () => {
                     <div>
                       <p className="text-lg font-medium mb-2 text-green-700">Upload Successful!</p>
                       <p className="text-sm text-gray-600 mb-4">
-                        {processedFiles.length} file(s) processed and categorized
+                        {processedFiles.length} file(s) processed and saved to your health vault
                       </p>
                       <div className="space-y-1 mb-4">
                         {processedFiles.map((fileName, index) => (
@@ -173,7 +203,7 @@ const UploadRecord = () => {
                         ))}
                       </div>
                       <Button onClick={handleViewRecords} className="mr-2">
-                        View Records
+                        View Dashboard
                       </Button>
                       <Button variant="outline" onClick={() => setProcessedFiles([])}>
                         Upload More

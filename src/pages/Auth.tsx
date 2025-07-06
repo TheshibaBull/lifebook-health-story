@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Heart } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 
 const Auth = () => {
   const [isSignUp, setIsSignUp] = useState(false);
@@ -15,6 +15,7 @@ const Auth = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { signIn, signUp } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,62 +32,36 @@ const Auth = () => {
       return;
     }
 
-    // Simulate authentication delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    if (password.length < 6) {
+      toast({
+        title: "Error",
+        description: "Password must be at least 6 characters",
+        variant: "destructive"
+      });
+      setIsLoading(false);
+      return;
+    }
 
     try {
       if (isSignUp) {
-        // Store user data for sign up
-        const userData = {
-          email,
-          id: Date.now().toString(),
-          createdAt: new Date().toISOString(),
-          hasCompletedProfile: false
-        };
-        
-        localStorage.setItem('user-authenticated', 'true');
-        localStorage.setItem('user-data', JSON.stringify(userData));
-        
+        await signUp(email, password);
         toast({
           title: "Account Created",
-          description: "Welcome to Lifebook Health! Please complete your profile.",
+          description: "Please check your email to verify your account.",
         });
-        
         navigate('/create-profile');
       } else {
-        // For sign in, check if user has existing data
-        const existingUserData = localStorage.getItem('user-data');
-        const hasCompletedProfile = localStorage.getItem('user-profile');
-        
-        if (!existingUserData) {
-          // New user signing in - create basic data
-          const userData = {
-            email,
-            id: Date.now().toString(),
-            createdAt: new Date().toISOString(),
-            hasCompletedProfile: !!hasCompletedProfile
-          };
-          localStorage.setItem('user-data', JSON.stringify(userData));
-        }
-        
-        localStorage.setItem('user-authenticated', 'true');
-        
+        await signIn(email, password);
         toast({
           title: "Welcome Back",
           description: "Successfully signed in to your account.",
         });
-        
-        // Navigate based on profile completion status
-        if (hasCompletedProfile) {
-          navigate('/dashboard');
-        } else {
-          navigate('/create-profile');
-        }
+        navigate('/dashboard');
       }
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Error",
-        description: "Something went wrong. Please try again.",
+        description: error.message || "Authentication failed. Please try again.",
         variant: "destructive"
       });
     } finally {
@@ -130,6 +105,7 @@ const Auth = () => {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 disabled={isLoading}
+                minLength={6}
               />
             </div>
             
