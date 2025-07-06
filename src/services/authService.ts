@@ -41,7 +41,8 @@ export class AuthService {
           date_of_birth: profileData?.dateOfBirth || '',
           blood_group: profileData?.bloodGroup || '',
           allergies: profileData?.allergies || [],
-          profile_completed: !!profileData
+          profile_completed: !!profileData,
+          account_status: 'active'
         })
 
         // Create user credentials record for login tracking

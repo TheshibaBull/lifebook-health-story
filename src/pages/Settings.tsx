@@ -88,6 +88,7 @@ const Settings = () => {
   });
   const [hasChanges, setHasChanges] = useState(false);
   const [currentView, setCurrentView] = useState('main');
+  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
   const isMobile = useIsMobile();

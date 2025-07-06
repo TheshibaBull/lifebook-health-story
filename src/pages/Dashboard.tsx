@@ -100,7 +100,7 @@ const Dashboard = () => {
       <div className="px-6 pt-8 pb-6">
         <div className="text-center mb-6">
           <h1 className="text-2xl font-bold text-foreground mb-2">
-            Good Morning{profile?.full_name ? `, ${profile.full_name.split(' ')[0]}` : ''}!
+            Good Morning{profile?.first_name ? `, ${profile.first_name}` : ''}!
           </h1>
           <p className="text-muted-foreground text-sm">Here's your health overview today</p>
         </div>
@@ -212,7 +212,7 @@ const Dashboard = () => {
         {/* Welcome Header */}
         <div className="text-center mb-16">
           <h1 className="text-5xl font-bold text-gray-900 mb-4">
-            Welcome back{profile?.full_name ? `, ${profile.full_name.split(' ')[0]}` : ''}!
+            Welcome back{profile?.first_name ? `, ${profile.first_name}` : ''}!
           </h1>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
             Your comprehensive health overview at a glance

@@ -12,7 +12,8 @@ import { UserProfileService } from '@/services/userProfileService';
 
 const CreateProfile = () => {
   const [formData, setFormData] = useState({
-    full_name: '',
+    first_name: '',
+    last_name: '',
     date_of_birth: '',
     gender: '',
     blood_group: '',
@@ -34,7 +35,7 @@ const CreateProfile = () => {
     setIsLoading(true);
 
     // Validate required fields
-    if (!formData.full_name || !formData.date_of_birth) {
+    if (!formData.first_name || !formData.last_name || !formData.date_of_birth) {
       toast({
         title: "Error",
         description: "Please fill in all required fields",
@@ -57,6 +58,9 @@ const CreateProfile = () => {
     try {
       await UserProfileService.createProfile({
         id: user.id,
+        email: user.email || '',
+        profile_completed: true,
+        account_status: 'active',
         ...formData
       });
 
@@ -89,12 +93,24 @@ const CreateProfile = () => {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="full_name">Full Name *</Label>
+              <Label htmlFor="first_name">First Name *</Label>
               <Input
-                id="full_name"
-                placeholder="Enter your full name"
-                value={formData.full_name}
-                onChange={(e) => handleInputChange('full_name', e.target.value)}
+                id="first_name"
+                placeholder="Enter your first name"
+                value={formData.first_name}
+                onChange={(e) => handleInputChange('first_name', e.target.value)}
+                required
+                disabled={isLoading}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="last_name">Last Name *</Label>
+              <Input
+                id="last_name"
+                placeholder="Enter your last name"
+                value={formData.last_name}
+                onChange={(e) => handleInputChange('last_name', e.target.value)}
                 required
                 disabled={isLoading}
               />

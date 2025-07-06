@@ -13,26 +13,11 @@ import { useToast } from '@/hooks/use-toast';
 import { User, FileText, Calendar, Shield, Edit3, Phone, Mail, Plus, X } from 'lucide-react';
 import { AllergiesSelector } from '@/components/AllergiesSelector';
 
-interface FamilyMember {
-  id: string;
-  name: string;
-  relation: string;
-  avatar: string;
-  status: string;
-  lastUpdate: string;
-  dateOfBirth?: string;
-  email?: string;
-  phone?: string;
-  emergencyContact?: boolean;
-  medicalConditions?: string[];
-  allergies?: string[];
-  medications?: string[];
-  accessLevel: 'full' | 'limited' | 'view-only';
-}
+import type { FamilyMember } from '@/lib/supabase';
 
 interface FamilyMemberProfileProps {
   member: FamilyMember;
-  onUpdateMember: (member: FamilyMember) => void;
+  onUpdateMember: (member: FamilyMember) => Promise<void>;
   onClose: () => void;
 }
 
@@ -44,13 +29,21 @@ const FamilyMemberProfile = ({ member, onUpdateMember, onClose }: FamilyMemberPr
   const [newMedication, setNewMedication] = useState('');
   const { toast } = useToast();
 
-  const handleSave = () => {
-    onUpdateMember(editedMember);
-    setIsEditing(false);
-    toast({
-      title: "Profile Updated",
-      description: "Family member profile has been updated successfully.",
-    });
+  const handleSave = async () => {
+    try {
+      await onUpdateMember(editedMember);
+      setIsEditing(false);
+      toast({
+        title: "Profile Updated",
+        description: "Family member profile has been updated successfully.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update family member profile.",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleCancel = () => {
@@ -62,7 +55,7 @@ const FamilyMemberProfile = ({ member, onUpdateMember, onClose }: FamilyMemberPr
     if (newCondition.trim()) {
       setEditedMember(prev => ({
         ...prev,
-        medicalConditions: [...(prev.medicalConditions || []), newCondition.trim()]
+        medical_conditions: [...(prev.medical_conditions || []), newCondition.trim()]
       }));
       setNewCondition('');
     }
@@ -71,7 +64,7 @@ const FamilyMemberProfile = ({ member, onUpdateMember, onClose }: FamilyMemberPr
   const removeMedicalCondition = (index: number) => {
     setEditedMember(prev => ({
       ...prev,
-      medicalConditions: prev.medicalConditions?.filter((_, i) => i !== index)
+      medical_conditions: prev.medical_conditions?.filter((_, i) => i !== index)
     }));
   };
 
@@ -133,14 +126,14 @@ const FamilyMemberProfile = ({ member, onUpdateMember, onClose }: FamilyMemberPr
             <div className="flex items-center gap-4">
               <Avatar className="w-16 h-16">
                 <AvatarFallback className="bg-blue-500 text-white text-xl">
-                  {member.avatar}
+                  {member.name.charAt(0).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
               <div>
                 <h2 className="text-2xl font-bold">{member.name}</h2>
                 <p className="text-gray-600">{member.relation}</p>
-                <Badge className={getAccessLevelColor(member.accessLevel)}>
-                  {member.accessLevel.replace('-', ' ')} access
+                <Badge className={getAccessLevelColor(member.access_level || 'view-only')}>
+                  {(member.access_level || 'view-only').replace('-', ' ')} access
                 </Badge>
               </div>
             </div>
@@ -222,12 +215,12 @@ const FamilyMemberProfile = ({ member, onUpdateMember, onClose }: FamilyMemberPr
                   {isEditing ? (
                     <Input
                       type="date"
-                      value={editedMember.dateOfBirth || ''}
-                      onChange={(e) => setEditedMember(prev => ({ ...prev, dateOfBirth: e.target.value }))}
+                      value={editedMember.date_of_birth || ''}
+                      onChange={(e) => setEditedMember(prev => ({ ...prev, date_of_birth: e.target.value }))}
                       className="mt-1"
                     />
                   ) : (
-                    <p className="text-sm mt-1">{member.dateOfBirth || 'Not provided'}</p>
+                    <p className="text-sm mt-1">{member.date_of_birth || 'Not provided'}</p>
                   )}
                 </div>
 
@@ -268,10 +261,10 @@ const FamilyMemberProfile = ({ member, onUpdateMember, onClose }: FamilyMemberPr
                 <div className="flex items-center space-x-2">
                   <Checkbox
                     id="emergency"
-                    checked={editedMember.emergencyContact}
+                    checked={editedMember.emergency_contact}
                     onCheckedChange={(checked) => setEditedMember(prev => ({ 
                       ...prev, 
-                      emergencyContact: checked as boolean 
+                      emergency_contact: checked as boolean 
                     }))}
                     disabled={!isEditing}
                   />
@@ -289,7 +282,7 @@ const FamilyMemberProfile = ({ member, onUpdateMember, onClose }: FamilyMemberPr
                 <div>
                   <Label className="text-sm font-medium text-gray-600">Medical Conditions</Label>
                   <div className="flex flex-wrap gap-1 mt-2">
-                    {editedMember.medicalConditions?.map((condition, index) => (
+                    {editedMember.medical_conditions?.map((condition, index) => (
                       <div key={index} className="flex items-center gap-1">
                         <Badge variant="outline">{condition}</Badge>
                         {isEditing && (
@@ -304,7 +297,7 @@ const FamilyMemberProfile = ({ member, onUpdateMember, onClose }: FamilyMemberPr
                         )}
                       </div>
                     ))}
-                    {(!editedMember.medicalConditions?.length && !isEditing) && (
+                    {(!editedMember.medical_conditions?.length && !isEditing) && (
                       <span className="text-sm text-gray-500">None recorded</span>
                     )}
                   </div>
@@ -423,10 +416,10 @@ const FamilyMemberProfile = ({ member, onUpdateMember, onClose }: FamilyMemberPr
               <div>
                 <Label className="text-sm font-medium">Access Level</Label>
                 <RadioGroup
-                  value={editedMember.accessLevel}
+                  value={editedMember.access_level || 'view-only'}
                   onValueChange={(value) => setEditedMember(prev => ({ 
                     ...prev, 
-                    accessLevel: value as 'full' | 'limited' | 'view-only' 
+                    access_level: value as 'full' | 'limited' | 'view-only' 
                   }))}
                   disabled={!isEditing}
                   className="mt-2"
