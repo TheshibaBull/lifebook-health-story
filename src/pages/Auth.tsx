@@ -9,7 +9,6 @@ import { Heart, Eye, EyeOff } from 'lucide-react';
 import { AllergiesSelector } from '@/components/AllergiesSelector';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/hooks/useAuth';
 
 interface SignUpFormData {
   firstName: string;
@@ -54,38 +53,12 @@ const Auth = () => {
 
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { signIn, signUp } = useAuth();
 
   const handleForgotPassword = async () => {
-    if (!signInData.email) {
-      toast({
-        title: "Email Required",
-        description: "Please enter your email address first",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      const { supabase } = await import('@/integrations/supabase/client');
-      const { error } = await supabase.auth.resetPasswordForEmail(signInData.email);
-      
-      if (error) throw error;
-      
-      toast({
-        title: "Reset Email Sent",
-        description: "Please check your email for password reset instructions.",
-      });
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to send reset email",
-        variant: "destructive"
-      });
-    } finally {
-      setIsLoading(false);
-    }
+    toast({
+      title: "Reset Email Sent",
+      description: "Please check your email for password reset instructions. (Demo mode - no actual email sent)",
+    });
   };
 
   const validateSignUpForm = (): boolean => {
@@ -93,8 +66,6 @@ const Auth = () => {
       { field: signUpData.firstName, name: 'First Name' },
       { field: signUpData.lastName, name: 'Last Name' },
       { field: signUpData.email, name: 'Email' },
-      { field: signUpData.gender, name: 'Gender' },
-      { field: signUpData.dateOfBirth, name: 'Date of Birth' },
       { field: signUpData.password, name: 'Password' },
       { field: signUpData.confirmPassword, name: 'Confirm Password' }
     ];
@@ -114,15 +85,6 @@ const Auth = () => {
       toast({
         title: "Invalid Email",
         description: "Please enter a valid email address",
-        variant: "destructive"
-      });
-      return false;
-    }
-
-    if (signUpData.password.length < 8) {
-      toast({
-        title: "Weak Password",
-        description: "Password must be at least 8 characters long",
         variant: "destructive"
       });
       return false;
@@ -160,19 +122,10 @@ const Auth = () => {
           return;
         }
 
-        await signUp(signUpData.email, signUpData.password, {
-          firstName: signUpData.firstName,
-          lastName: signUpData.lastName,
-          phone: signUpData.phone,
-          gender: signUpData.gender,
-          dateOfBirth: signUpData.dateOfBirth,
-          bloodGroup: signUpData.bloodGroup,
-          allergies: signUpData.allergies
-        });
-
+        // Simulate successful signup - accept any data
         toast({
           title: "Account Created!",
-          description: "Please check your email to verify your account.",
+          description: "Your account has been created successfully. (Demo mode - no actual account created)",
         });
 
         // Clear form and switch to sign in
@@ -192,6 +145,7 @@ const Auth = () => {
           agreeToTerms: false
         });
       } else {
+        // Accept any username/password combination for sign in
         if (!signInData.email || !signInData.password) {
           toast({
             title: "Missing Information",
@@ -202,11 +156,10 @@ const Auth = () => {
           return;
         }
 
-        await signIn(signInData.email, signInData.password);
-        
+        // Simulate successful login with any credentials
         toast({
           title: "Welcome Back!",
-          description: "Successfully signed in.",
+          description: "Successfully signed in. (Demo mode - any credentials accepted)",
         });
         
         navigate('/dashboard');
@@ -214,7 +167,7 @@ const Auth = () => {
     } catch (error: any) {
       toast({
         title: "Error",
-        description: error.message || "Authentication failed. Please try again.",
+        description: "An unexpected error occurred. Please try again.",
         variant: "destructive"
       });
     } finally {
@@ -232,6 +185,10 @@ const Auth = () => {
           </div>
           <CardDescription>
             {isSignUp ? 'Create your health account' : 'Sign in to your account'}
+            <br />
+            <span className="text-xs text-orange-600 font-medium">
+              Demo Mode: Any credentials will work for testing
+            </span>
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -418,14 +375,14 @@ const Auth = () => {
                 </div>
               </>
             ) : (
-              // Sign In Form
+              // Sign In Form - simplified for demo
               <>
                 <div className="space-y-2">
-                  <Label htmlFor="signInEmail">Email</Label>
+                  <Label htmlFor="signInEmail">Email (any email works for demo)</Label>
                   <Input
                     id="signInEmail"
                     type="email"
-                    placeholder="Enter your email"
+                    placeholder="Enter any email"
                     value={signInData.email}
                     onChange={(e) => setSignInData({ ...signInData, email: e.target.value })}
                     required
@@ -433,12 +390,12 @@ const Auth = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="signInPassword">Password</Label>
+                  <Label htmlFor="signInPassword">Password (any password works for demo)</Label>
                   <div className="relative">
                     <Input
                       id="signInPassword"
                       type={showPassword ? "text" : "password"}
-                      placeholder="Enter your password"
+                      placeholder="Enter any password"
                       value={signInData.password}
                       onChange={(e) => setSignInData({ ...signInData, password: e.target.value })}
                       required
