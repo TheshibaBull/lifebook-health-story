@@ -31,6 +31,7 @@ import { useNavigate } from 'react-router-dom';
 import { MobileAppLayout } from '@/components/MobileAppLayout';
 import { MobileCard } from '@/components/MobileCard';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useAuth } from '@/hooks/useAuth';
 import { AllergiesSelector } from '@/components/AllergiesSelector';
 
 interface UserSettings {
@@ -89,9 +90,11 @@ const Settings = () => {
   const [hasChanges, setHasChanges] = useState(false);
   const [currentView, setCurrentView] = useState('main');
   const [isLoading, setIsLoading] = useState(false);
+  
   const { toast } = useToast();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+  const { signOut } = useAuth();
 
   useEffect(() => {
     // Load settings from localStorage
@@ -236,18 +239,21 @@ const Settings = () => {
     }
   };
 
-  const handleLogout = () => {
-    // Clear all authentication and user data
-    localStorage.removeItem('user-authenticated');
-    localStorage.removeItem('onboarding-completed');
-    localStorage.removeItem('user-profile');
-    
-    toast({
-      title: "Logged Out",
-      description: "You have been successfully logged out.",
-    });
-    
-    navigate('/');
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      toast({
+        title: "Logged Out",
+        description: "You have been successfully logged out.",
+      });
+      navigate('/');
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: "Failed to log out. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   const renderMobileSettings = () => {

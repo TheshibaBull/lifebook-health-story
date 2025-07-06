@@ -12,7 +12,7 @@ const Welcome = () => {
     // Check if user has completed onboarding
     const onboardingCompleted = localStorage.getItem('onboarding-completed');
     if (onboardingCompleted === 'true') {
-      navigate('/dashboard');
+      navigate('/auth');
     }
 
     // Apply accessibility settings if they exist
@@ -58,7 +58,7 @@ const Welcome = () => {
   ];
 
   const handleGetStarted = () => {
-    navigate('/onboarding');
+    navigate('/auth');
   };
 
   return (

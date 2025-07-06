@@ -10,24 +10,13 @@ const Index = () => {
   const isMobile = useIsMobile();
 
   useEffect(() => {
-    // Check authentication and redirect accordingly
-    const isAuthenticated = localStorage.getItem('user-authenticated');
-    const hasCompletedProfile = localStorage.getItem('user-profile');
-    
-    // Only redirect if user is authenticated - let unauthenticated users see the landing page
-    if (isAuthenticated) {
-      if (hasCompletedProfile) {
-        navigate('/dashboard');
-      } else {
-        navigate('/create-profile');
-      }
-    }
-    // Remove the onboarding check - let users see the main landing page
+    // This is handled by the PublicRoute component in App.tsx
+    // Authenticated users will be automatically redirected to dashboard
   }, [navigate]);
 
   const handleGetStarted = () => {
-    // Navigate directly to the dashboard (app homepage)
-    navigate('/dashboard');
+    // Navigate to authentication page for new users
+    navigate('/auth');
   };
 
   const content = isMobile ? (

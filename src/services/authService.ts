@@ -14,9 +14,14 @@ interface SignUpProfileData {
 
 export class AuthService {
   static async signUp(email: string, password: string, profileData?: SignUpProfileData) {
+    const redirectUrl = `${window.location.origin}/dashboard`;
+    
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        emailRedirectTo: redirectUrl
+      }
     })
     
     if (error) {

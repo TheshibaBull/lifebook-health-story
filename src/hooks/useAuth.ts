@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { AuthService } from '@/services/authService'
 import { UserProfileService } from '@/services/userProfileService'
-import type { User } from '@supabase/supabase-js'
+import type { User, Session } from '@supabase/supabase-js'
 
 interface SignUpProfileData {
   firstName: string;
@@ -15,17 +15,19 @@ interface SignUpProfileData {
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null)
+  const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Get initial user
-    AuthService.getCurrentUser().then(user => {
+    // Set up auth state listener FIRST
+    const { data: { subscription } } = AuthService.onAuthStateChange((user) => {
       setUser(user)
+      setSession(user ? session : null)
       setLoading(false)
     })
 
-    // Listen for auth changes
-    const { data: { subscription } } = AuthService.onAuthStateChange((user) => {
+    // THEN check for existing session
+    AuthService.getCurrentUser().then(user => {
       setUser(user)
       setLoading(false)
     })
@@ -49,6 +51,7 @@ export function useAuth() {
 
   return {
     user,
+    session,
     loading,
     signIn,
     signUp,
