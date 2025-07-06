@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -156,13 +157,16 @@ const Auth = () => {
           return;
         }
 
-        // Simulate successful login with any credentials
+        // Show success message
         toast({
           title: "Welcome Back!",
           description: "Successfully signed in.",
         });
         
-        navigate('/dashboard');
+        // Direct navigation to dashboard
+        setTimeout(() => {
+          navigate('/dashboard');
+        }, 500);
       }
     } catch (error: any) {
       toast({
