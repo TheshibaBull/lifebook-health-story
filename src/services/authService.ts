@@ -67,19 +67,6 @@ export class AuthService {
   }
 
   static async signIn(email: string, password: string) {
-    // Update login attempt tracking
-    try {
-      await supabase
-        .from('user_credentials')
-        .update({
-          login_attempts: supabase.sql`login_attempts + 1`,
-          last_login_at: new Date().toISOString()
-        })
-        .eq('email', email)
-    } catch (error) {
-      console.error('Failed to update login tracking:', error)
-    }
-
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -95,6 +82,32 @@ export class AuthService {
       }
       throw new Error(error.message || 'Failed to sign in')
     }
+
+    // Update login attempt tracking after successful sign-in
+    if (data.user) {
+      try {
+        // First get the current login_attempts value
+        const { data: credentialsData } = await supabase
+          .from('user_credentials')
+          .select('login_attempts')
+          .eq('email', email)
+          .single()
+
+        const currentAttempts = credentialsData?.login_attempts || 0
+
+        // Update with incremented value
+        await supabase
+          .from('user_credentials')
+          .update({
+            login_attempts: currentAttempts + 1,
+            last_login_at: new Date().toISOString()
+          })
+          .eq('email', email)
+      } catch (error) {
+        console.error('Failed to update login tracking:', error)
+      }
+    }
+
     return data
   }
 
