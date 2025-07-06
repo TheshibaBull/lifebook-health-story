@@ -2,7 +2,7 @@ import { supabase } from '@/lib/supabase'
 import type { UserProfile } from '@/lib/supabase'
 
 export class UserProfileService {
-  static async createProfile(profile: Omit<UserProfile, 'id' | 'created_at' | 'updated_at'>) {
+  static async createProfile(profile: Omit<UserProfile, 'created_at' | 'updated_at'>) {
     const { data, error } = await supabase
       .from('user_profiles')
       .insert([profile])
