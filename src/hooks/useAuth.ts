@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react'
-import { AuthService } from '@/services/authService'
-import { UserProfileService } from '@/services/userProfileService'
+import { supabase } from '@/integrations/supabase/client'
 import type { User, Session } from '@supabase/supabase-js'
 
-interface SignUpProfileData {
+interface SignUpData {
   firstName: string;
   lastName: string;
   phone?: string;
@@ -19,34 +18,83 @@ export function useAuth() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Set up auth state listener FIRST
-    const { data: { subscription } } = AuthService.onAuthStateChange((user) => {
-      setUser(user)
-      setSession(user ? session : null)
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session)
+      setUser(session?.user ?? null)
       setLoading(false)
     })
 
-    // THEN check for existing session
-    AuthService.getCurrentUser().then(user => {
-      setUser(user)
-      setLoading(false)
-    })
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        setSession(session)
+        setUser(session?.user ?? null)
+        setLoading(false)
+      }
+    )
 
     return () => subscription.unsubscribe()
   }, [])
 
   const signIn = async (email: string, password: string) => {
-    const { user } = await AuthService.signIn(email, password)
-    return user
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    })
+    
+    if (error) {
+      throw new Error(error.message)
+    }
+    
+    return data.user
   }
 
-  const signUp = async (email: string, password: string, profileData?: SignUpProfileData) => {
-    const { user } = await AuthService.signUp(email, password, profileData)
-    return user
+  const signUp = async (email: string, password: string, profileData?: SignUpData) => {
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: `${window.location.origin}/dashboard`
+      }
+    })
+    
+    if (error) {
+      throw new Error(error.message)
+    }
+
+    // Create user profile if signup successful
+    if (data.user && profileData) {
+      const { error: profileError } = await supabase
+        .from('user_profiles')
+        .insert({
+          id: data.user.id,
+          first_name: profileData.firstName,
+          last_name: profileData.lastName,
+          email: email,
+          phone: profileData.phone || '',
+          gender: profileData.gender,
+          date_of_birth: profileData.dateOfBirth,
+          blood_group: profileData.bloodGroup || '',
+          allergies: profileData.allergies || [],
+          profile_completed: true,
+          account_status: 'active'
+        })
+
+      if (profileError) {
+        console.error('Profile creation error:', profileError)
+        // Don't throw here as the user account was created successfully
+      }
+    }
+    
+    return data.user
   }
 
   const signOut = async () => {
-    await AuthService.signOut()
+    const { error } = await supabase.auth.signOut()
+    if (error) {
+      throw new Error(error.message)
+    }
   }
 
   return {

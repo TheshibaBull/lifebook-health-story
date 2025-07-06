@@ -13,15 +13,12 @@ import { QuickEmergencyAccess } from '@/components/QuickEmergencyAccess';
 import { AppLayout } from '@/components/AppLayout';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useAuth } from '@/hooks/useAuth';
-import { UserProfileService } from '@/services/userProfileService';
-import { HealthRecordsService } from '@/services/healthRecordsService';
-import { HealthMetricsService } from '@/services/healthMetricsService';
-import { NotificationsService } from '@/services/notificationsService';
-import type { UserProfile, HealthRecord } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
+import type { Tables } from '@/integrations/supabase/types';
 
 const Dashboard = () => {
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [healthRecords, setHealthRecords] = useState<HealthRecord[]>([]);
+  const [profile, setProfile] = useState<Tables<'user_profiles'> | null>(null);
+  const [healthRecords, setHealthRecords] = useState<Tables<'health_records'>[]>([]);
   const [healthScore, setHealthScore] = useState(87);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -46,7 +43,16 @@ const Dashboard = () => {
       setLoading(true);
 
       // Load user profile
-      const userProfile = await UserProfileService.getCurrentUserProfile();
+      const { data: userProfile, error: profileError } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      if (profileError && profileError.code !== 'PGRST116') {
+        throw profileError;
+      }
+
       if (!userProfile) {
         navigate('/create-profile');
         return;
@@ -54,16 +60,29 @@ const Dashboard = () => {
       setProfile(userProfile);
 
       // Load health records
-      const records = await HealthRecordsService.getRecords(user.id);
-      setHealthRecords(records);
+      const { data: records, error: recordsError } = await supabase
+        .from('health_records')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
 
-      // Calculate health score
-      const score = await HealthMetricsService.calculateHealthScore(user.id);
-      setHealthScore(score);
+      if (recordsError) throw recordsError;
+      setHealthRecords(records || []);
 
       // Get unread notifications count
-      const unreadCount = await NotificationsService.getUnreadCount(user.id);
-      setUnreadNotifications(unreadCount);
+      const { data: notifications, error: notificationsError } = await supabase
+        .from('notifications')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('read', false);
+
+      if (notificationsError) throw notificationsError;
+      setUnreadNotifications(notifications?.length || 0);
+
+      // Calculate basic health score based on available data
+      const recordsCount = records?.length || 0;
+      const baseScore = Math.min(50 + recordsCount * 5, 95);
+      setHealthScore(baseScore);
 
     } catch (error: any) {
       console.error('Error loading dashboard data:', error);

@@ -8,7 +8,7 @@ import { Heart } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
-import { UserProfileService } from '@/services/userProfileService';
+import { supabase } from '@/integrations/supabase/client';
 
 const CreateProfile = () => {
   const [formData, setFormData] = useState({
@@ -56,13 +56,17 @@ const CreateProfile = () => {
     }
 
     try {
-      await UserProfileService.createProfile({
-        id: user.id,
-        email: user.email || '',
-        profile_completed: true,
-        account_status: 'active',
-        ...formData
-      });
+      const { error } = await supabase
+        .from('user_profiles')
+        .insert({
+          id: user.id,
+          email: user.email || '',
+          profile_completed: true,
+          account_status: 'active',
+          ...formData
+        });
+
+      if (error) throw error;
 
       toast({
         title: "Profile Created",

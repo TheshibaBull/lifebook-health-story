@@ -10,7 +10,6 @@ import { AllergiesSelector } from '@/components/AllergiesSelector';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
-import { AuthService } from '@/services/authService';
 
 interface SignUpFormData {
   firstName: string;
@@ -69,7 +68,11 @@ const Auth = () => {
 
     setIsLoading(true);
     try {
-      await AuthService.resetPassword(signInData.email);
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { error } = await supabase.auth.resetPasswordForEmail(signInData.email);
+      
+      if (error) throw error;
+      
       toast({
         title: "Reset Email Sent",
         description: "Please check your email for password reset instructions.",
@@ -86,7 +89,6 @@ const Auth = () => {
   };
 
   const validateSignUpForm = (): boolean => {
-    // Required fields validation
     const requiredFields = [
       { field: signUpData.firstName, name: 'First Name' },
       { field: signUpData.lastName, name: 'Last Name' },
@@ -108,9 +110,7 @@ const Auth = () => {
       }
     }
 
-    // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(signUpData.email)) {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(signUpData.email)) {
       toast({
         title: "Invalid Email",
         description: "Please enter a valid email address",
@@ -119,17 +119,6 @@ const Auth = () => {
       return false;
     }
 
-    // Phone validation (if provided)
-    if (signUpData.phone && !/^\+?[\d\s\-\(\)]{10,}$/.test(signUpData.phone)) {
-      toast({
-        title: "Invalid Phone",
-        description: "Please enter a valid phone number",
-        variant: "destructive"
-      });
-      return false;
-    }
-
-    // Password validation
     if (signUpData.password.length < 8) {
       toast({
         title: "Weak Password",
@@ -139,7 +128,6 @@ const Auth = () => {
       return false;
     }
 
-    // Password confirmation
     if (signUpData.password !== signUpData.confirmPassword) {
       toast({
         title: "Password Mismatch",
@@ -149,20 +137,6 @@ const Auth = () => {
       return false;
     }
 
-    // Age validation (must be 13 or older)
-    const birthDate = new Date(signUpData.dateOfBirth);
-    const today = new Date();
-    const age = today.getFullYear() - birthDate.getFullYear();
-    if (age < 13) {
-      toast({
-        title: "Age Restriction",
-        description: "You must be at least 13 years old to create an account",
-        variant: "destructive"
-      });
-      return false;
-    }
-
-    // Terms agreement
     if (!signUpData.agreeToTerms) {
       toast({
         title: "Terms Required",
@@ -181,13 +155,11 @@ const Auth = () => {
 
     try {
       if (isSignUp) {
-        // Validate sign up form
         if (!validateSignUpForm()) {
           setIsLoading(false);
           return;
         }
 
-        // Create account with comprehensive profile data
         await signUp(signUpData.email, signUpData.password, {
           firstName: signUpData.firstName,
           lastName: signUpData.lastName,
@@ -199,15 +171,13 @@ const Auth = () => {
         });
 
         toast({
-          title: "Account Created Successfully!",
-          description: "Welcome to Lifebook Health. You can now sign in.",
+          title: "Account Created!",
+          description: "Please check your email to verify your account.",
         });
 
-        // Switch to sign in mode
+        // Clear form and switch to sign in
         setIsSignUp(false);
         setSignInData({ email: signUpData.email, password: '' });
-        
-        // Clear sign up form
         setSignUpData({
           firstName: '',
           lastName: '',
@@ -222,7 +192,6 @@ const Auth = () => {
           agreeToTerms: false
         });
       } else {
-        // Sign in validation
         if (!signInData.email || !signInData.password) {
           toast({
             title: "Missing Information",
@@ -237,7 +206,7 @@ const Auth = () => {
         
         toast({
           title: "Welcome Back!",
-          description: "Successfully signed in to your account.",
+          description: "Successfully signed in.",
         });
         
         navigate('/dashboard');
