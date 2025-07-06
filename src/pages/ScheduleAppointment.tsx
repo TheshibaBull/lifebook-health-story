@@ -1,29 +1,29 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon, Clock, User, Phone, Mail, Stethoscope } from 'lucide-react';
+import { CalendarIcon, Clock, Stethoscope } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { AppLayout } from '@/components/AppLayout';
 import { toast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { useDoctorAvailability } from '@/hooks/useDoctorAvailability';
 
 const ScheduleAppointment = () => {
   const [selectedDate, setSelectedDate] = useState<Date>();
   const [selectedTime, setSelectedTime] = useState<string>('');
   const [appointmentType, setAppointmentType] = useState<string>('');
-  const [doctorName, setDoctorName] = useState<string>('');
-  const [patientName, setPatientName] = useState<string>('');
-  const [patientPhone, setPatientPhone] = useState<string>('');
-  const [patientEmail, setPatientEmail] = useState<string>('');
+  const [selectedDoctorId, setSelectedDoctorId] = useState<string>('');
   const [notes, setNotes] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const { doctors, availableTimeSlots, loading, fetchTimeSlots } = useDoctorAvailability();
 
   const appointmentTypes = [
     'General Consultation',
@@ -34,24 +34,26 @@ const ScheduleAppointment = () => {
     'Telemedicine',
   ];
 
-  const doctors = [
-    'Dr. Sarah Johnson - Cardiologist',
-    'Dr. Michael Chen - General Practitioner',
-    'Dr. Emily Davis - Dermatologist',
-    'Dr. Robert Wilson - Neurologist',
-    'Dr. Lisa Martinez - Pediatrician',
-  ];
+  const handleDoctorChange = (doctorId: string) => {
+    setSelectedDoctorId(doctorId);
+    setSelectedTime(''); // Reset selected time when doctor changes
+    if (selectedDate) {
+      fetchTimeSlots(doctorId, selectedDate);
+    }
+  };
 
-  const timeSlots = [
-    '09:00 AM', '09:30 AM', '10:00 AM', '10:30 AM',
-    '11:00 AM', '11:30 AM', '02:00 PM', '02:30 PM',
-    '03:00 PM', '03:30 PM', '04:00 PM', '04:30 PM',
-  ];
+  const handleDateChange = (date: Date | undefined) => {
+    setSelectedDate(date);
+    setSelectedTime(''); // Reset selected time when date changes
+    if (date && selectedDoctorId) {
+      fetchTimeSlots(selectedDoctorId, date);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!selectedDate || !selectedTime || !appointmentType || !doctorName || !patientName || !patientPhone) {
+    if (!selectedDate || !selectedTime || !appointmentType || !selectedDoctorId) {
       toast({
         title: "Missing Information",
         description: "Please fill in all required fields.",
@@ -63,8 +65,21 @@ const ScheduleAppointment = () => {
     setIsSubmitting(true);
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      const { error } = await supabase
+        .from('appointments')
+        .insert({
+          user_id: (await supabase.auth.getUser()).data.user?.id,
+          doctor_id: selectedDoctorId,
+          appointment_date: selectedDate.toISOString().split('T')[0],
+          appointment_time: selectedTime + ':00',
+          appointment_type: appointmentType,
+          notes: notes || null,
+          status: 'scheduled'
+        });
+
+      if (error) {
+        throw error;
+      }
       
       toast({
         title: "Appointment Scheduled!",
@@ -75,13 +90,11 @@ const ScheduleAppointment = () => {
       setSelectedDate(undefined);
       setSelectedTime('');
       setAppointmentType('');
-      setDoctorName('');
-      setPatientName('');
-      setPatientPhone('');
-      setPatientEmail('');
+      setSelectedDoctorId('');
       setNotes('');
       
     } catch (error) {
+      console.error('Error scheduling appointment:', error);
       toast({
         title: "Error",
         description: "Failed to schedule appointment. Please try again.",
@@ -95,7 +108,7 @@ const ScheduleAppointment = () => {
   return (
     <AppLayout title="Schedule Appointment">
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white">
-        <div className="container mx-auto px-4 py-8 max-w-4xl">
+        <div className="container mx-auto px-4 py-8 max-w-3xl">
           {/* Header */}
           <div className="text-center mb-8">
             <h1 className="text-4xl font-bold text-gray-900 mb-2">Schedule Appointment</h1>
@@ -103,62 +116,6 @@ const ScheduleAppointment = () => {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-8">
-            {/* Patient Information Section */}
-            <Card className="shadow-lg border-0">
-              <CardHeader className="bg-gradient-to-r from-blue-500 to-blue-600 text-white">
-                <CardTitle className="flex items-center gap-2 text-xl">
-                  <User className="w-6 h-6" />
-                  Patient Information
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-6 space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-3">
-                    <Label htmlFor="patientName" className="text-sm font-semibold text-gray-700">
-                      Patient Name *
-                    </Label>
-                    <Input
-                      id="patientName"
-                      value={patientName}
-                      onChange={(e) => setPatientName(e.target.value)}
-                      placeholder="Enter full name"
-                      className="h-12"
-                      required
-                    />
-                  </div>
-                  
-                  <div className="space-y-3">
-                    <Label htmlFor="patientPhone" className="text-sm font-semibold text-gray-700">
-                      Phone Number *
-                    </Label>
-                    <Input
-                      id="patientPhone"
-                      type="tel"
-                      value={patientPhone}
-                      onChange={(e) => setPatientPhone(e.target.value)}
-                      placeholder="(555) 123-4567"
-                      className="h-12"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  <Label htmlFor="patientEmail" className="text-sm font-semibold text-gray-700">
-                    Email Address (Optional)
-                  </Label>
-                  <Input
-                    id="patientEmail"
-                    type="email"
-                    value={patientEmail}
-                    onChange={(e) => setPatientEmail(e.target.value)}
-                    placeholder="patient@example.com"
-                    className="h-12"
-                  />
-                </div>
-              </CardContent>
-            </Card>
-
             {/* Appointment Details Section */}
             <Card className="shadow-lg border-0">
               <CardHeader className="bg-gradient-to-r from-green-500 to-green-600 text-white">
@@ -187,14 +144,14 @@ const ScheduleAppointment = () => {
 
                   <div className="space-y-3">
                     <Label className="text-sm font-semibold text-gray-700">Select Doctor *</Label>
-                    <Select value={doctorName} onValueChange={setDoctorName}>
+                    <Select value={selectedDoctorId} onValueChange={handleDoctorChange}>
                       <SelectTrigger className="h-12">
                         <SelectValue placeholder="Choose your doctor" />
                       </SelectTrigger>
                       <SelectContent>
                         {doctors.map((doctor) => (
-                          <SelectItem key={doctor} value={doctor}>
-                            {doctor}
+                          <SelectItem key={doctor.id} value={doctor.id}>
+                            {doctor.name} - {doctor.specialization}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -233,8 +190,8 @@ const ScheduleAppointment = () => {
                         <Calendar
                           mode="single"
                           selected={selectedDate}
-                          onSelect={setSelectedDate}
-                          disabled={(date) => date < new Date() || date.getDay() === 0}
+                          onSelect={handleDateChange}
+                          disabled={(date) => date < new Date() || date.getDay() === 0 || date.getDay() === 6}
                           initialFocus
                           className="pointer-events-auto"
                         />
@@ -243,18 +200,34 @@ const ScheduleAppointment = () => {
                   </div>
 
                   <div className="space-y-3">
-                    <Label className="text-sm font-semibold text-gray-700">Time Slot *</Label>
-                    <Select value={selectedTime} onValueChange={setSelectedTime}>
+                    <Label className="text-sm font-semibold text-gray-700">Available Time Slots *</Label>
+                    <Select 
+                      value={selectedTime} 
+                      onValueChange={setSelectedTime}
+                      disabled={!selectedDoctorId || !selectedDate || loading}
+                    >
                       <SelectTrigger className="h-12">
                         <Clock className="mr-2 h-4 w-4" />
-                        <SelectValue placeholder="Select time" />
+                        <SelectValue placeholder={
+                          loading ? "Loading slots..." : 
+                          !selectedDoctorId || !selectedDate ? "Select doctor and date first" : 
+                          "Select time slot"
+                        } />
                       </SelectTrigger>
                       <SelectContent>
-                        {timeSlots.map((time) => (
-                          <SelectItem key={time} value={time}>
-                            {time}
+                        {availableTimeSlots.length === 0 && selectedDoctorId && selectedDate && !loading ? (
+                          <SelectItem value="no-slots" disabled>
+                            No available slots for this date
                           </SelectItem>
-                        ))}
+                        ) : (
+                          availableTimeSlots
+                            .filter(slot => slot.available)
+                            .map((slot) => (
+                              <SelectItem key={slot.time} value={slot.time}>
+                                {slot.time}
+                              </SelectItem>
+                            ))
+                        )}
                       </SelectContent>
                     </Select>
                   </div>
@@ -266,7 +239,7 @@ const ScheduleAppointment = () => {
             <Card className="shadow-lg border-0">
               <CardHeader className="bg-gradient-to-r from-orange-500 to-orange-600 text-white">
                 <CardTitle className="flex items-center gap-2 text-xl">
-                  <Mail className="w-6 h-6" />
+                  <Stethoscope className="w-6 h-6" />
                   Additional Information
                 </CardTitle>
               </CardHeader>
