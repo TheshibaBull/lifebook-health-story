@@ -21,25 +21,9 @@ import HealthScore from "./pages/HealthScore";
 
 const queryClient = new QueryClient();
 
-// Protected Route Component
+// Protected Route Component - BYPASSED FOR TESTING
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { isAuthenticated, loading } = useAuth();
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) {
-    return <Navigate to="/auth" replace />;
-  }
-
+  // Authentication bypassed for testing
   return <>{children}</>;
 };
 
