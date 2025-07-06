@@ -1,10 +1,10 @@
+
 import { useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { useAuth } from "@/hooks/useAuth";
 import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import UploadRecord from "./pages/UploadRecord";
@@ -27,32 +27,16 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
-// Public Route Component (redirects to dashboard if authenticated)
+// Public Route Component - BYPASSED FOR TESTING
 const PublicRoute = ({ children }: { children: React.ReactNode }) => {
-  const { isAuthenticated, loading } = useAuth();
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (isAuthenticated) {
-    return <Navigate to="/dashboard" replace />;
-  }
-
+  // Authentication bypass - no redirects
   return <>{children}</>;
 };
 
 const App = () => {
   useEffect(() => {
     // Initialize any app-wide services here
-    console.log('Lifebook Health App initialized');
+    console.log('Lifebook Health App initialized - Authentication bypassed for testing');
   }, []);
 
   return (
@@ -62,7 +46,7 @@ const App = () => {
         <Sonner />
         <BrowserRouter>
           <Routes>
-            {/* Public Routes */}
+            {/* Public Routes - Authentication bypassed */}
             <Route path="/" element={
               <PublicRoute>
                 <Index />
@@ -79,7 +63,7 @@ const App = () => {
               </PublicRoute>
             } />
             
-            {/* Protected Routes */}
+            {/* Protected Routes - Authentication bypassed */}
             <Route path="/create-profile" element={
               <ProtectedRoute>
                 <CreateProfile />
