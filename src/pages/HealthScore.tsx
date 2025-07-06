@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -17,21 +16,41 @@ const HealthScore = () => {
       title: "Blood Pressure Monitoring",
       description: "Your blood pressure readings have been rising. Monitor it daily and consult your doctor.",
       priority: "high",
-      action: "Schedule appointment"
+      action: "Schedule appointment",
+      actionType: "appointment"
     },
     {
-      title: "Cholesterol Test Due",
+      title: "Cholesterol Test Due", 
       description: "It's time for your annual cholesterol test. Schedule it with your healthcare provider.",
-      priority: "medium", 
-      action: "Book test"
+      priority: "medium",
+      action: "Book test",
+      actionType: "test"
     },
     {
       title: "Exercise Recommendation",
       description: "Based on your health data, incorporating 30 minutes of daily exercise would be beneficial.",
       priority: "low",
-      action: "View plan"
+      action: "View plan",
+      actionType: "plan"
     }
   ];
+
+  const handleActionClick = (actionType: string) => {
+    switch (actionType) {
+      case 'appointment':
+        navigate('/schedule-appointment');
+        break;
+      case 'test':
+        navigate('/book-test');
+        break;
+      case 'plan':
+        // For now, just show a placeholder action
+        console.log('View exercise plan clicked');
+        break;
+      default:
+        break;
+    }
+  };
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
@@ -142,7 +161,12 @@ const HealthScore = () => {
                         </div>
                         <p className="text-xs text-gray-600 mb-2">{suggestion.description}</p>
                       </div>
-                      <Button variant="outline" size="sm" className="text-xs">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="text-xs"
+                        onClick={() => handleActionClick(suggestion.actionType)}
+                      >
                         {suggestion.action}
                       </Button>
                     </div>
@@ -270,7 +294,11 @@ const HealthScore = () => {
                           </div>
                           <p className="text-sm text-gray-600 mb-3">{suggestion.description}</p>
                         </div>
-                        <Button variant="outline" size="sm">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleActionClick(suggestion.actionType)}
+                        >
                           {suggestion.action}
                         </Button>
                       </div>
