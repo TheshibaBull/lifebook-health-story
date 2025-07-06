@@ -7,16 +7,46 @@ import { Heart } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { AuthService } from '@/services/authService';
 
 const Auth = () => {
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
   const { signIn, signUp } = useAuth();
 
+  const handleForgotPassword = async () => {
+    if (!email) {
+      toast({
+        title: "Email Required",
+        description: "Please enter your email address first",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      await AuthService.resetPassword(email);
+      toast({
+        title: "Reset Email Sent",
+        description: "Please check your email for password reset instructions.",
+      });
+      setShowForgotPassword(false);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to send reset email",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -32,6 +62,17 @@ const Auth = () => {
       return;
     }
 
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      toast({
+        title: "Invalid Email",
+        description: "Please enter a valid email address",
+        variant: "destructive"
+      });
+      setIsLoading(false);
+      return;
+    }
     if (password.length < 6) {
       toast({
         title: "Error",
@@ -47,9 +88,11 @@ const Auth = () => {
         await signUp(email, password);
         toast({
           title: "Account Created",
-          description: "Please check your email to verify your account.",
+          description: "Account created successfully! You can now sign in.",
         });
-        navigate('/create-profile');
+        // Switch to sign in mode
+        setIsSignUp(false);
+        setPassword(''); // Clear password for security
       } else {
         await signIn(email, password);
         toast({
@@ -111,7 +154,13 @@ const Auth = () => {
             
             {!isSignUp && (
               <div className="text-right">
-                <Button variant="link" className="px-0 text-sm" type="button">
+                <Button 
+                  variant="link" 
+                  className="px-0 text-sm" 
+                  type="button"
+                  onClick={handleForgotPassword}
+                  disabled={isLoading}
+                >
                   Forgot password?
                 </Button>
               </div>
