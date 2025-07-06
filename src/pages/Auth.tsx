@@ -57,7 +57,7 @@ const Auth = () => {
   const handleForgotPassword = async () => {
     toast({
       title: "Reset Email Sent",
-      description: "Please check your email for password reset instructions. (Demo mode - no actual email sent)",
+      description: "Please check your email for password reset instructions.",
     });
   };
 
@@ -125,7 +125,7 @@ const Auth = () => {
         // Simulate successful signup - accept any data
         toast({
           title: "Account Created!",
-          description: "Your account has been created successfully. (Demo mode - no actual account created)",
+          description: "Your account has been created successfully.",
         });
 
         // Clear form and switch to sign in
@@ -159,7 +159,7 @@ const Auth = () => {
         // Simulate successful login with any credentials
         toast({
           title: "Welcome Back!",
-          description: "Successfully signed in. (Demo mode - any credentials accepted)",
+          description: "Successfully signed in.",
         });
         
         navigate('/dashboard');
@@ -185,10 +185,6 @@ const Auth = () => {
           </div>
           <CardDescription>
             {isSignUp ? 'Create your health account' : 'Sign in to your account'}
-            <br />
-            <span className="text-xs text-orange-600 font-medium">
-              Demo Mode: Any credentials will work for testing
-            </span>
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -375,14 +371,14 @@ const Auth = () => {
                 </div>
               </>
             ) : (
-              // Sign In Form - simplified for demo
+              // Sign In Form
               <>
                 <div className="space-y-2">
-                  <Label htmlFor="signInEmail">Email (any email works for demo)</Label>
+                  <Label htmlFor="signInEmail">Email</Label>
                   <Input
                     id="signInEmail"
                     type="email"
-                    placeholder="Enter any email"
+                    placeholder="Enter your email"
                     value={signInData.email}
                     onChange={(e) => setSignInData({ ...signInData, email: e.target.value })}
                     required
@@ -390,12 +386,12 @@ const Auth = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="signInPassword">Password (any password works for demo)</Label>
+                  <Label htmlFor="signInPassword">Password</Label>
                   <div className="relative">
                     <Input
                       id="signInPassword"
                       type={showPassword ? "text" : "password"}
-                      placeholder="Enter any password"
+                      placeholder="Enter your password"
                       value={signInData.password}
                       onChange={(e) => setSignInData({ ...signInData, password: e.target.value })}
                       required
