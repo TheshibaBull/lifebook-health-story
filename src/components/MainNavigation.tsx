@@ -1,9 +1,8 @@
-
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { 
   Heart, 
   Menu, 
@@ -51,12 +50,12 @@ export const MainNavigation = () => {
         </SheetTrigger>
         <SheetContent side="left" className="w-64 p-0">
           <div className="flex flex-col h-full">
-            <div className="p-6 border-b">
-              <div className="flex items-center gap-2">
+            <SheetHeader className="p-6 border-b">
+              <SheetTitle className="flex items-center gap-2">
                 <Heart className="w-6 h-6 text-red-500" />
                 <span className="text-lg font-semibold">Lifebook Health</span>
-              </div>
-            </div>
+              </SheetTitle>
+            </SheetHeader>
             <nav className="flex-1 p-4">
               <div className="space-y-2">
                 {navigationItems.map((item) => {
