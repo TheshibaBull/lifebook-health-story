@@ -71,9 +71,11 @@ const FamilyVault = () => {
             onViewProfile={handleViewProfile}
             onAddMember={handleAddMemberClick}
           />
-          <AddFamilyMemberDialog
-            onAddMember={handleMemberAdded}
-          />
+          <div className="mt-8">
+            <AddFamilyMemberDialog
+              onAddMember={handleMemberAdded}
+            />
+          </div>
         </TabsContent>
 
         <TabsContent value="analytics">
