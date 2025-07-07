@@ -21,29 +21,34 @@ export function useAuth() {
   const { toast } = useToast()
 
   useEffect(() => {
+    let mounted = true;
+
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        if (!mounted) return;
+        
         console.log('Auth state changed:', event, session?.user?.email)
         setSession(session)
         setUser(session?.user ?? null)
-        // Only set loading to false after auth state changes (not initial load)
-        if (event !== 'INITIAL_SESSION') {
-          setLoading(false)
-        }
+        setLoading(false)
       }
     )
 
     // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!mounted) return;
+      
       console.log('Initial session:', session?.user?.email)
       setSession(session)
       setUser(session?.user ?? null)
-      // Set loading to false only after initial session check
       setLoading(false)
     })
 
-    return () => subscription.unsubscribe()
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    }
   }, [])
 
   const signIn = async (email: string, password: string) => {
