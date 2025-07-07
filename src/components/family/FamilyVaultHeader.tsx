@@ -1,12 +1,15 @@
 
 import { Users, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface FamilyVaultHeaderProps {
   onAddMember: () => void;
 }
 
 const FamilyVaultHeader = ({ onAddMember }: FamilyVaultHeaderProps) => {
+  const isMobile = useIsMobile();
+
   return (
     <div className="flex items-center justify-between">
       <div>
@@ -18,10 +21,12 @@ const FamilyVaultHeader = ({ onAddMember }: FamilyVaultHeaderProps) => {
           Manage your family's health information and get personalized insights
         </p>
       </div>
-      <Button onClick={onAddMember}>
-        <Plus className="w-4 h-4 mr-2" />
-        Add Family Member
-      </Button>
+      {!isMobile && (
+        <Button onClick={onAddMember}>
+          <Plus className="w-4 h-4 mr-2" />
+          Add Family Member
+        </Button>
+      )}
     </div>
   );
 };
