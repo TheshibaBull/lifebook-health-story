@@ -225,6 +225,29 @@ const FamilyMemberProfile = ({ member, onUpdateMember, onClose }: FamilyMemberPr
                 </div>
 
                 <div>
+                  <Label className="text-sm font-medium text-gray-600">Blood Group</Label>
+                  {isEditing ? (
+                    <select
+                      value={editedMember.blood_group || ''}
+                      onChange={(e) => setEditedMember(prev => ({ ...prev, blood_group: e.target.value }))}
+                      className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                    >
+                      <option value="">Select blood group</option>
+                      <option value="A+">A+</option>
+                      <option value="A-">A-</option>
+                      <option value="B+">B+</option>
+                      <option value="B-">B-</option>
+                      <option value="AB+">AB+</option>
+                      <option value="AB-">AB-</option>
+                      <option value="O+">O+</option>
+                      <option value="O-">O-</option>
+                    </select>
+                  ) : (
+                    <p className="text-sm mt-1">{member.blood_group || 'Not provided'}</p>
+                  )}
+                </div>
+
+                <div>
                   <Label className="text-sm font-medium text-gray-600">Email</Label>
                   {isEditing ? (
                     <Input

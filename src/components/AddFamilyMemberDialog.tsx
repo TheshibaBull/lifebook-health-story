@@ -33,10 +33,10 @@ const AddFamilyMemberDialog = ({ onAddMember }: AddFamilyMemberDialogProps) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.name || !formData.relation || !formData.phone || !formData.dateOfBirth) {
+    if (!formData.name || !formData.relation || !formData.phone || !formData.dateOfBirth || !formData.bloodGroup) {
       toast({
         title: "Missing Information",
-        description: "Please fill in all required fields (Name, Relationship, Phone, and Date of Birth).",
+        description: "Please fill in all required fields (Name, Relationship, Phone, Date of Birth, and Blood Group).",
         variant: "destructive",
       });
       return;
@@ -158,7 +158,7 @@ const AddFamilyMemberDialog = ({ onAddMember }: AddFamilyMemberDialogProps) => {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="bloodGroup">Blood Group (Optional)</Label>
+            <Label htmlFor="bloodGroup">Blood Group *</Label>
             <Select value={formData.bloodGroup} onValueChange={(value) => setFormData({ ...formData, bloodGroup: value })}>
               <SelectTrigger>
                 <SelectValue placeholder="Select blood group" />
