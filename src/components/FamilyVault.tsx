@@ -81,9 +81,11 @@ const FamilyVault = () => {
   const handleUpdateMember = async (updatedMember: FamilyMember) => {
     try {
       const updated = await FamilyMembersService.updateFamilyMember(updatedMember.id, updatedMember);
-      setFamilyMembers(prev => prev.map(member => 
-        member.id === updated.id ? updated : member
-      ));
+      if (updated) {
+        setFamilyMembers(prev => prev.map(member => 
+          member.id === updated.id ? updated : member
+        ));
+      }
       setSelectedMember(null);
       
       toast({
