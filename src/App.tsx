@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "./hooks/useAuth";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { LoadingSpinner } from "./components/LoadingSpinner";
+import { PWAService } from '@/services/pwaService';
 
 // Direct imports for reliable navigation
 import Index from "./pages/Index";
@@ -69,9 +70,10 @@ const PublicRoute = ({ children }: { children: React.ReactNode }) => {
   );
 };
 
-const App = () => {
+function App() {
   useEffect(() => {
-    console.log('Lifebook Health App initialized with Supabase authentication');
+    // Initialize PWA features
+    PWAService.initialize();
   }, []);
 
   return (

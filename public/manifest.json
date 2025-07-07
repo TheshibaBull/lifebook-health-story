@@ -1,55 +1,69 @@
 
 {
-  "name": "Lifebook Health",
-  "short_name": "Lifebook",
-  "description": "Your lifelong health record, all in one place",
+  "name": "LifeBook Health Story",
+  "short_name": "LifeBook",
+  "description": "Your personal health records vault with AI-powered insights",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#3b82f6",
   "orientation": "portrait-primary",
+  "categories": ["health", "medical", "productivity"],
   "icons": [
     {
       "src": "/favicon.ico",
-      "sizes": "48x48",
+      "sizes": "64x64 32x32 24x24 16x16",
       "type": "image/x-icon"
     },
     {
       "src": "/placeholder.svg",
-      "sizes": "192x192",
       "type": "image/svg+xml",
+      "sizes": "192x192",
       "purpose": "any maskable"
     },
     {
       "src": "/placeholder.svg",
+      "type": "image/svg+xml", 
       "sizes": "512x512",
-      "type": "image/svg+xml",
       "purpose": "any maskable"
     }
   ],
-  "categories": ["health", "medical", "lifestyle"],
+  "screenshots": [
+    {
+      "src": "/placeholder.svg",
+      "type": "image/svg+xml",
+      "sizes": "540x720",
+      "form_factor": "narrow"
+    },
+    {
+      "src": "/placeholder.svg", 
+      "type": "image/svg+xml",
+      "sizes": "1024x768",
+      "form_factor": "wide"
+    }
+  ],
   "shortcuts": [
     {
-      "name": "Upload Record",
+      "name": "Upload Records",
       "short_name": "Upload",
-      "description": "Upload a new health record",
+      "description": "Upload new health records",
       "url": "/upload-record",
       "icons": [
         {
           "src": "/placeholder.svg",
-          "sizes": "96x96"
+          "sizes": "192x192"
         }
       ]
     },
     {
-      "name": "Emergency Access",
-      "short_name": "Emergency",
-      "description": "Quick access to emergency health info",
-      "url": "/emergency",
+      "name": "Health Score",
+      "short_name": "Score",
+      "description": "Check your health score",
+      "url": "/health-score",
       "icons": [
         {
           "src": "/placeholder.svg",
-          "sizes": "96x96"
+          "sizes": "192x192"
         }
       ]
     }

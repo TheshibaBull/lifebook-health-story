@@ -9,6 +9,7 @@ import { OfflineUpload } from '@/components/OfflineUpload';
 import { AIDocumentProcessor } from '@/services/aiDocumentProcessor';
 import { FileUploadService } from '@/services/fileUploadService';
 import { HealthRecordsService } from '@/services/healthRecordsService';
+import { PWAService } from '@/services/pwaService';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -80,8 +81,8 @@ const UploadRecord = () => {
         setUploadProgress((i / files.length) * 25);
 
         toast({
-          title: "Uploading File",
-          description: `Uploading ${file.name}...`,
+          title: "Processing File",
+          description: `Analyzing ${file.name} with enhanced AI...`,
         });
 
         // Upload file to Supabase Storage
@@ -89,7 +90,6 @@ const UploadRecord = () => {
           file, 
           user.id,
           (progress) => {
-            // Update progress based on upload status
             const totalProgress = ((i + progress.percentage / 100 * 0.3) / files.length) * 50;
             setUploadProgress(totalProgress);
           }
@@ -100,9 +100,9 @@ const UploadRecord = () => {
           throw new Error(uploadResult.error || 'Upload failed');
         }
 
-        // Process with AI
+        // Process with Enhanced AI (now includes real OCR and medical entity extraction)
         const analysis = await AIDocumentProcessor.analyzeDocument(file);
-        setUploadProgress(((i + 0.5) / files.length) * 50);
+        setUploadProgress(((i + 0.7) / files.length) * 75);
 
         // Create health record in database
         await HealthRecordsService.createRecord({
@@ -129,8 +129,11 @@ const UploadRecord = () => {
         
         toast({
           title: "Document Processed",
-          description: `${file.name} categorized as ${analysis.category}`,
+          description: `${file.name} analyzed with ${Math.round(analysis.confidence * 100)}% confidence`,
         });
+
+        // Schedule background sync for offline capability
+        await PWAService.scheduleBackgroundSync('health-data-sync');
         
       } catch (error: any) {
         console.error('Error processing file:', error);
@@ -148,7 +151,7 @@ const UploadRecord = () => {
     if (processed.length > 0) {
       toast({
         title: "Upload Complete",
-        description: `Successfully processed ${processed.length} file(s)`,
+        description: `Successfully processed ${processed.length} file(s) with enhanced AI analysis`,
       });
     }
   };
@@ -175,7 +178,7 @@ const UploadRecord = () => {
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="standard" className="flex items-center gap-2">
                 <FileText className="w-4 h-4" />
-                AI-Powered Upload
+                Enhanced AI Upload
               </TabsTrigger>
               <TabsTrigger value="offline" className="flex items-center gap-2">
                 <CloudOff className="w-4 h-4" />
@@ -197,7 +200,7 @@ const UploadRecord = () => {
                 {isProcessing ? (
                   <div className="space-y-4">
                     <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
-                    <p className="text-gray-600">Processing your documents with AI...</p>
+                    <p className="text-gray-600">Processing with Enhanced AI...</p>
                     <Progress value={uploadProgress} className="w-full" />
                     <p className="text-sm text-gray-500">{Math.round(uploadProgress)}% complete</p>
                   </div>
@@ -205,9 +208,9 @@ const UploadRecord = () => {
                   <div className="space-y-4">
                     <CheckCircle className="w-16 h-16 text-green-500 mx-auto" />
                     <div>
-                      <p className="text-lg font-medium mb-2 text-green-700">Upload Successful!</p>
+                      <p className="text-lg font-medium mb-2 text-green-700">Enhanced AI Processing Complete!</p>
                       <p className="text-sm text-gray-600 mb-4">
-                        {processedFiles.length} file(s) processed and saved to your health vault
+                        {processedFiles.length} file(s) analyzed with advanced OCR and medical entity extraction
                       </p>
                       <div className="space-y-1 mb-4">
                         {processedFiles.map((fileName, index) => (
@@ -226,26 +229,26 @@ const UploadRecord = () => {
                   <div className="space-y-4">
                     <Brain className="w-16 h-16 text-purple-500 mx-auto" />
                     <div>
-                      <p className="text-lg font-medium mb-2">Smart Document Processing</p>
+                      <p className="text-lg font-medium mb-2">Enhanced AI Document Processing</p>
                       <p className="text-sm text-gray-600 mb-4">
-                        AI will automatically extract, categorize, and organize your medical records
+                        Advanced OCR, medical entity extraction, and intelligent categorization
                       </p>
                       <div className="grid grid-cols-2 gap-3 mb-6 text-xs">
                         <div className="flex items-center gap-2">
                           <CheckCircle className="w-4 h-4 text-green-500" />
-                          <span>OCR Text Extraction</span>
+                          <span>Advanced OCR Text Extraction</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <CheckCircle className="w-4 h-4 text-green-500" />
-                          <span>Auto-Categorization</span>
+                          <span>Medical Entity Recognition</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <CheckCircle className="w-4 h-4 text-green-500" />
-                          <span>Smart Tagging</span>
+                          <span>Intelligent Auto-Categorization</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <CheckCircle className="w-4 h-4 text-green-500" />
-                          <span>Medical Entity Detection</span>
+                          <span>Confidence Scoring</span>
                         </div>
                       </div>
                       <input
@@ -259,7 +262,7 @@ const UploadRecord = () => {
                       <label htmlFor="file-upload">
                         <Button className="cursor-pointer">
                           <Brain className="w-4 h-4 mr-2" />
-                          Choose Files for AI Processing
+                          Choose Files for Enhanced AI Processing
                         </Button>
                       </label>
                     </div>
@@ -272,7 +275,7 @@ const UploadRecord = () => {
                 <p>Maximum file size: 10MB per file</p>
                 <div className="flex items-center justify-center gap-2 text-purple-600">
                   <AlertCircle className="w-4 h-4" />
-                  <span>AI processing may take a few seconds per document</span>
+                  <span>Enhanced AI processing includes OCR and medical entity extraction</span>
                 </div>
               </div>
             </TabsContent>
