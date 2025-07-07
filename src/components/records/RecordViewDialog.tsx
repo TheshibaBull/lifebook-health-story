@@ -12,23 +12,9 @@ import {
   FileText
 } from 'lucide-react';
 import { format } from 'date-fns';
+import type { Tables } from '@/integrations/supabase/types';
 
-interface HealthRecord {
-  id: string;
-  title: string;
-  category: string;
-  tags: string[];
-  file_name?: string;
-  file_path?: string;
-  file_size?: number;
-  file_type?: string;
-  extracted_text?: string;
-  medical_entities?: Record<string, any>;
-  date_of_record?: string;
-  provider_name?: string;
-  created_at: string;
-  fileUrl?: string;
-}
+type HealthRecord = Tables<'health_records'> & { fileUrl?: string };
 
 interface RecordViewDialogProps {
   record: HealthRecord | null;

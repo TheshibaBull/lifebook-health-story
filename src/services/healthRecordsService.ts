@@ -1,9 +1,12 @@
-import { supabase } from '@/lib/supabase'
-import type { HealthRecord } from '@/lib/supabase'
+import { supabase } from '@/integrations/supabase/client'
+import type { Tables, TablesInsert } from '@/integrations/supabase/types'
 import { FileUploadService } from './fileUploadService'
 
+type HealthRecord = Tables<'health_records'>
+type HealthRecordInsert = TablesInsert<'health_records'>
+
 export class HealthRecordsService {
-  static async createRecord(record: Omit<HealthRecord, 'id' | 'created_at' | 'updated_at'>) {
+  static async createRecord(record: HealthRecordInsert) {
     const { data, error } = await supabase
       .from('health_records')
       .insert([record])
