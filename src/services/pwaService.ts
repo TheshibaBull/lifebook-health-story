@@ -2,7 +2,26 @@
 export class PWAService {
   private static swRegistration: ServiceWorkerRegistration | null = null;
   
+  private static isUnsupportedEnvironment(): boolean {
+    // Check if running in StackBlitz or other iframe-based environments
+    try {
+      return window.self !== window.top || 
+             window.location.hostname.includes('stackblitz') ||
+             window.location.hostname.includes('webcontainer');
+    } catch {
+      // If we can't access window.top due to cross-origin restrictions,
+      // we're likely in an iframe
+      return true;
+    }
+  }
+  
   static async initialize(): Promise<void> {
+    // Skip Service Worker registration in unsupported environments
+    if (this.isUnsupportedEnvironment()) {
+      console.log('Service Worker registration skipped: unsupported environment');
+      return;
+    }
+    
     if ('serviceWorker' in navigator) {
       try {
         const registration = await navigator.serviceWorker.register('/sw.js');
@@ -47,6 +66,11 @@ export class PWAService {
   }
   
   static async subscribeToPushNotifications(): Promise<PushSubscription | null> {
+    if (this.isUnsupportedEnvironment()) {
+      console.log('Push notifications not available in this environment');
+      return null;
+    }
+    
     if (!this.swRegistration) {
       console.error('Service Worker not registered');
       return null;
@@ -72,6 +96,11 @@ export class PWAService {
   }
   
   static async scheduleBackgroundSync(tag: string): Promise<void> {
+    if (this.isUnsupportedEnvironment()) {
+      console.log('Background sync not available in this environment');
+      return;
+    }
+    
     if (!this.swRegistration) {
       console.error('Service Worker not registered');
       return;
