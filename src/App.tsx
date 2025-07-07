@@ -19,6 +19,8 @@ const Scanning = lazy(() => import("./pages/Scanning"));
 const Welcome = lazy(() => import("./pages/Welcome"));
 const Auth = lazy(() => import("./pages/Auth"));
 const Notifications = lazy(() => import("./pages/Notifications"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const EmailVerification = lazy(() => import("./pages/EmailVerification"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const HealthScore = lazy(() => import("./pages/HealthScore"));
 const ScheduleAppointment = lazy(() => import("./pages/ScheduleAppointment"));
@@ -97,6 +99,16 @@ const App = () => {
               <Route path="/auth" element={
                 <PublicRoute>
                   <Auth />
+                </PublicRoute>
+              } />
+              <Route path="/reset-password" element={
+                <PublicRoute>
+                  <ResetPassword />
+                </PublicRoute>
+              } />
+              <Route path="/verify-email" element={
+                <PublicRoute>
+                  <EmailVerification />
                 </PublicRoute>
               } />
               

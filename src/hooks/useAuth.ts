@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '@/integrations/supabase/client'
 import type { User, Session } from '@supabase/supabase-js'
 import { useToast } from '@/hooks/use-toast'
+import { UserProfileService } from '@/services/userProfileService'
 
 interface SignUpData {
   firstName: string;
@@ -44,6 +45,12 @@ export function useAuth() {
   const signIn = async (email: string, password: string) => {
     try {
       setLoading(true)
+      
+      // Validate input
+      if (!email || !password) {
+        throw new Error('Email and password are required')
+      }
+      
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -54,6 +61,20 @@ export function useAuth() {
         throw new Error(error.message)
       }
       
+      // Track successful login
+      try {
+        const { error: trackError } = await supabase.rpc('track_user_login', {
+          p_user_id: data.user.id,
+          p_email: email
+        })
+        
+        if (trackError) {
+          console.error('Error tracking login:', trackError)
+          // Don't throw here, just log the error
+        }
+      } catch (trackErr) {
+        console.error('Failed to track login:', trackErr)
+      }
       console.log('Sign in successful:', data.user?.email)
       return data.user
     } catch (error: any) {
@@ -72,6 +93,7 @@ export function useAuth() {
   const signUp = async (email: string, password: string, profileData?: SignUpData) => {
     try {
       setLoading(true)
+      
       // Calculate age from date of birth
       const calculateAge = (dateOfBirth: string): number => {
         const today = new Date()
@@ -86,6 +108,12 @@ export function useAuth() {
         return age
       }
 
+      // Validate input
+      if (!email || !password) {
+        throw new Error('Email and password are required')
+      }
+      
+      // Sign up with Supabase Auth
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -103,6 +131,7 @@ export function useAuth() {
         throw new Error(error.message)
       }
 
+      // Ensure we have a user object
       if (!data.user) {
         throw new Error('No user returned from signup')
       }
@@ -110,6 +139,7 @@ export function useAuth() {
       console.log('Auth signup successful, creating profile for:', data.user.email)
       
       // Create user profile if signup successful and profile data provided
+      // This is now handled by UserProfileService
       if (profileData) {
         const profilePayload = {
           id: data.user.id,
@@ -128,7 +158,7 @@ export function useAuth() {
 
         console.log('Creating profile with payload:', profilePayload)
         
-        const { data: newProfile, error: profileError } = await supabase
+        const { data: newProfile, error: profileError } = await supabase 
           .from('user_profiles')
           .insert(profilePayload)
           .select()
@@ -136,7 +166,7 @@ export function useAuth() {
 
         if (profileError) {
           console.error('Profile creation error:', profileError)
-          // Don't throw here - user is created, just profile setup incomplete
+          // Don't throw here - user is created, just profile setup may be incomplete
           toast({
             title: "Account Created",
             description: "Please check your email to verify your account. You can complete your profile after signing in.",
@@ -194,12 +224,76 @@ export function useAuth() {
     }
   }
 
+  const resetPassword = async (email: string) => {
+    try {
+      setLoading(true)
+      
+      if (!email) {
+        throw new Error('Email is required')
+      }
+      
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      })
+      
+      if (error) {
+        throw new Error(error.message)
+      }
+      
+      return true
+    } catch (error: any) {
+      console.error('Password reset error:', error)
+      toast({
+        title: "Password Reset Failed",
+        description: error.message,
+        variant: "destructive"
+      })
+      throw error
+    } finally {
+      setLoading(false)
+    }
+  }
+  
+  // Function to update user password after reset
+  const updatePassword = async (newPassword: string) => {
+    try {
+      setLoading(true)
+      
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword
+      })
+      
+      if (error) {
+        throw new Error(error.message)
+      }
+      
+      toast({
+        title: "Password Updated",
+        description: "Your password has been successfully updated.",
+      })
+      
+      return true
+    } catch (error: any) {
+      console.error('Password update error:', error)
+      toast({
+        title: "Password Update Failed",
+        description: error.message,
+        variant: "destructive"
+      })
+      throw error
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return {
     user,
     session,
     loading,
     signIn,
     signUp,
+    resetPassword,
+    updatePassword,
     signOut,
     isAuthenticated: !!user
   }

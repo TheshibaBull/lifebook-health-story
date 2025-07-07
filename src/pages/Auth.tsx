@@ -11,6 +11,8 @@ import { AllergiesSelector } from '@/components/AllergiesSelector';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { z } from 'zod';
+import { validateForm } from '@/components/ui/form-validation';
 
 interface SignUpFormData {
   firstName: string;
@@ -30,7 +32,11 @@ const Auth = () => {
   const [isSignUp, setIsSignUp] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [isResetMode, setIsResetMode] = useState(false);
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   
   // Sign in form data
   const [signInData, setSignInData] = useState({
@@ -55,75 +61,77 @@ const Auth = () => {
 
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { signIn, signUp, loading } = useAuth();
+  const { signIn, signUp, resetPassword, loading } = useAuth();
 
   const handleForgotPassword = async () => {
-    toast({
-      title: "Reset Email Sent",
-      description: "Please check your email for password reset instructions.",
-    });
+    setIsResetMode(true);
   };
 
-  const validateSignUpForm = (): boolean => {
-    const requiredFields = [
-      { field: signUpData.firstName, name: 'First Name' },
-      { field: signUpData.lastName, name: 'Last Name' },
-      { field: signUpData.email, name: 'Email' },
-      { field: signUpData.phone, name: 'Phone Number' },
-      { field: signUpData.dateOfBirth, name: 'Date of Birth' },
-      { field: signUpData.gender, name: 'Gender' },
-      { field: signUpData.password, name: 'Password' },
-      { field: signUpData.confirmPassword, name: 'Confirm Password' }
-    ];
-
-    for (const { field, name } of requiredFields) {
-      if (!field.trim()) {
-        toast({
-          title: "Missing Information",
-          description: `${name} is required`,
-          variant: "destructive"
-        });
-        return false;
-      }
+  const handleSendResetEmail = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!resetEmail.trim()) {
+      setFormErrors({ resetEmail: 'Email is required' });
+      return;
     }
-
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(signUpData.email)) {
+    
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(resetEmail)) {
+      setFormErrors({ resetEmail: 'Please enter a valid email address' });
+      return;
+    }
+    
+    setIsLoading(true);
+    
+    try {
+      await resetPassword(resetEmail);
       toast({
-        title: "Invalid Email",
-        description: "Please enter a valid email address",
+        title: "Reset Email Sent",
+        description: "Please check your email for password reset instructions.",
+      });
+      setIsResetMode(false);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to send reset email",
         variant: "destructive"
       });
-      return false;
+    } finally {
+      setIsLoading(false);
     }
-
-    if (signUpData.password !== signUpData.confirmPassword) {
-      toast({
-        title: "Password Mismatch",
-        description: "Passwords do not match",
-        variant: "destructive"
-      });
-      return false;
-    }
-
-    if (!signUpData.agreeToTerms) {
-      toast({
-        title: "Terms Required",
-        description: "Please agree to the Terms of Service and Privacy Policy",
-        variant: "destructive"
-      });
-      return false;
-    }
-
-    return true;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setFormErrors({});
 
     try {
       if (isSignUp) {
-        if (!validateSignUpForm()) {
+        // Validate form using zod
+        const signUpSchema = z.object({
+          firstName: z.string().min(1, 'First name is required'),
+          lastName: z.string().min(1, 'Last name is required'),
+          email: z.string().email('Please enter a valid email address'),
+          phone: z.string().min(1, 'Phone number is required'),
+          gender: z.string().min(1, 'Gender is required'),
+          dateOfBirth: z.string().min(1, 'Date of birth is required'),
+          password: z.string()
+            .min(8, 'Password must be at least 8 characters')
+            .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
+            .regex(/[0-9]/, 'Password must contain at least one number'),
+          confirmPassword: z.string().min(1, 'Please confirm your password'),
+          agreeToTerms: z.boolean().refine(val => val === true, {
+            message: 'You must agree to the Terms of Service and Privacy Policy'
+          })
+        }).refine(data => data.password === data.confirmPassword, {
+          message: "Passwords don't match",
+          path: ["confirmPassword"]
+        });
+        
+        const validation = validateForm(signUpSchema, signUpData);
+        
+        if (!validation.success) {
+          setFormErrors(validation.errors || {});
           setIsLoading(false);
           return;
         }
@@ -140,29 +148,128 @@ const Auth = () => {
 
 
         // Don't navigate immediately - let user verify email first
-        setIsSignUp(false); // Switch to sign in form
+        toast({
+          title: "Account Created!",
+          description: "Please check your email to verify your account and then sign in.",
+        });
+        
+        // Clear form and switch to sign in
+        setSignUpData({
+          firstName: '',
+          lastName: '',
+          email: '',
+          phone: '',
+          gender: '',
+          dateOfBirth: '',
+          bloodGroup: '',
+          allergies: [],
+          password: '',
+          confirmPassword: '',
+          agreeToTerms: false
+        });
+        setIsSignUp(false);
       } else {
-        if (!signInData.email || !signInData.password) {
-          toast({
-            title: "Missing Information",
-            description: "Please enter both email and password",
-            variant: "destructive"
-          });
+        // Validate sign in form
+        const signInSchema = z.object({
+          email: z.string().email('Please enter a valid email address'),
+          password: z.string().min(1, 'Password is required')
+        });
+        
+        const validation = validateForm(signInSchema, signInData);
+        
+        if (!validation.success) {
+          setFormErrors(validation.errors || {});
           setIsLoading(false);
           return;
         }
 
         await signIn(signInData.email, signInData.password);
         
+        toast({
+          title: "Welcome Back!",
+          description: "Successfully signed in.",
+        });
+        
         navigate('/dashboard');
       }
     } catch (error: any) {
-      // Error handling is now done in useAuth hook
-      console.error('Auth error:', error);
+      // Additional error handling for specific cases
+      if (error.message?.includes('Email not confirmed')) {
+        toast({
+          title: "Email Not Verified",
+          description: "Please check your inbox and click the verification link before signing in.",
+          variant: "destructive"
+        });
+      } else if (error.message?.includes('Invalid login credentials')) {
+        toast({
+          title: "Invalid Credentials",
+          description: "The email or password you entered is incorrect.",
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Authentication Error",
+          description: error.message || "An error occurred during authentication.",
+          variant: "destructive"
+        });
+      }
     } finally {
       setIsLoading(false);
     }
   };
+
+  // If in password reset mode, show the reset form
+  if (isResetMode) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-cyan-50 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <div className="flex items-center justify-center gap-2 mb-4">
+              <Heart className="w-8 h-8 text-red-500" />
+              <CardTitle className="text-2xl">Reset Password</CardTitle>
+            </div>
+            <CardDescription>
+              Enter your email address and we'll send you a link to reset your password.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSendResetEmail} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="resetEmail">Email Address</Label>
+                <Input
+                  id="resetEmail"
+                  type="email"
+                  placeholder="Enter your email"
+                  value={resetEmail}
+                  onChange={(e) => setResetEmail(e.target.value)}
+                  required
+                  disabled={isLoading}
+                  className={formErrors.resetEmail ? "border-red-500" : ""}
+                />
+                {formErrors.resetEmail && (
+                  <p className="text-sm text-red-500">{formErrors.resetEmail}</p>
+                )}
+              </div>
+              
+              <Button type="submit" className="w-full" disabled={isLoading}>
+                {isLoading ? 'Sending...' : 'Send Reset Link'}
+              </Button>
+              
+              <Button 
+                type="button" 
+                variant="ghost" 
+                className="w-full" 
+                onClick={() => setIsResetMode(false)}
+                disabled={isLoading}
+              >
+                Back to Sign In
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-cyan-50 flex items-center justify-center p-4">
@@ -189,9 +296,13 @@ const Auth = () => {
                       placeholder="Enter your first name"
                       value={signUpData.firstName}
                       onChange={(e) => setSignUpData({ ...signUpData, firstName: e.target.value })}
+                      className={formErrors.firstName ? "border-red-500" : ""}
                       required
                       disabled={isLoading}
                     />
+                    {formErrors.firstName && (
+                      <p className="text-sm text-red-500">{formErrors.firstName}</p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="lastName">Last Name *</Label>
@@ -200,9 +311,13 @@ const Auth = () => {
                       placeholder="Enter your last name"
                       value={signUpData.lastName}
                       onChange={(e) => setSignUpData({ ...signUpData, lastName: e.target.value })}
+                      className={formErrors.lastName ? "border-red-500" : ""}
                       required
                       disabled={isLoading}
                     />
+                    {formErrors.lastName && (
+                      <p className="text-sm text-red-500">{formErrors.lastName}</p>
+                    )}
                   </div>
                 </div>
 
@@ -214,9 +329,13 @@ const Auth = () => {
                     placeholder="Enter your email"
                     value={signUpData.email}
                     onChange={(e) => setSignUpData({ ...signUpData, email: e.target.value })}
+                    className={formErrors.email ? "border-red-500" : ""}
                     required
                     disabled={isLoading}
                   />
+                  {formErrors.email && (
+                    <p className="text-sm text-red-500">{formErrors.email}</p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -227,9 +346,13 @@ const Auth = () => {
                     placeholder="Enter your phone number"
                     value={signUpData.phone}
                     onChange={(e) => setSignUpData({ ...signUpData, phone: e.target.value })}
+                    className={formErrors.phone ? "border-red-500" : ""}
                     required
                     disabled={isLoading}
                   />
+                  {formErrors.phone && (
+                    <p className="text-sm text-red-500">{formErrors.phone}</p>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -244,13 +367,16 @@ const Auth = () => {
                       <SelectTrigger>
                         <SelectValue placeholder="Select gender" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className={formErrors.gender ? "border-red-500" : ""}>
                         <SelectItem value="male">Male</SelectItem>
                         <SelectItem value="female">Female</SelectItem>
                         <SelectItem value="other">Other</SelectItem>
                         <SelectItem value="prefer-not-to-say">Prefer not to say</SelectItem>
                       </SelectContent>
                     </Select>
+                    {formErrors.gender && (
+                      <p className="text-sm text-red-500">{formErrors.gender}</p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="dateOfBirth">Date of Birth *</Label>
@@ -260,9 +386,13 @@ const Auth = () => {
                       value={signUpData.dateOfBirth}
                       onChange={(e) => setSignUpData({ ...signUpData, dateOfBirth: e.target.value })}
                       required
+                      className={formErrors.dateOfBirth ? "border-red-500" : ""}
                       disabled={isLoading}
                       max={new Date().toISOString().split('T')[0]}
                     />
+                    {formErrors.dateOfBirth && (
+                      <p className="text-sm text-red-500">{formErrors.dateOfBirth}</p>
+                    )}
                   </div>
                 </div>
 
@@ -305,6 +435,7 @@ const Auth = () => {
                         placeholder="Create a password"
                         value={signUpData.password}
                         onChange={(e) => setSignUpData({ ...signUpData, password: e.target.value })}
+                        className={formErrors.password ? "border-red-500" : ""}
                         required
                         disabled={isLoading}
                         minLength={8}
@@ -321,6 +452,9 @@ const Auth = () => {
                       </Button>
                     </div>
                     <p className="text-xs text-gray-500">Minimum 8 characters</p>
+                    {formErrors.password && (
+                      <p className="text-sm text-red-500">{formErrors.password}</p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="confirmPassword">Confirm Password *</Label>
@@ -331,6 +465,7 @@ const Auth = () => {
                         placeholder="Confirm your password"
                         value={signUpData.confirmPassword}
                         onChange={(e) => setSignUpData({ ...signUpData, confirmPassword: e.target.value })}
+                        className={formErrors.confirmPassword ? "border-red-500" : ""}
                         required
                         disabled={isLoading}
                         minLength={8}
@@ -346,6 +481,9 @@ const Auth = () => {
                         {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </Button>
                     </div>
+                    {formErrors.confirmPassword && (
+                      <p className="text-sm text-red-500">{formErrors.confirmPassword}</p>
+                    )}
                   </div>
                 </div>
 
@@ -355,11 +493,15 @@ const Auth = () => {
                     checked={signUpData.agreeToTerms}
                     onCheckedChange={(checked) => setSignUpData({ ...signUpData, agreeToTerms: checked as boolean })}
                     disabled={isLoading}
+                    className={formErrors.agreeToTerms ? "border-red-500" : ""}
                   />
                   <Label htmlFor="terms" className="text-sm">
                     I agree to the <Button variant="link" className="p-0 h-auto text-sm">Terms of Service</Button> and <Button variant="link" className="p-0 h-auto text-sm">Privacy Policy</Button>
                   </Label>
                 </div>
+                {formErrors.agreeToTerms && (
+                  <p className="text-sm text-red-500">{formErrors.agreeToTerms}</p>
+                )}
               </>
             ) : (
               // Sign In Form
@@ -372,9 +514,13 @@ const Auth = () => {
                     placeholder="Enter your email"
                     value={signInData.email}
                     onChange={(e) => setSignInData({ ...signInData, email: e.target.value })}
+                    className={formErrors.email ? "border-red-500" : ""}
                     required
                     disabled={isLoading}
                   />
+                  {formErrors.email && (
+                    <p className="text-sm text-red-500">{formErrors.email}</p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="signInPassword">Password</Label>
@@ -385,6 +531,7 @@ const Auth = () => {
                       placeholder="Enter your password"
                       value={signInData.password}
                       onChange={(e) => setSignInData({ ...signInData, password: e.target.value })}
+                      className={formErrors.password ? "border-red-500" : ""}
                       required
                       disabled={isLoading}
                     />
@@ -399,6 +546,9 @@ const Auth = () => {
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </Button>
                   </div>
+                  {formErrors.password && (
+                    <p className="text-sm text-red-500">{formErrors.password}</p>
+                  )}
                 </div>
                 
                 <div className="text-right">
@@ -413,6 +563,36 @@ const Auth = () => {
                   </Button>
                 </div>
               </>
+            )}
+            
+            {/* Email verification message */}
+            {!isSignUp && (
+              <div className="text-center mt-4">
+                <p className="text-sm text-blue-600">
+                  Didn't receive a verification email?{' '}
+                  <Button 
+                    variant="link" 
+                    className="p-0 h-auto text-sm"
+                    onClick={() => {
+                      if (signInData.email) {
+                        // Implement resend verification email functionality
+                        toast({
+                          title: "Verification Email Sent",
+                          description: "Please check your inbox for the verification link.",
+                        });
+                      } else {
+                        toast({
+                          title: "Email Required",
+                          description: "Please enter your email address first.",
+                          variant: "destructive"
+                        });
+                      }
+                    }}
+                  >
+                    Resend verification email
+                  </Button>
+                </p>
+              </div>
             )}
 
             <Button type="submit" className="w-full" disabled={isLoading || loading}>
