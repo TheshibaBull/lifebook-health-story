@@ -23,7 +23,8 @@ import {
   Settings,
   Bell,
   User,
-  LogOut
+  LogOut,
+  FileText
 } from 'lucide-react';
 
 const navigationItems = [
