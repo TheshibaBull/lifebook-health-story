@@ -83,12 +83,12 @@ export const appointmentSchema = z.object({
   notes: z.string().optional()
 });
 
-// Validation helper functions
-export const validateForm = <T>(schema: z.ZodSchema<T>, data: unknown): {
+// Validation helper function with proper generic syntax
+export function validateForm<T>(schema: z.ZodSchema<T>, data: unknown): {
   success: boolean;
   data?: T;
   errors?: Record<string, string>;
-} => {
+} {
   try {
     const validatedData = schema.parse(data);
     return { success: true, data: validatedData };
@@ -104,7 +104,7 @@ export const validateForm = <T>(schema: z.ZodSchema<T>, data: unknown): {
     }
     return { success: false, errors: { general: 'Validation failed' } };
   }
-};
+}
 
 // Form field validation component
 interface FormFieldProps {
