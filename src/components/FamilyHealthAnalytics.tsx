@@ -10,7 +10,9 @@ import { Users, TrendingUp, AlertTriangle, Calendar, Target, Activity, Heart, Sm
 import { useToast } from '@/hooks/use-toast';
 import { FamilyMembersService } from '@/services/familyMembersService';
 import { useAuth } from '@/hooks/useAuth';
-import type { FamilyMember } from '@/lib/supabase';
+import type { Tables } from '@/integrations/supabase/types';
+
+type FamilyMember = Tables<'family_members'>;
 
 interface HealthMetrics {
   steps: number;

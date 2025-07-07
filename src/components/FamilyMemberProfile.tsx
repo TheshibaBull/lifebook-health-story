@@ -13,7 +13,9 @@ import { useToast } from '@/hooks/use-toast';
 import { User, FileText, Calendar, Shield, Edit3, Phone, Mail, Plus, X } from 'lucide-react';
 import { AllergiesSelector } from '@/components/AllergiesSelector';
 
-import type { FamilyMember } from '@/lib/supabase';
+import type { Tables } from '@/integrations/supabase/types';
+
+type FamilyMember = Tables<'family_members'>;
 
 interface FamilyMemberProfileProps {
   member: FamilyMember;

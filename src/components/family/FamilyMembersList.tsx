@@ -1,7 +1,9 @@
 
 import { FamilyMemberCard } from './FamilyMemberCard';
 import { EmptyFamilyState } from './EmptyFamilyState';
-import type { FamilyMember } from '@/lib/supabase';
+import type { Tables } from '@/integrations/supabase/types';
+
+type FamilyMember = Tables<'family_members'>;
 
 interface FamilyMembersListProps {
   familyMembers: FamilyMember[];

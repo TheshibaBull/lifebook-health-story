@@ -3,7 +3,9 @@ import { useState, useEffect } from 'react';
 import { FamilyMembersService } from '@/services/familyMembersService';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import type { FamilyMember } from '@/lib/supabase';
+import type { Tables } from '@/integrations/supabase/types';
+
+type FamilyMember = Tables<'family_members'>;
 
 export const useFamilyMembers = () => {
   const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);

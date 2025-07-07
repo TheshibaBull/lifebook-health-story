@@ -1,8 +1,11 @@
-import { supabase } from '@/lib/supabase'
-import type { Notification } from '@/lib/supabase'
+import { supabase } from '@/integrations/supabase/client'
+import type { Tables, TablesInsert } from '@/integrations/supabase/types'
+
+type Notification = Tables<'notifications'>
+type NotificationInsert = TablesInsert<'notifications'>
 
 export class NotificationsService {
-  static async createNotification(notification: Omit<Notification, 'id' | 'created_at'>) {
+  static async createNotification(notification: NotificationInsert) {
     const { data, error } = await supabase
       .from('notifications')
       .insert([notification])

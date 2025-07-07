@@ -2,7 +2,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Shield, Heart } from 'lucide-react';
-import type { FamilyMember } from '@/lib/supabase';
+import type { Tables } from '@/integrations/supabase/types';
+
+type FamilyMember = Tables<'family_members'>;
 
 interface EmergencyContactsTabProps {
   familyMembers: FamilyMember[];

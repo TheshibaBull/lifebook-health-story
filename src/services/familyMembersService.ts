@@ -1,8 +1,11 @@
-import { supabase } from '@/lib/supabase'
-import type { FamilyMember } from '@/lib/supabase'
+import { supabase } from '@/integrations/supabase/client'
+import type { Tables, TablesInsert } from '@/integrations/supabase/types'
+
+type FamilyMember = Tables<'family_members'>
+type FamilyMemberInsert = TablesInsert<'family_members'>
 
 export class FamilyMembersService {
-  static async createFamilyMember(member: Omit<FamilyMember, 'id' | 'created_at' | 'updated_at'>) {
+  static async createFamilyMember(member: FamilyMemberInsert) {
     const { data, error } = await supabase
       .from('family_members')
       .insert([member])

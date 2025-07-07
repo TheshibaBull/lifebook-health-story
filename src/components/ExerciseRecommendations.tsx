@@ -175,6 +175,12 @@ const ExerciseRecommendations = () => {
       
       // Get recent health metrics
       const healthMetrics = await HealthMetricsService.getLatestMetrics(user.id);
+      
+      // Parse metrics into an object for easier access
+      const parsedMetrics = healthMetrics.reduce((acc: any, metric) => {
+        acc[metric.metric_type] = metric;
+        return acc;
+      }, {});
 
       // Analyze health data to create profile
       const conditions = userMember?.medical_conditions || [];
@@ -185,10 +191,10 @@ const ExerciseRecommendations = () => {
 
       // Determine fitness level based on metrics
       let fitnessLevel: 'Beginner' | 'Intermediate' | 'Advanced' = 'Beginner';
-      if (healthMetrics.steps && healthMetrics.steps.value > 8000) {
+      if (parsedMetrics.steps && parsedMetrics.steps.value > 8000) {
         fitnessLevel = 'Intermediate';
       }
-      if (healthMetrics.exercise_minutes && healthMetrics.exercise_minutes.value > 150) {
+      if (parsedMetrics.exercise_minutes && parsedMetrics.exercise_minutes.value > 150) {
         fitnessLevel = 'Advanced';
       }
 
@@ -206,7 +212,7 @@ const ExerciseRecommendations = () => {
       setRecommendations(recs);
 
       // Calculate weekly progress (mock data)
-      const exerciseMinutes = healthMetrics.exercise_minutes?.value || 0;
+      const exerciseMinutes = parsedMetrics.exercise_minutes?.value || 0;
       const weeklyTarget = 150; // WHO recommendation
       setWeeklyProgress(Math.min(100, (exerciseMinutes * 7 / weeklyTarget) * 100));
 

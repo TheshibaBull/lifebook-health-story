@@ -11,7 +11,9 @@ import { FamilyVaultHeader } from '@/components/family/FamilyVaultHeader';
 import { FamilyMembersList } from '@/components/family/FamilyMembersList';
 import { EmergencyContactsTab } from '@/components/family/EmergencyContactsTab';
 import { useFamilyMembers } from '@/hooks/useFamilyMembers';
-import type { FamilyMember } from '@/lib/supabase';
+import type { Tables } from '@/integrations/supabase/types';
+
+type FamilyMember = Tables<'family_members'>;
 
 const FamilyVault = () => {
   const [selectedMember, setSelectedMember] = useState<FamilyMember | null>(null);
