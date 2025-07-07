@@ -18,76 +18,128 @@ export function useAuth() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session)
-      setUser(session?.user ?? null)
-      setLoading(false)
-    })
-
-    // Listen for auth changes
+    // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        console.log('Auth state changed:', event, session?.user?.email)
         setSession(session)
         setUser(session?.user ?? null)
         setLoading(false)
       }
     )
 
+    // THEN check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('Initial session:', session?.user?.email)
+      setSession(session)
+      setUser(session?.user ?? null)
+      setLoading(false)
+    })
+
     return () => subscription.unsubscribe()
   }, [])
 
   const signIn = async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
-    
-    if (error) {
-      throw new Error(error.message)
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
+      
+      if (error) {
+        // Handle specific error cases
+        if (error.message.includes('Invalid login credentials')) {
+          throw new Error('Invalid email or password. Please check your credentials and try again.')
+        } else if (error.message.includes('Email not confirmed')) {
+          throw new Error('Please check your email and click the confirmation link before signing in.')
+        } else {
+          throw new Error(error.message)
+        }
+      }
+      
+      return data.user
+    } catch (error: any) {
+      console.error('Sign in error:', error)
+      throw error
     }
-    
-    return data.user
   }
 
   const signUp = async (email: string, password: string, profileData?: SignUpData) => {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: `${window.location.origin}/dashboard`
+    try {
+      // Calculate age from date of birth
+      const calculateAge = (dateOfBirth: string): number => {
+        const today = new Date()
+        const birthDate = new Date(dateOfBirth)
+        let age = today.getFullYear() - birthDate.getFullYear()
+        const monthDiff = today.getMonth() - birthDate.getMonth()
+        
+        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+          age--
+        }
+        
+        return age
       }
-    })
-    
-    if (error) {
-      throw new Error(error.message)
-    }
 
-    // Create user profile if signup successful
-    if (data.user && profileData) {
-      const { error: profileError } = await supabase
-        .from('user_profiles')
-        .insert({
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/dashboard`,
+          data: {
+            first_name: profileData?.firstName || '',
+            last_name: profileData?.lastName || '',
+          }
+        }
+      })
+      
+      if (error) {
+        // Handle specific error cases
+        if (error.message.includes('User already registered')) {
+          throw new Error('An account with this email already exists. Please sign in instead.')
+        } else if (error.message.includes('Password should be at least')) {
+          throw new Error('Password must be at least 6 characters long.')
+        } else {
+          throw new Error(error.message)
+        }
+      }
+
+      // Create user profile if signup successful and user exists
+      if (data.user && profileData) {
+        console.log('Creating user profile for:', data.user.email)
+        
+        const profilePayload = {
           id: data.user.id,
           first_name: profileData.firstName,
           last_name: profileData.lastName,
           email: email,
-          phone: profileData.phone || '',
-          gender: profileData.gender,
-          date_of_birth: profileData.dateOfBirth,
-          blood_group: profileData.bloodGroup || '',
+          phone: profileData.phone || null,
+          gender: profileData.gender || null,
+          date_of_birth: profileData.dateOfBirth || null,
+          age: profileData.dateOfBirth ? calculateAge(profileData.dateOfBirth) : null,
+          blood_group: profileData.bloodGroup || null,
           allergies: profileData.allergies || [],
           profile_completed: true,
           account_status: 'active'
-        })
+        }
 
-      if (profileError) {
-        console.error('Profile creation error:', profileError)
-        // Don't throw here as the user account was created successfully
+        const { error: profileError } = await supabase
+          .from('user_profiles')
+          .insert(profilePayload)
+
+        if (profileError) {
+          console.error('Profile creation error:', profileError)
+          // Still throw error for profile creation issues so user knows
+          throw new Error(`Account created but profile setup failed: ${profileError.message}. Please contact support.`)
+        }
+        
+        console.log('User profile created successfully')
       }
+      
+      return data.user
+    } catch (error: any) {
+      console.error('Sign up error:', error)
+      throw error
     }
-    
-    return data.user
   }
 
   const signOut = async () => {

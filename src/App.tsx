@@ -28,7 +28,14 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
   
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-cyan-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading your health dashboard...</p>
+        </div>
+      </div>
+    );
   }
   
   if (!user) {
@@ -43,7 +50,14 @@ const PublicRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
   
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-cyan-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
   }
   
   if (user) {
@@ -55,8 +69,7 @@ const PublicRoute = ({ children }: { children: React.ReactNode }) => {
 
 const App = () => {
   useEffect(() => {
-    // Initialize any app-wide services here
-    console.log('Lifebook Health App initialized - Authentication bypassed for testing');
+    console.log('Lifebook Health App initialized with Supabase authentication');
   }, []);
 
   return (
@@ -66,7 +79,7 @@ const App = () => {
         <Sonner />
         <BrowserRouter>
           <Routes>
-            {/* Public Routes - Authentication bypassed */}
+            {/* Public Routes - Accessible only when not authenticated */}
             <Route path="/" element={
               <PublicRoute>
                 <Index />
@@ -83,7 +96,7 @@ const App = () => {
               </PublicRoute>
             } />
             
-            {/* Protected Routes - Authentication bypassed */}
+            {/* Protected Routes - Require authentication */}
             <Route path="/create-profile" element={
               <ProtectedRoute>
                 <CreateProfile />
