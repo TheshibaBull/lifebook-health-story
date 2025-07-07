@@ -447,7 +447,7 @@ const FamilyMemberProfile = ({ member, onUpdateMember, onClose }: FamilyMemberPr
               <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
                 <h4 className="font-medium text-red-800 mb-2">Emergency Medical Information</h4>
                 <div className="space-y-2 text-sm">
-                  <p><strong>Blood Type:</strong> O+</p>
+                  <p><strong>Blood Type:</strong> {member.blood_group || 'Not provided'}</p>
                   <p><strong>Known Allergies:</strong> {member.allergies?.join(', ') || 'None'}</p>
                   <p><strong>Emergency Medications:</strong> {member.medications?.join(', ') || 'None'}</p>
                   <p><strong>Emergency Contact:</strong> {member.phone || 'Not provided'}</p>

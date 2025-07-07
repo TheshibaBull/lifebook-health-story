@@ -58,6 +58,10 @@ const FamilyVault = () => {
         email: memberData.email,
         phone: memberData.phone,
         date_of_birth: memberData.dateOfBirth,
+        blood_group: memberData.blood_group,
+        medical_conditions: memberData.medical_conditions,
+        allergies: memberData.allergies,
+        medications: memberData.medications,
         emergency_contact: memberData.emergencyContact || false,
         access_level: 'view-only'
       });
