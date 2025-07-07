@@ -47,12 +47,12 @@ const AddFamilyMemberDialog = ({ onAddMember }: AddFamilyMemberDialogProps) => {
       relation: formData.relation,
       email: formData.email,
       phone: formData.phone,
-      dateOfBirth: formData.dateOfBirth,
+      date_of_birth: formData.dateOfBirth,
       blood_group: formData.bloodGroup,
       medical_conditions: formData.medicalConditions,
       allergies: formData.allergies,
       medications: formData.medications,
-      emergencyContact: formData.emergencyContact
+      emergency_contact: formData.emergencyContact
     };
 
     onAddMember(newMember);
