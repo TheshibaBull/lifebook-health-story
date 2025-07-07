@@ -63,7 +63,7 @@ const FamilyHealthAnalytics = memo(() => {
   }, [user?.id]);
 
   // Generate health data based on real family members
-  const generateHealthDataFromDB = (): FamilyHealthMember[] => {
+  const generateHealthDataFromDB = useCallback((): FamilyHealthMember[] => {
     const healthMembers: FamilyHealthMember[] = [];
     
     // Add user as first member
@@ -109,7 +109,7 @@ const FamilyHealthAnalytics = memo(() => {
     });
 
     return healthMembers;
-  };
+  }, [dbFamilyMembers]);
 
   // Calculate dynamic health score based on multiple factors
   const calculateHealthScore = (metrics: HealthMetrics, age: number): number => {
@@ -152,7 +152,7 @@ const FamilyHealthAnalytics = memo(() => {
   };
 
   // Generate health trend data with pattern analysis
-  const generateHealthTrends = (familyHealthData: FamilyHealthMember[]): HealthTrendData[] => {
+  const generateHealthTrends = useCallback((familyHealthData: FamilyHealthMember[]): HealthTrendData[] => {
     const trends: HealthTrendData[] = [];
     const today = new Date();
     
@@ -190,7 +190,7 @@ const FamilyHealthAnalytics = memo(() => {
     }
     
     return trends;
-  };
+  }, []);
 
   const syncWithDevices = useCallback(async () => {
     setIsLoading(true);
@@ -231,9 +231,14 @@ const FamilyHealthAnalytics = memo(() => {
 
   useEffect(() => {
     if (dbFamilyMembers.length >= 0) {
-      syncWithDevices();
+      const newFamilyData = generateHealthDataFromDB();
+      const newTrends = generateHealthTrends(newFamilyData);
+      
+      setFamilyData(newFamilyData);
+      setHealthTrends(newTrends);
+      setLastUpdated(new Date());
     }
-  }, [dbFamilyMembers, syncWithDevices]);
+  }, [dbFamilyMembers, generateHealthDataFromDB, generateHealthTrends]);
 
   const familyHealthScore = useMemo(() => 
     familyData.length > 0 ? {
