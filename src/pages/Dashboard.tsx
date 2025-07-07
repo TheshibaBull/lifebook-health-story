@@ -5,8 +5,7 @@ import {
   Heart, 
   TrendingUp, 
   Calendar, 
-  Shield,
-  FileText
+  Shield
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -17,7 +16,6 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import type { Tables } from '@/integrations/supabase/types';
 import { UserProfileService } from '@/services/userProfileService';
-import { RecentRecords } from '@/components/RecentRecords';
 
 const Dashboard = () => {
   const [profile, setProfile] = useState<Tables<'user_profiles'> | null>(null);
@@ -173,57 +171,27 @@ const Dashboard = () => {
               </CardContent>
             </Card>
           </div>
+          </div>
         </div>
 
-        {/* Recent Records */}
-        <div className="px-6 mb-8">
-          <RecentRecords />
-        </div>
-
-        {/* Quick Actions */}
-        <div className="grid grid-cols-2 gap-3 mb-8">
-          <Button 
-            onClick={() => navigate('/records')}
-            className="h-auto py-4 flex flex-col gap-2 bg-card text-card-foreground hover:bg-accent shadow-md"
-            variant="outline"
-          >
-            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-              <FileText className="w-4 h-4 text-primary" />
-            </div>
-            <span className="text-sm font-medium">View Records</span>
-          </Button>
-          
-          <Button 
-            onClick={() => navigate('/family')}
-            className="h-auto py-4 flex flex-col gap-2 bg-card text-card-foreground hover:bg-accent shadow-md"
-            variant="outline"
-          >
-            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-              <Heart className="w-4 h-4 text-primary" />
-            </div>
-            <span className="text-sm font-medium">Family Health</span>
-          </Button>
+        {/* Emergency Access */}
+        <div className="px-6 pb-8">
+          <Card className="border-0 shadow-lg bg-card/50 backdrop-blur-sm">
+            <CardHeader className="pb-4 text-center">
+              <CardTitle className="text-xl font-semibold text-foreground flex items-center gap-2 justify-center">
+                <div className="w-10 h-10 rounded-full bg-destructive/10 flex items-center justify-center">
+                  <Shield className="w-5 h-5 text-destructive" />
+                </div>
+                Emergency Access
+              </CardTitle>
+              <p className="text-muted-foreground text-sm mt-2">Quick access to critical health information</p>
+            </CardHeader>
+            <CardContent className="px-6 pb-6">
+              <QuickEmergencyAccess />
+            </CardContent>
+          </Card>
         </div>
       </div>
-
-      {/* Emergency Access */}
-      <div className="px-6 pb-8">
-        <Card className="border-0 shadow-lg bg-card/50 backdrop-blur-sm">
-          <CardHeader className="pb-4 text-center">
-            <CardTitle className="text-xl font-semibold text-foreground flex items-center gap-2 justify-center">
-              <div className="w-10 h-10 rounded-full bg-destructive/10 flex items-center justify-center">
-                <Shield className="w-5 h-5 text-destructive" />
-              </div>
-              Emergency Access
-            </CardTitle>
-            <p className="text-muted-foreground text-sm mt-2">Quick access to critical health information</p>
-          </CardHeader>
-          <CardContent className="px-6 pb-6">
-            <QuickEmergencyAccess />
-          </CardContent>
-        </Card>
-      </div>
-    </div>
   ) : (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30">
       <div className="max-w-7xl mx-auto px-6 py-12">
@@ -297,12 +265,9 @@ const Dashboard = () => {
                 </CardContent>
               </Card>
             </div>
-            
-            {/* Recent Records */}
-            <RecentRecords className="shadow-lg" />
           </div>
-
-          {/* Right Column - Emergency Access */}
+            
+          {/* Emergency Access */}
           <div className="xl:col-span-1">
             <Card className="border-0 shadow-lg bg-white sticky top-6">
               <CardHeader className="pb-6 text-center">
