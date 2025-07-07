@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { MobileAppLayout } from '@/components/MobileAppLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -33,6 +34,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import type { DateRange } from 'react-day-picker';
 
 interface SearchResult {
   id: string;
@@ -48,10 +50,7 @@ interface SearchResult {
 
 interface SearchFilters {
   category: string;
-  dateRange: {
-    from?: Date;
-    to?: Date;
-  };
+  dateRange: DateRange | undefined;
   provider: string;
   tags: string[];
   type: string;
@@ -68,7 +67,7 @@ const SearchPage = () => {
   const [isSearching, setIsSearching] = useState(false);
   const [filters, setFilters] = useState<SearchFilters>({
     category: '',
-    dateRange: {},
+    dateRange: undefined,
     provider: '',
     tags: [],
     type: ''
@@ -215,13 +214,13 @@ const SearchPage = () => {
 
   const hasActiveFilters = () => {
     return filters.category || filters.provider || filters.tags.length > 0 || 
-           filters.type || filters.dateRange.from || filters.dateRange.to;
+           filters.type || filters.dateRange?.from || filters.dateRange?.to;
   };
 
   const clearFilters = () => {
     setFilters({
       category: '',
-      dateRange: {},
+      dateRange: undefined,
       provider: '',
       tags: [],
       type: ''
@@ -682,7 +681,7 @@ const SearchPage = () => {
                       <PopoverTrigger asChild>
                         <Button variant="outline" className="w-full justify-start text-left font-normal">
                           <CalendarIcon className="mr-2 h-4 w-4" />
-                          {filters.dateRange.from ? (
+                          {filters.dateRange?.from ? (
                             filters.dateRange.to ? (
                               <>
                                 {format(filters.dateRange.from, "LLL dd, y")} -{" "}
@@ -700,18 +699,18 @@ const SearchPage = () => {
                         <Calendar
                           initialFocus
                           mode="range"
-                          defaultMonth={filters.dateRange.from}
+                          defaultMonth={filters.dateRange?.from}
                           selected={filters.dateRange}
-                          onSelect={(range) => setFilters(prev => ({ ...prev, dateRange: range || {} }))}
+                          onSelect={(range) => setFilters(prev => ({ ...prev, dateRange: range }))}
                           numberOfMonths={2}
                         />
                       </PopoverContent>
                     </Popover>
-                    {(filters.dateRange.from || filters.dateRange.to) && (
+                    {filters.dateRange && (
                       <Button 
                         variant="ghost" 
                         size="sm" 
-                        onClick={() => setFilters(prev => ({ ...prev, dateRange: {} }))}
+                        onClick={() => setFilters(prev => ({ ...prev, dateRange: undefined }))}
                         className="w-full"
                       >
                         Clear dates

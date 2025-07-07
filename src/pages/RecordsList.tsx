@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -35,6 +36,7 @@ import { HealthRecordsService } from '@/services/healthRecordsService';
 import { FileUploadService } from '@/services/fileUploadService';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
+import type { DateRange } from 'react-day-picker';
 
 interface HealthRecord {
   id: string;
@@ -46,6 +48,7 @@ interface HealthRecord {
   file_size?: number;
   file_type?: string;
   extracted_text?: string;
+  medical_entities?: Record<string, any>;
   date_of_record?: string;
   provider_name?: string;
   created_at: string;
@@ -63,10 +66,7 @@ const RecordsList = () => {
   const [recordToDelete, setRecordToDelete] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showViewDialog, setShowViewDialog] = useState(false);
-  const [dateRange, setDateRange] = useState<{
-    from?: Date;
-    to?: Date;
-  }>({});
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
   
   const navigate = useNavigate();
   const isMobile = useIsMobile();
@@ -134,7 +134,7 @@ const RecordsList = () => {
     }
     
     // Filter by date range
-    if (dateRange.from) {
+    if (dateRange?.from) {
       filtered = filtered.filter(record => {
         if (!record.date_of_record) return false;
         const recordDate = new Date(record.date_of_record);
@@ -142,7 +142,7 @@ const RecordsList = () => {
       });
     }
     
-    if (dateRange.to) {
+    if (dateRange?.to) {
       filtered = filtered.filter(record => {
         if (!record.date_of_record) return false;
         const recordDate = new Date(record.date_of_record);
@@ -297,7 +297,7 @@ const RecordsList = () => {
           <Button variant="outline" size="sm" className="w-full justify-between">
             <div className="flex items-center">
               <CalendarIcon className="mr-2 h-4 w-4" />
-              {dateRange.from ? (
+              {dateRange?.from ? (
                 dateRange.to ? (
                   <>
                     {format(dateRange.from, "LLL dd, y")} -{" "}
@@ -310,12 +310,12 @@ const RecordsList = () => {
                 <span>Filter by date</span>
               )}
             </div>
-            {(dateRange.from || dateRange.to) && (
+            {dateRange && (
               <X 
                 className="h-4 w-4 opacity-50" 
                 onClick={(e) => {
                   e.stopPropagation();
-                  setDateRange({});
+                  setDateRange(undefined);
                 }}
               />
             )}
@@ -325,7 +325,7 @@ const RecordsList = () => {
           <Calendar
             initialFocus
             mode="range"
-            defaultMonth={dateRange.from}
+            defaultMonth={dateRange?.from}
             selected={dateRange}
             onSelect={setDateRange}
             numberOfMonths={1}
@@ -343,7 +343,7 @@ const RecordsList = () => {
           <FilePlus2 className="w-12 h-12 text-gray-300 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-900 mb-2">No records found</h3>
           <p className="text-gray-500 mb-4">
-            {searchQuery || activeCategory !== 'all' || dateRange.from || dateRange.to
+            {searchQuery || activeCategory !== 'all' || dateRange?.from || dateRange?.to
               ? "Try adjusting your filters"
               : "Upload your first health record to get started"}
           </p>
@@ -445,7 +445,7 @@ const RecordsList = () => {
             <Button variant="outline" className="min-w-[240px] justify-between">
               <div className="flex items-center">
                 <CalendarIcon className="mr-2 h-4 w-4" />
-                {dateRange.from ? (
+                {dateRange?.from ? (
                   dateRange.to ? (
                     <>
                       {format(dateRange.from, "LLL dd, y")} -{" "}
@@ -458,12 +458,12 @@ const RecordsList = () => {
                   <span>Filter by date</span>
                 )}
               </div>
-              {(dateRange.from || dateRange.to) && (
+              {dateRange && (
                 <X 
                   className="h-4 w-4 opacity-50" 
                   onClick={(e) => {
                     e.stopPropagation();
-                    setDateRange({});
+                    setDateRange(undefined);
                   }}
                 />
               )}
@@ -473,7 +473,7 @@ const RecordsList = () => {
             <Calendar
               initialFocus
               mode="range"
-              defaultMonth={dateRange.from}
+              defaultMonth={dateRange?.from}
               selected={dateRange}
               onSelect={setDateRange}
               numberOfMonths={2}
@@ -507,7 +507,7 @@ const RecordsList = () => {
               <FilePlus2 className="w-16 h-16 text-gray-300 mx-auto mb-4" />
               <h3 className="text-xl font-medium text-gray-900 mb-2">No records found</h3>
               <p className="text-gray-500 mb-6 max-w-md mx-auto">
-                {searchQuery || activeCategory !== 'all' || dateRange.from || dateRange.to
+                {searchQuery || activeCategory !== 'all' || dateRange?.from || dateRange?.to
                   ? "Try adjusting your filters or search terms"
                   : "Upload your first health record to get started with your health vault"}
               </p>
