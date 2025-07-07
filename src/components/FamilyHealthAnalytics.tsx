@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
@@ -39,7 +39,7 @@ interface HealthTrendData {
   sleep: number;
 }
 
-const FamilyHealthAnalytics = () => {
+const FamilyHealthAnalytics = memo(() => {
   const [familyData, setFamilyData] = useState<FamilyMember[]>([]);
   const [healthTrends, setHealthTrends] = useState<HealthTrendData[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -174,7 +174,7 @@ const FamilyHealthAnalytics = () => {
     return trends;
   };
 
-  const syncWithDevices = async () => {
+  const syncWithDevices = useCallback(async () => {
     setIsLoading(true);
     try {
       // Simulate API calls to various health platforms
@@ -200,21 +200,23 @@ const FamilyHealthAnalytics = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [toast]);
 
   useEffect(() => {
     syncWithDevices();
   }, []);
 
-  const familyHealthScore = familyData.length > 0 ? {
-    overall: Math.round(familyData.reduce((acc, member) => 
-      acc + calculateHealthScore(member.metrics, member.age), 0) / familyData.length),
-    members: familyData.map(member => ({
-      name: member.name,
-      score: calculateHealthScore(member.metrics, member.age),
-      trend: Math.random() > 0.5 ? 'up' : Math.random() > 0.3 ? 'stable' : 'down'
-    }))
-  } : { overall: 0, members: [] };
+  const familyHealthScore = useMemo(() => 
+    familyData.length > 0 ? {
+      overall: Math.round(familyData.reduce((acc, member) => 
+        acc + calculateHealthScore(member.metrics, member.age), 0) / familyData.length),
+      members: familyData.map(member => ({
+        name: member.name,
+        score: calculateHealthScore(member.metrics, member.age),
+        trend: Math.random() > 0.5 ? 'up' : Math.random() > 0.3 ? 'stable' : 'down'
+      }))
+    } : { overall: 0, members: [] }
+  , [familyData]);
 
   const chartConfig = {
     familyScore: { label: "Family Average", color: "#3b82f6" },
@@ -412,6 +414,6 @@ const FamilyHealthAnalytics = () => {
       </div>
     </div>
   );
-};
+});
 
 export { FamilyHealthAnalytics };

@@ -1,48 +1,57 @@
-import { useEffect } from "react";
+import { useEffect, Suspense, lazy } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import Index from "./pages/Index";
-import Dashboard from "./pages/Dashboard";
-import UploadRecord from "./pages/UploadRecord";
-import Search from "./pages/Search";
-import Family from "./pages/Family";
-import Settings from "./pages/Settings";
-import Scanning from "./pages/Scanning";
-import Welcome from "./pages/Welcome";
-import Auth from "./pages/Auth";
-import CreateProfile from "./pages/CreateProfile";
-import Notifications from "./pages/Notifications";
-import NotFound from "./pages/NotFound";
-import HealthScore from "./pages/HealthScore";
-import ScheduleAppointment from "./pages/ScheduleAppointment";
-import BookTest from "./pages/BookTest";
 import { useAuth } from "./hooks/useAuth";
 
+// Lazy load pages for better performance
+const Index = lazy(() => import("./pages/Index"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const UploadRecord = lazy(() => import("./pages/UploadRecord"));
+const Search = lazy(() => import("./pages/Search"));
+const Family = lazy(() => import("./pages/Family"));
+const Settings = lazy(() => import("./pages/Settings"));
+const Scanning = lazy(() => import("./pages/Scanning"));
+const Welcome = lazy(() => import("./pages/Welcome"));
+const Auth = lazy(() => import("./pages/Auth"));
+const CreateProfile = lazy(() => import("./pages/CreateProfile"));
+const Notifications = lazy(() => import("./pages/Notifications"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const HealthScore = lazy(() => import("./pages/HealthScore"));
+const ScheduleAppointment = lazy(() => import("./pages/ScheduleAppointment"));
+const BookTest = lazy(() => import("./pages/BookTest"));
+
 const queryClient = new QueryClient();
+
+// Loading component for better UX
+const PageLoader = () => (
+  <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-cyan-50">
+    <div className="text-center">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+      <p className="text-gray-600">Loading...</p>
+    </div>
+  </div>
+);
 
 // Protected Route Component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
   
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-cyan-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading your health dashboard...</p>
-        </div>
-      </div>
-    );
+    return <PageLoader />;
   }
   
   if (!user) {
     return <Navigate to="/auth" replace />;
   }
   
-  return <>{children}</>;
+  return (
+    <Suspense fallback={<PageLoader />}>
+      {children}
+    </Suspense>
+  );
 };
 
 // Public Route Component  
@@ -50,21 +59,18 @@ const PublicRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
   
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-cyan-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
-        </div>
-      </div>
-    );
+    return <PageLoader />;
   }
   
   if (user) {
     return <Navigate to="/dashboard" replace />;
   }
   
-  return <>{children}</>;
+  return (
+    <Suspense fallback={<PageLoader />}>
+      {children}
+    </Suspense>
+  );
 };
 
 const App = () => {
