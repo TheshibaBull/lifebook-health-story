@@ -10,6 +10,7 @@ import { Heart, Eye, EyeOff } from 'lucide-react';
 import { AllergiesSelector } from '@/components/AllergiesSelector';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 
 interface SignUpFormData {
   firstName: string;
@@ -54,6 +55,7 @@ const Auth = () => {
 
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { signIn, signUp, loading } = useAuth();
 
   const handleForgotPassword = async () => {
     toast({
@@ -123,10 +125,20 @@ const Auth = () => {
           return;
         }
 
-        // Simulate successful signup - accept any data
+        // Use real Supabase signup
+        await signUp(signUpData.email, signUpData.password, {
+          firstName: signUpData.firstName,
+          lastName: signUpData.lastName,
+          phone: signUpData.phone,
+          gender: signUpData.gender,
+          dateOfBirth: signUpData.dateOfBirth,
+          bloodGroup: signUpData.bloodGroup,
+          allergies: signUpData.allergies
+        });
+
         toast({
           title: "Account Created!",
-          description: "Your account has been created successfully.",
+          description: "Please check your email to verify your account.",
         });
 
         // Clear form and switch to sign in
@@ -146,7 +158,7 @@ const Auth = () => {
           agreeToTerms: false
         });
       } else {
-        // Accept any username/password combination for sign in
+        // Real Supabase sign in
         if (!signInData.email || !signInData.password) {
           toast({
             title: "Missing Information",
@@ -157,21 +169,19 @@ const Auth = () => {
           return;
         }
 
-        // Show success message
+        await signIn(signInData.email, signInData.password);
+        
         toast({
           title: "Welcome Back!",
           description: "Successfully signed in.",
         });
         
-        // Direct navigation to dashboard
-        setTimeout(() => {
-          navigate('/dashboard');
-        }, 500);
+        navigate('/dashboard');
       }
     } catch (error: any) {
       toast({
-        title: "Error",
-        description: "An unexpected error occurred. Please try again.",
+        title: "Authentication Error",
+        description: error.message || "An error occurred during authentication.",
         variant: "destructive"
       });
     } finally {
@@ -428,8 +438,8 @@ const Auth = () => {
               </>
             )}
 
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? 'Please wait...' : (isSignUp ? 'Create Account' : 'Sign In')}
+            <Button type="submit" className="w-full" disabled={isLoading || loading}>
+              {(isLoading || loading) ? 'Please wait...' : (isSignUp ? 'Create Account' : 'Sign In')}
             </Button>
           </form>
 

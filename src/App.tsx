@@ -19,18 +19,37 @@ import NotFound from "./pages/NotFound";
 import HealthScore from "./pages/HealthScore";
 import ScheduleAppointment from "./pages/ScheduleAppointment";
 import BookTest from "./pages/BookTest";
+import { useAuth } from "./hooks/useAuth";
 
 const queryClient = new QueryClient();
 
-// Protected Route Component - BYPASSED FOR TESTING
+// Protected Route Component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  // Authentication bypassed for testing
+  const { user, loading } = useAuth();
+  
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+  }
+  
+  if (!user) {
+    return <Navigate to="/auth" replace />;
+  }
+  
   return <>{children}</>;
 };
 
-// Public Route Component - BYPASSED FOR TESTING
+// Public Route Component  
 const PublicRoute = ({ children }: { children: React.ReactNode }) => {
-  // Authentication bypass - no redirects
+  const { user, loading } = useAuth();
+  
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+  }
+  
+  if (user) {
+    return <Navigate to="/dashboard" replace />;
+  }
+  
   return <>{children}</>;
 };
 

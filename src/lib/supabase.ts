@@ -1,13 +1,5 @@
-import { createClient } from '@supabase/supabase-js'
-
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
-
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase environment variables')
-}
-
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+// Re-export the main supabase client to avoid duplicate instances
+export { supabase } from '@/integrations/supabase/client'
 
 // Database types
 export interface UserCredentials {
@@ -78,7 +70,7 @@ export interface FamilyMember {
   allergies?: string[]
   medications?: string[]
   emergency_contact: boolean
-  access_level: 'full' | 'limited' | 'view-only'
+  access_level: string // Changed from union type to string to match database
   created_at: string
   updated_at: string
 }
@@ -88,7 +80,7 @@ export interface Notification {
   user_id: string
   title: string
   message: string
-  type: 'medication' | 'appointment' | 'achievement' | 'emergency' | 'general'
+  type: string // Changed from union type to string to match database
   read: boolean
   action_url?: string
   metadata?: any
@@ -98,7 +90,7 @@ export interface Notification {
 export interface HealthMetric {
   id: string
   user_id: string
-  metric_type: 'steps' | 'heart_rate' | 'blood_pressure_sys' | 'blood_pressure_dia' | 'weight' | 'height' | 'glucose' | 'sleep_hours' | 'exercise_minutes'
+  metric_type: string // Changed from union type to string to match database
   value: number
   unit: string
   recorded_at: string
