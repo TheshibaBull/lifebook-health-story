@@ -313,13 +313,58 @@ export type Database = {
         }
         Relationships: []
       }
+      user_credentials: {
+        Row: {
+          account_locked_until: string | null
+          created_at: string | null
+          email: string
+          failed_login_attempts: number | null
+          id: string
+          last_failed_login_at: string | null
+          last_login_at: string | null
+          last_login_ip: unknown | null
+          login_attempts: number | null
+          password_changed_at: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          account_locked_until?: string | null
+          created_at?: string | null
+          email: string
+          failed_login_attempts?: number | null
+          id?: string
+          last_failed_login_at?: string | null
+          last_login_at?: string | null
+          last_login_ip?: unknown | null
+          login_attempts?: number | null
+          password_changed_at?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          account_locked_until?: string | null
+          created_at?: string | null
+          email?: string
+          failed_login_attempts?: number | null
+          id?: string
+          last_failed_login_at?: string | null
+          last_login_at?: string | null
+          last_login_ip?: unknown | null
+          login_attempts?: number | null
+          password_changed_at?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_profiles: {
         Row: {
-          account_status: string
+          account_status: string | null
           age: number | null
           allergies: string[] | null
           blood_group: string | null
-          created_at: string
+          created_at: string | null
           date_of_birth: string | null
           email: string
           emergency_contact_name: string | null
@@ -331,35 +376,35 @@ export type Database = {
           medical_conditions: string[] | null
           medications: string[] | null
           phone: string | null
-          profile_completed: boolean
-          updated_at: string
+          profile_completed: boolean | null
+          updated_at: string | null
         }
         Insert: {
-          account_status?: string
+          account_status?: string | null
           age?: number | null
           allergies?: string[] | null
           blood_group?: string | null
-          created_at?: string
+          created_at?: string | null
           date_of_birth?: string | null
           email: string
           emergency_contact_name?: string | null
           emergency_contact_phone?: string | null
           first_name: string
           gender?: string | null
-          id?: string
+          id: string
           last_name: string
           medical_conditions?: string[] | null
           medications?: string[] | null
           phone?: string | null
-          profile_completed?: boolean
-          updated_at?: string
+          profile_completed?: boolean | null
+          updated_at?: string | null
         }
         Update: {
-          account_status?: string
+          account_status?: string | null
           age?: number | null
           allergies?: string[] | null
           blood_group?: string | null
-          created_at?: string
+          created_at?: string | null
           date_of_birth?: string | null
           email?: string
           emergency_contact_name?: string | null
@@ -371,8 +416,8 @@ export type Database = {
           medical_conditions?: string[] | null
           medications?: string[] | null
           phone?: string | null
-          profile_completed?: boolean
-          updated_at?: string
+          profile_completed?: boolean | null
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -381,7 +426,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      calculate_age: {
+        Args: { birth_date: string }
+        Returns: number
+      }
+      track_failed_login: {
+        Args: { p_email: string; p_ip_address?: unknown }
+        Returns: undefined
+      }
+      track_user_login: {
+        Args: { p_user_id: string; p_email: string; p_ip_address?: unknown }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
