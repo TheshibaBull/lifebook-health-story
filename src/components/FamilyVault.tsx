@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -44,13 +45,29 @@ const FamilyVault = () => {
     loadFamilyMembers();
   }, [user?.id]);
 
-  const handleMemberAdded = () => {
-    loadFamilyMembers();
-    setIsAddDialogOpen(false);
-    toast({
-      title: "Family Member Added",
-      description: "Family member has been successfully added to your vault.",
-    });
+  const handleMemberAdded = async (memberData: any) => {
+    if (!user?.id) return;
+    
+    try {
+      await FamilyMembersService.createFamilyMember({
+        ...memberData,
+        user_id: user.id
+      });
+      
+      loadFamilyMembers();
+      setIsAddDialogOpen(false);
+      toast({
+        title: "Family Member Added",
+        description: "Family member has been successfully added to your vault.",
+      });
+    } catch (error) {
+      console.error('Error adding family member:', error);
+      toast({
+        title: "Error",
+        description: "Failed to add family member. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleMemberUpdated = () => {
@@ -275,7 +292,7 @@ const FamilyVault = () => {
       </Tabs>
 
       <AddFamilyMemberDialog
-        onMemberAdded={handleMemberAdded}
+        onAddMember={handleMemberAdded}
       />
 
       {selectedMember && (
