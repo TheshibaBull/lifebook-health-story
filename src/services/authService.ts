@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { UserProfileService } from './userProfileService';
 
@@ -93,7 +94,7 @@ export class AuthService {
         throw error;
       }
       
-      return data || [];
+      return data ? [data] : [];
     } catch (error) {
       console.error('Error getting login history:', error);
       return [];

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -276,18 +275,17 @@ const FamilyVault = () => {
       </Tabs>
 
       <AddFamilyMemberDialog
-        open={isAddDialogOpen}
-        onOpenChange={setIsAddDialogOpen}
         onMemberAdded={handleMemberAdded}
       />
 
       {selectedMember && (
         <FamilyMemberProfile
           member={selectedMember}
-          open={!!selectedMember}
-          onOpenChange={(open) => !open && setSelectedMember(null)}
-          onMemberUpdated={handleMemberUpdated}
-          onMemberDeleted={handleMemberDeleted}
+          onUpdateMember={async (updatedMember) => {
+            await FamilyMembersService.updateFamilyMember(updatedMember.id, updatedMember);
+            handleMemberUpdated();
+          }}
+          onClose={() => setSelectedMember(null)}
         />
       )}
     </div>
