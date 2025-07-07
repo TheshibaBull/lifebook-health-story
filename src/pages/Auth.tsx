@@ -128,7 +128,6 @@ const Auth = () => {
           return;
         }
 
-        // Use real Supabase signup
         await signUp(signUpData.email, signUpData.password, {
           firstName: signUpData.firstName,
           lastName: signUpData.lastName,
@@ -139,15 +138,10 @@ const Auth = () => {
           allergies: signUpData.allergies
         });
 
-        toast({
-          title: "Account Created!",
-          description: "Please check your email to verify your account and then sign in.",
-        });
 
-        // Navigate directly to dashboard since profile is already created
-        navigate('/dashboard');
+        // Don't navigate immediately - let user verify email first
+        setIsSignUp(false); // Switch to sign in form
       } else {
-        // Real Supabase sign in
         if (!signInData.email || !signInData.password) {
           toast({
             title: "Missing Information",
@@ -160,19 +154,11 @@ const Auth = () => {
 
         await signIn(signInData.email, signInData.password);
         
-        toast({
-          title: "Welcome Back!",
-          description: "Successfully signed in.",
-        });
-        
         navigate('/dashboard');
       }
     } catch (error: any) {
-      toast({
-        title: "Authentication Error",
-        description: error.message || "An error occurred during authentication.",
-        variant: "destructive"
-      });
+      // Error handling is now done in useAuth hook
+      console.error('Auth error:', error);
     } finally {
       setIsLoading(false);
     }

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/integrations/supabase/client'
 import type { User, Session } from '@supabase/supabase-js'
+import { useToast } from '@/hooks/use-toast'
 
 interface SignUpData {
   firstName: string;
@@ -16,6 +17,7 @@ export function useAuth() {
   const [user, setUser] = useState<User | null>(null)
   const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(true)
+  const { toast } = useToast()
 
   useEffect(() => {
     // Set up auth state listener FIRST
@@ -41,31 +43,35 @@ export function useAuth() {
 
   const signIn = async (email: string, password: string) => {
     try {
+      setLoading(true)
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       })
       
       if (error) {
-        // Handle specific error cases
-        if (error.message.includes('Invalid login credentials')) {
-          throw new Error('Invalid email or password. Please check your credentials and try again.')
-        } else if (error.message.includes('Email not confirmed')) {
-          throw new Error('Please check your email and click the confirmation link before signing in.')
-        } else {
-          throw new Error(error.message)
-        }
+        console.error('Sign in error:', error)
+        throw new Error(error.message)
       }
       
+      console.log('Sign in successful:', data.user?.email)
       return data.user
     } catch (error: any) {
       console.error('Sign in error:', error)
+      toast({
+        title: "Sign In Failed",
+        description: error.message,
+        variant: "destructive"
+      })
       throw error
+    } finally {
+      setLoading(false)
     }
   }
 
   const signUp = async (email: string, password: string, profileData?: SignUpData) => {
     try {
+      setLoading(true)
       // Calculate age from date of birth
       const calculateAge = (dateOfBirth: string): number => {
         const today = new Date()
@@ -84,35 +90,29 @@ export function useAuth() {
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/dashboard`,
-          data: {
-            first_name: profileData?.firstName || '',
-            last_name: profileData?.lastName || '',
-          }
+          emailRedirectTo: `${window.location.origin}/dashboard`
         }
       })
       
       if (error) {
-        // Handle specific error cases
-        if (error.message.includes('User already registered')) {
-          throw new Error('An account with this email already exists. Please sign in instead.')
-        } else if (error.message.includes('Password should be at least')) {
-          throw new Error('Password must be at least 6 characters long.')
-        } else {
-          throw new Error(error.message)
-        }
+        console.error('Supabase auth signup error:', error)
+        throw new Error(error.message)
       }
 
-      // Create user profile if signup successful and user exists
-      if (data.user && profileData) {
-        console.log('Creating user profile for:', data.user.email)
-        
+      if (!data.user) {
+        throw new Error('No user returned from signup')
+      }
+
+      console.log('Auth signup successful, creating profile for:', data.user.email)
+      
+      // Create user profile if signup successful and profile data provided
+      if (profileData) {
         const profilePayload = {
           id: data.user.id,
           first_name: profileData.firstName,
           last_name: profileData.lastName,
           email: email,
-          phone: profileData.phone || '',
+          phone: profileData.phone || null,
           gender: profileData.gender || null,
           date_of_birth: profileData.dateOfBirth || null,
           age: profileData.dateOfBirth ? calculateAge(profileData.dateOfBirth) : null,
@@ -122,30 +122,64 @@ export function useAuth() {
           account_status: 'active'
         }
 
+        console.log('Creating profile with payload:', profilePayload)
+        
         const { error: profileError } = await supabase
           .from('user_profiles')
           .insert(profilePayload)
 
         if (profileError) {
           console.error('Profile creation error:', profileError)
-          // Still throw error for profile creation issues so user knows
-          throw new Error(`Account created but profile setup failed: ${profileError.message}. Please contact support.`)
+          // Don't throw here - user is created, just profile failed
+          toast({
+            title: "Account Created",
+            description: "Account created but profile setup incomplete. Please complete your profile in settings.",
+            variant: "destructive"
+          })
+        } else {
+          console.log('User profile created successfully')
+          toast({
+            title: "Account Created Successfully",
+            description: "Please check your email to verify your account.",
+          })
         }
-        
-        console.log('User profile created successfully')
       }
       
       return data.user
     } catch (error: any) {
       console.error('Sign up error:', error)
+      toast({
+        title: "Sign Up Failed", 
+        description: error.message,
+        variant: "destructive"
+      })
       throw error
+    } finally {
+      setLoading(false)
     }
   }
 
   const signOut = async () => {
-    const { error } = await supabase.auth.signOut()
-    if (error) {
-      throw new Error(error.message)
+    try {
+      setLoading(true)
+      const { error } = await supabase.auth.signOut()
+      if (error) {
+        throw new Error(error.message)
+      }
+      toast({
+        title: "Signed Out",
+        description: "You have been successfully signed out.",
+      })
+    } catch (error: any) {
+      console.error('Sign out error:', error)
+      toast({
+        title: "Sign Out Failed",
+        description: error.message,
+        variant: "destructive"
+      })
+      throw error
+    } finally {
+      setLoading(false)
     }
   }
 
