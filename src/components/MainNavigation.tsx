@@ -30,11 +30,10 @@ import {
 const navigationItems = [
   { name: 'Home', path: '/', icon: Home },
   { name: 'Dashboard', path: '/dashboard', icon: Heart },
-  { name: 'Records', path: '/records', icon: FileText },
+  { name: 'Family', path: '/family', icon: Users },
   { name: 'Health Score', path: '/health-score', icon: BarChart3 },
   { name: 'Upload Record', path: '/upload-record', icon: Upload },
   { name: 'Search', path: '/search', icon: Search },
-  { name: 'Family', path: '/family', icon: Users },
   { name: 'Settings', path: '/settings', icon: Settings },
   { name: 'Notifications', path: '/notifications', icon: Bell },
 ];
