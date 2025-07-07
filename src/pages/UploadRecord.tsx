@@ -8,9 +8,12 @@ import { useNavigate } from 'react-router-dom';
 import { OfflineUpload } from '@/components/OfflineUpload';
 import { AIDocumentProcessor } from '@/services/aiDocumentProcessor';
 import { FileUploadService } from '@/services/fileUploadService';
+import { HealthRecordsService } from '@/services/healthRecordsService';
+import { OfflineUpload } from '@/components/OfflineUpload';
+import { AIDocumentProcessor } from '@/services/aiDocumentProcessor';
+import { FileUploadService } from '@/services/fileUploadService';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
 
 const UploadRecord = () => {
   const [isDragging, setIsDragging] = useState(false);
@@ -78,14 +81,22 @@ const UploadRecord = () => {
         }
 
         setUploadProgress((i / files.length) * 25);
-        
+
         toast({
           title: "Uploading File",
           description: `Uploading ${file.name}...`,
         });
 
         // Upload file to Supabase Storage
-        const uploadResult = await FileUploadService.uploadFile(file, user.id);
+        const uploadResult = await FileUploadService.uploadFile(
+          file, 
+          user.id,
+          (progress) => {
+            // Update progress based on upload status
+            const totalProgress = ((i + progress.percentage / 100 * 0.3) / files.length) * 50;
+            setUploadProgress(totalProgress);
+          }
+        );
         setUploadProgress(((i + 0.3) / files.length) * 50);
         
         if (!uploadResult.success) {
@@ -97,32 +108,24 @@ const UploadRecord = () => {
         setUploadProgress(((i + 0.5) / files.length) * 50);
 
         // Create health record in database
-        const { data: healthRecord, error: recordError } = await supabase
-          .from('health_records')
-          .insert({
-            user_id: user.id,
-            title: file.name,
+        await HealthRecordsService.createRecord({
+          user_id: user.id,
+          title: file.name,
+          category: analysis.category,
+          tags: analysis.tags,
+          file_name: file.name,
+          file_path: uploadResult.data?.path,
+          file_size: file.size,
+          file_type: file.type,
+          extracted_text: analysis.extractedText,
+          medical_entities: analysis.medicalEntities,
+          ai_analysis: {
+            confidence: analysis.confidence,
             category: analysis.category,
-            tags: analysis.tags,
-            file_name: file.name,
-            file_path: uploadResult.data?.path,
-            file_size: file.size,
-            file_type: file.type,
-            extracted_text: analysis.extractedText,
-            medical_entities: analysis.medicalEntities,
-            ai_analysis: {
-              confidence: analysis.confidence,
-              category: analysis.category,
-              tags: analysis.tags
-            },
-            date_of_record: new Date().toISOString().split('T')[0]
-          })
-          .select()
-          .single();
-        
-        if (recordError) {
-          throw new Error(recordError.message);
-        }
+            tags: analysis.tags
+          },
+          date_of_record: new Date().toISOString().split('T')[0]
+        });
 
         processed.push(file.name);
         setUploadProgress(((i + 1) / files.length) * 100);

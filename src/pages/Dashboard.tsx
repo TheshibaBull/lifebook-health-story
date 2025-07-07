@@ -5,7 +5,8 @@ import {
   Heart, 
   TrendingUp, 
   Calendar, 
-  Shield
+  Shield,
+  FileText
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -16,6 +17,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import type { Tables } from '@/integrations/supabase/types';
 import { UserProfileService } from '@/services/userProfileService';
+import { RecentRecords } from '@/components/RecentRecords';
 
 const Dashboard = () => {
   const [profile, setProfile] = useState<Tables<'user_profiles'> | null>(null);
@@ -173,17 +175,22 @@ const Dashboard = () => {
           </div>
         </div>
 
+        {/* Recent Records */}
+        <div className="px-6 mb-8">
+          <RecentRecords />
+        </div>
+
         {/* Quick Actions */}
         <div className="grid grid-cols-2 gap-3 mb-8">
           <Button 
-            onClick={() => navigate('/upload-record')}
+            onClick={() => navigate('/records')}
             className="h-auto py-4 flex flex-col gap-2 bg-card text-card-foreground hover:bg-accent shadow-md"
             variant="outline"
           >
             <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-              <TrendingUp className="w-4 h-4 text-primary" />
+              <FileText className="w-4 h-4 text-primary" />
             </div>
-            <span className="text-sm font-medium">Upload Record</span>
+            <span className="text-sm font-medium">View Records</span>
           </Button>
           
           <Button 
@@ -290,6 +297,9 @@ const Dashboard = () => {
                 </CardContent>
               </Card>
             </div>
+            
+            {/* Recent Records */}
+            <RecentRecords className="shadow-lg" />
           </div>
 
           {/* Right Column - Emergency Access */}

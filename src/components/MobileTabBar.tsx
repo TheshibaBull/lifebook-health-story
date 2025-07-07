@@ -12,7 +12,7 @@ const MobileTabBar = ({ activeTab, onTabChange }: MobileTabBarProps) => {
 
   const tabs = [
     { icon: Heart, label: 'Health', path: '/dashboard' },
-    { icon: FileText, label: 'Records', path: '/upload-record' },
+    { icon: FileText, label: 'Records', path: '/records' },
     { icon: Search, label: 'Search', path: '/search' },
     { icon: Users, label: 'Family', path: '/family' },
     { icon: Settings, label: 'Settings', path: '/settings' },

@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase'
 import type { HealthRecord } from '@/lib/supabase'
+import { FileUploadService } from './fileUploadService'
 
 export class HealthRecordsService {
   static async createRecord(record: Omit<HealthRecord, 'id' | 'created_at' | 'updated_at'>) {
@@ -22,6 +23,30 @@ export class HealthRecordsService {
     
     if (error) throw error
     return data || []
+  }
+
+  static async getRecordWithUrl(recordId: string): Promise<HealthRecord & { fileUrl?: string } | null> {
+    try {
+      const { data, error } = await supabase
+        .from('health_records')
+        .select('*')
+        .eq('id', recordId)
+        .single();
+      
+      if (error) throw error;
+      if (!data) return null;
+      
+      // Get file URL if file_path exists
+      let fileUrl = null;
+      if (data.file_path) {
+        fileUrl = await FileUploadService.getFileUrl(data.file_path);
+      }
+      
+      return { ...data, fileUrl: fileUrl || undefined };
+    } catch (error) {
+      console.error('Error fetching record with URL:', error);
+      throw error;
+    }
   }
 
   static async getRecord(recordId: string): Promise<HealthRecord | null> {
@@ -56,6 +81,27 @@ export class HealthRecordsService {
     if (error) throw error
   }
 
+  static async deleteRecordWithFile(recordId: string): Promise<void> {
+    try {
+      // First get the record to get the file path
+      const record = await this.getRecord(recordId);
+      if (!record) {
+        throw new Error('Record not found');
+      }
+      
+      // Delete the file from storage if it exists
+      if (record.file_path) {
+        await FileUploadService.deleteFile(record.file_path);
+      }
+      
+      // Delete the record from the database
+      await this.deleteRecord(recordId);
+    } catch (error) {
+      console.error('Error deleting record with file:', error);
+      throw error;
+    }
+  }
+
   static async searchRecords(userId: string, query: string): Promise<HealthRecord[]> {
     const { data, error } = await supabase
       .from('health_records')
@@ -80,28 +126,16 @@ export class HealthRecordsService {
     return data || []
   }
 
-  static async uploadFile(file: File, path: string) {
-    const { data, error } = await supabase.storage
-      .from('health-records')
-      .upload(path, file)
-    
-    if (error) throw error
-    return data
-  }
-
-  static async getFileUrl(path: string) {
-    const { data } = supabase.storage
-      .from('health-records')
-      .getPublicUrl(path)
-    
-    return data.publicUrl
-  }
-
-  static async deleteFile(path: string) {
-    const { error } = await supabase.storage
-      .from('health-records')
-      .remove([path])
-    
-    if (error) throw error
+  static async getRecordsByDateRange(userId: string, startDate: string, endDate: string): Promise<HealthRecord[]> {
+    const { data, error } = await supabase
+      .from('health_records')
+      .select('*')
+      .eq('user_id', userId)
+      .gte('date_of_record', startDate)
+      .lte('date_of_record', endDate)
+      .order('date_of_record', { ascending: false });
+      
+    if (error) throw error;
+    return data || [];
   }
 }

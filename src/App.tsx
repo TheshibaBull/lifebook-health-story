@@ -25,6 +25,7 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 const HealthScore = lazy(() => import("./pages/HealthScore"));
 const ScheduleAppointment = lazy(() => import("./pages/ScheduleAppointment"));
 const BookTest = lazy(() => import("./pages/BookTest"));
+const RecordsList = lazy(() => import("./pages/RecordsList"));
 
 const queryClient = new QueryClient();
 
@@ -126,6 +127,11 @@ const App = () => {
               <Route path="/upload-record" element={
                 <ProtectedRoute>
                   <UploadRecord />
+                </ProtectedRoute>
+              } />
+              <Route path="/records" element={
+                <ProtectedRoute>
+                  <RecordsList />
                 </ProtectedRoute>
               } />
               <Route path="/search" element={
