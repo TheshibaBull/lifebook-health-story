@@ -85,7 +85,7 @@ const AddFamilyMemberDialog = ({ onAddMember }: AddFamilyMemberDialogProps) => {
           Add Family Member
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="w-[95vw] max-w-[425px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Users className="w-5 h-5 text-green-500" />

@@ -43,7 +43,7 @@ const FamilyVault = () => {
 
   return (
     <div className="space-y-6">
-      <FamilyVaultHeader onAddMember={handleAddMemberClick} />
+      <FamilyVaultHeader />
 
       <Tabs defaultValue="members" className="space-y-6">
         <TabsList className="grid w-full grid-cols-4">
