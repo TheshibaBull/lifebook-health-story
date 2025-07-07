@@ -15,6 +15,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import type { Tables } from '@/integrations/supabase/types';
+import { UserProfileService } from '@/services/userProfileService';
 
 const Dashboard = () => {
   const [profile, setProfile] = useState<Tables<'user_profiles'> | null>(null);
@@ -42,21 +43,12 @@ const Dashboard = () => {
     try {
       setLoading(true);
 
-      // Load user profile
-      const { data: userProfile, error: profileError } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-
-      if (profileError && profileError.code !== 'PGRST116') {
-        throw profileError;
-      }
-
-      if (!userProfile) {
-        navigate('/create-profile');
-        return;
-      }
+      // Ensure user profile exists, create if needed
+      const userProfile = await UserProfileService.ensureProfileExists(
+        user.id, 
+        user.email || '', 
+        user.user_metadata
+      );
       setProfile(userProfile);
 
       // Load health records

@@ -90,7 +90,11 @@ export function useAuth() {
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/dashboard`
+          emailRedirectTo: `${window.location.origin}/dashboard`,
+          data: {
+            first_name: profileData?.firstName || '',
+            last_name: profileData?.lastName || ''
+          }
         }
       })
       
@@ -124,17 +128,18 @@ export function useAuth() {
 
         console.log('Creating profile with payload:', profilePayload)
         
-        const { error: profileError } = await supabase
+        const { data: newProfile, error: profileError } = await supabase
           .from('user_profiles')
           .insert(profilePayload)
+          .select()
+          .single()
 
         if (profileError) {
           console.error('Profile creation error:', profileError)
-          // Don't throw here - user is created, just profile failed
+          // Don't throw here - user is created, just profile setup incomplete
           toast({
             title: "Account Created",
-            description: "Account created but profile setup incomplete. Please complete your profile in settings.",
-            variant: "destructive"
+            description: "Please check your email to verify your account. You can complete your profile after signing in.",
           })
         } else {
           console.log('User profile created successfully')
@@ -143,6 +148,12 @@ export function useAuth() {
             description: "Please check your email to verify your account.",
           })
         }
+      } else {
+        // No profile data provided, just notify about email verification
+        toast({
+          title: "Account Created",
+          description: "Please check your email to verify your account.",
+        })
       }
       
       return data.user
