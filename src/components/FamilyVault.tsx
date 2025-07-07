@@ -71,6 +71,9 @@ const FamilyVault = () => {
             onViewProfile={handleViewProfile}
             onAddMember={handleAddMemberClick}
           />
+          <AddFamilyMemberDialog
+            onAddMember={handleMemberAdded}
+          />
         </TabsContent>
 
         <TabsContent value="analytics">
@@ -85,10 +88,6 @@ const FamilyVault = () => {
           <EmergencyContactsTab familyMembers={familyMembers} />
         </TabsContent>
       </Tabs>
-
-      <AddFamilyMemberDialog
-        onAddMember={handleMemberAdded}
-      />
 
       {selectedMember && (
         <FamilyMemberProfile
