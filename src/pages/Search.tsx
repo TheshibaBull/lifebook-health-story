@@ -602,12 +602,12 @@ const SearchPage = () => {
                 {/* Category Filter */}
                 <div>
                   <label className="text-sm font-medium text-gray-700 mb-2 block">Category</label>
-                  <Select value={filters.category} onValueChange={(value) => setFilters(prev => ({ ...prev, category: value }))}>
+                  <Select value={filters.category} onValueChange={(value) => setFilters(prev => ({ ...prev, category: value === 'all-categories' ? '' : value }))}>
                     <SelectTrigger>
                       <SelectValue placeholder="All categories" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All categories</SelectItem>
+                      <SelectItem value="all-categories">All categories</SelectItem>
                       {categories.map(category => (
                         <SelectItem key={category} value={category}>{category}</SelectItem>
                       ))}
@@ -618,12 +618,12 @@ const SearchPage = () => {
                 {/* Type Filter */}
                 <div>
                   <label className="text-sm font-medium text-gray-700 mb-2 block">Type</label>
-                  <Select value={filters.type} onValueChange={(value) => setFilters(prev => ({ ...prev, type: value }))}>
+                  <Select value={filters.type} onValueChange={(value) => setFilters(prev => ({ ...prev, type: value === 'all-types' ? '' : value }))}>
                     <SelectTrigger>
                       <SelectValue placeholder="All types" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All types</SelectItem>
+                      <SelectItem value="all-types">All types</SelectItem>
                       <SelectItem value="health_record">Health Records</SelectItem>
                       <SelectItem value="appointment">Appointments</SelectItem>
                       <SelectItem value="family_member">Family Members</SelectItem>
@@ -634,12 +634,12 @@ const SearchPage = () => {
                 {/* Provider Filter */}
                 <div>
                   <label className="text-sm font-medium text-gray-700 mb-2 block">Provider</label>
-                  <Select value={filters.provider} onValueChange={(value) => setFilters(prev => ({ ...prev, provider: value }))}>
+                  <Select value={filters.provider} onValueChange={(value) => setFilters(prev => ({ ...prev, provider: value === 'all-providers' ? '' : value }))}>
                     <SelectTrigger>
                       <SelectValue placeholder="All providers" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All providers</SelectItem>
+                      <SelectItem value="all-providers">All providers</SelectItem>
                       {providers.map(provider => (
                         <SelectItem key={provider} value={provider}>{provider}</SelectItem>
                       ))}
