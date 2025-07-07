@@ -16,7 +16,6 @@ const Settings = lazy(() => import("./pages/Settings"));
 const Scanning = lazy(() => import("./pages/Scanning"));
 const Welcome = lazy(() => import("./pages/Welcome"));
 const Auth = lazy(() => import("./pages/Auth"));
-const CreateProfile = lazy(() => import("./pages/CreateProfile"));
 const Notifications = lazy(() => import("./pages/Notifications"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const HealthScore = lazy(() => import("./pages/HealthScore"));
@@ -103,11 +102,6 @@ const App = () => {
             } />
             
             {/* Protected Routes - Require authentication */}
-            <Route path="/create-profile" element={
-              <ProtectedRoute>
-                <CreateProfile />
-              </ProtectedRoute>
-            } />
             <Route path="/dashboard" element={
               <ProtectedRoute>
                 <Dashboard />

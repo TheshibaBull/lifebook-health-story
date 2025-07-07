@@ -69,6 +69,9 @@ const Auth = () => {
       { field: signUpData.firstName, name: 'First Name' },
       { field: signUpData.lastName, name: 'Last Name' },
       { field: signUpData.email, name: 'Email' },
+      { field: signUpData.phone, name: 'Phone Number' },
+      { field: signUpData.dateOfBirth, name: 'Date of Birth' },
+      { field: signUpData.gender, name: 'Gender' },
       { field: signUpData.password, name: 'Password' },
       { field: signUpData.confirmPassword, name: 'Confirm Password' }
     ];
@@ -138,25 +141,11 @@ const Auth = () => {
 
         toast({
           title: "Account Created!",
-          description: "Please check your email to verify your account.",
+          description: "Please check your email to verify your account and then sign in.",
         });
 
-        // Clear form and switch to sign in
-        setIsSignUp(false);
-        setSignInData({ email: signUpData.email, password: '' });
-        setSignUpData({
-          firstName: '',
-          lastName: '',
-          email: '',
-          phone: '',
-          gender: '',
-          dateOfBirth: '',
-          bloodGroup: '',
-          allergies: [],
-          password: '',
-          confirmPassword: '',
-          agreeToTerms: false
-        });
+        // Navigate directly to dashboard since profile is already created
+        navigate('/dashboard');
       } else {
         // Real Supabase sign in
         if (!signInData.email || !signInData.password) {
@@ -245,13 +234,14 @@ const Auth = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="phone">Phone Number</Label>
+                  <Label htmlFor="phone">Phone Number *</Label>
                   <Input
                     id="phone"
                     type="tel"
                     placeholder="Enter your phone number"
                     value={signUpData.phone}
                     onChange={(e) => setSignUpData({ ...signUpData, phone: e.target.value })}
+                    required
                     disabled={isLoading}
                   />
                 </div>
@@ -263,6 +253,7 @@ const Auth = () => {
                       value={signUpData.gender} 
                       onValueChange={(value) => setSignUpData({ ...signUpData, gender: value })}
                       disabled={isLoading}
+                      required
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select gender" />

@@ -5,7 +5,7 @@ import type { User, Session } from '@supabase/supabase-js'
 interface SignUpData {
   firstName: string;
   lastName: string;
-  phone?: string;
+  phone: string;
   gender: string;
   dateOfBirth: string;
   bloodGroup?: string;
@@ -112,7 +112,7 @@ export function useAuth() {
           first_name: profileData.firstName,
           last_name: profileData.lastName,
           email: email,
-          phone: profileData.phone || null,
+          phone: profileData.phone || '',
           gender: profileData.gender || null,
           date_of_birth: profileData.dateOfBirth || null,
           age: profileData.dateOfBirth ? calculateAge(profileData.dateOfBirth) : null,
