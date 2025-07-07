@@ -1,4 +1,4 @@
-import { useEffect, Suspense, lazy } from "react";
+import { useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -8,24 +8,24 @@ import { useAuth } from "./hooks/useAuth";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { LoadingSpinner } from "./components/LoadingSpinner";
 
-// Lazy load pages for better performance
-const Index = lazy(() => import("./pages/Index"));
-const Dashboard = lazy(() => import("./pages/Dashboard"));
-const UploadRecord = lazy(() => import("./pages/UploadRecord"));
-const Search = lazy(() => import("./pages/Search"));
-const Family = lazy(() => import("./pages/Family"));
-const Settings = lazy(() => import("./pages/Settings"));
-const Scanning = lazy(() => import("./pages/Scanning"));
-const Welcome = lazy(() => import("./pages/Welcome"));
-const Auth = lazy(() => import("./pages/Auth"));
-const Notifications = lazy(() => import("./pages/Notifications"));
-const ResetPassword = lazy(() => import("./pages/ResetPassword"));
-const EmailVerification = lazy(() => import("./pages/EmailVerification"));
-const NotFound = lazy(() => import("./pages/NotFound"));
-const HealthScore = lazy(() => import("./pages/HealthScore"));
-const ScheduleAppointment = lazy(() => import("./pages/ScheduleAppointment"));
-const BookTest = lazy(() => import("./pages/BookTest"));
-const RecordsList = lazy(() => import("./pages/RecordsList"));
+// Direct imports for reliable navigation
+import Index from "./pages/Index";
+import Dashboard from "./pages/Dashboard";
+import UploadRecord from "./pages/UploadRecord";
+import Search from "./pages/Search";
+import Family from "./pages/Family";
+import Settings from "./pages/Settings";
+import Scanning from "./pages/Scanning";
+import Welcome from "./pages/Welcome";
+import Auth from "./pages/Auth";
+import Notifications from "./pages/Notifications";
+import ResetPassword from "./pages/ResetPassword";
+import EmailVerification from "./pages/EmailVerification";
+import NotFound from "./pages/NotFound";
+import HealthScore from "./pages/HealthScore";
+import ScheduleAppointment from "./pages/ScheduleAppointment";
+import BookTest from "./pages/BookTest";
+import RecordsList from "./pages/RecordsList";
 
 const queryClient = new QueryClient();
 
@@ -44,11 +44,9 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   }
   
   return (
-    <Suspense fallback={<LoadingSpinner size="lg" text="Loading page..." />}>
-      <ErrorBoundary>
-        {children}
-      </ErrorBoundary>
-    </Suspense>
+    <ErrorBoundary>
+      {children}
+    </ErrorBoundary>
   );
 };
 
@@ -65,11 +63,9 @@ const PublicRoute = ({ children }: { children: React.ReactNode }) => {
   }
   
   return (
-    <Suspense fallback={<LoadingSpinner size="lg" text="Loading page..." />}>
-      <ErrorBoundary>
-        {children}
-      </ErrorBoundary>
-    </Suspense>
+    <ErrorBoundary>
+      {children}
+    </ErrorBoundary>
   );
 };
 
