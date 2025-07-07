@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { MobileAppLayout } from '@/components/MobileAppLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -35,6 +34,9 @@ import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import type { DateRange } from 'react-day-picker';
+import { SearchHeader } from '@/components/search/SearchHeader';
+import { SearchBar } from '@/components/search/SearchBar';
+import { QuickActions } from '@/components/search/QuickActions';
 
 interface SearchResult {
   id: string;
