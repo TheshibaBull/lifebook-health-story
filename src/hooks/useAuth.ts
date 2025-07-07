@@ -27,7 +27,10 @@ export function useAuth() {
         console.log('Auth state changed:', event, session?.user?.email)
         setSession(session)
         setUser(session?.user ?? null)
-        setLoading(false)
+        // Only set loading to false after auth state changes (not initial load)
+        if (event !== 'INITIAL_SESSION') {
+          setLoading(false)
+        }
       }
     )
 
@@ -36,6 +39,7 @@ export function useAuth() {
       console.log('Initial session:', session?.user?.email)
       setSession(session)
       setUser(session?.user ?? null)
+      // Set loading to false only after initial session check
       setLoading(false)
     })
 
