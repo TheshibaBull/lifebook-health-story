@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { ExerciseRecommendations } from '@/components/ExerciseRecommendations';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { TrendingUp, Heart, AlertTriangle, ArrowLeft, Activity, Brain, Shield } from 'lucide-react';
@@ -10,6 +11,7 @@ const HealthScore = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const healthScore = 87;
+  const [showExercisePlan, setShowExercisePlan] = useState(false);
   
   const suggestions = [
     {
@@ -44,8 +46,7 @@ const HealthScore = () => {
         navigate('/book-test');
         break;
       case 'plan':
-        // For now, just show a placeholder action
-        console.log('View exercise plan clicked');
+        setShowExercisePlan(true);
         break;
       default:
         break;
@@ -175,6 +176,27 @@ const HealthScore = () => {
               </div>
             </CardContent>
           </Card>
+
+          {/* Exercise Plan Modal/Section */}
+          {showExercisePlan && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+              <div className="bg-white rounded-lg max-w-4xl max-h-[90vh] overflow-y-auto w-full">
+                <div className="p-4 border-b flex items-center justify-between">
+                  <h2 className="text-lg font-semibold">Exercise Recommendations</h2>
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => setShowExercisePlan(false)}
+                  >
+                    ✕
+                  </Button>
+                </div>
+                <div className="p-4">
+                  <ExerciseRecommendations />
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </MobileAppLayout>
     );
@@ -309,6 +331,27 @@ const HealthScore = () => {
             </Card>
           </div>
         </div>
+
+        {/* Exercise Plan Modal/Section */}
+        {showExercisePlan && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-lg max-w-6xl max-h-[90vh] overflow-y-auto w-full">
+              <div className="p-6 border-b flex items-center justify-between">
+                <h2 className="text-2xl font-semibold">Exercise Recommendations</h2>
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => setShowExercisePlan(false)}
+                >
+                  ✕
+                </Button>
+              </div>
+              <div className="p-6">
+                <ExerciseRecommendations />
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

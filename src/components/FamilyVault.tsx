@@ -5,7 +5,7 @@ import { Users, TrendingUp, Activity, Shield } from 'lucide-react';
 import { AddFamilyMemberDialog } from '@/components/AddFamilyMemberDialog';
 import { FamilyMemberProfile } from '@/components/FamilyMemberProfile';
 import { FamilyHealthAnalytics } from '@/components/FamilyHealthAnalytics';
-import { ExerciseRecommendations } from '@/components/ExerciseRecommendations';
+
 import { FamilyMembersService } from '@/services/familyMembersService';
 import { FamilyVaultHeader } from '@/components/family/FamilyVaultHeader';
 import { FamilyMembersList } from '@/components/family/FamilyMembersList';
@@ -48,7 +48,7 @@ const FamilyVault = () => {
       <FamilyVaultHeader />
 
       <Tabs defaultValue="members" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="members" className="flex items-center gap-2">
             <Users className="w-4 h-4" />
             Members
@@ -56,10 +56,6 @@ const FamilyVault = () => {
           <TabsTrigger value="analytics" className="flex items-center gap-2">
             <TrendingUp className="w-4 h-4" />
             Analytics
-          </TabsTrigger>
-          <TabsTrigger value="exercise" className="flex items-center gap-2">
-            <Activity className="w-4 h-4" />
-            Exercise Plans
           </TabsTrigger>
           <TabsTrigger value="emergency" className="flex items-center gap-2">
             <Shield className="w-4 h-4" />
@@ -84,9 +80,6 @@ const FamilyVault = () => {
           <FamilyHealthAnalytics />
         </TabsContent>
 
-        <TabsContent value="exercise">
-          <ExerciseRecommendations />
-        </TabsContent>
 
         <TabsContent value="emergency">
           <EmergencyContactsTab familyMembers={familyMembers} />
