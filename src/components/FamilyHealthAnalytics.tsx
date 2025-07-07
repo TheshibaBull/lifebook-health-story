@@ -8,6 +8,9 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, BarChart, Bar, Area, AreaChart } from 'recharts';
 import { Users, TrendingUp, AlertTriangle, Calendar, Target, Activity, Heart, Smartphone, Watch, Wifi, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { FamilyMembersService } from '@/services/familyMembersService';
+import { useAuth } from '@/hooks/useAuth';
+import type { FamilyMember } from '@/lib/supabase';
 
 interface HealthMetrics {
   steps: number;
@@ -20,7 +23,7 @@ interface HealthMetrics {
   exerciseMinutes: number;
 }
 
-interface FamilyMember {
+interface FamilyHealthMember {
   name: string;
   age: number;
   metrics: HealthMetrics;
@@ -32,72 +35,80 @@ interface HealthTrendData {
   date: string;
   familyScore: number;
   you: number;
-  mle: number;
-  swapnil: number;
   steps: number;
   heartRate: number;
   sleep: number;
+  [key: string]: any; // Allow dynamic family member keys
 }
 
 const FamilyHealthAnalytics = memo(() => {
-  const [familyData, setFamilyData] = useState<FamilyMember[]>([]);
+  const [familyData, setFamilyData] = useState<FamilyHealthMember[]>([]);
+  const [dbFamilyMembers, setDbFamilyMembers] = useState<FamilyMember[]>([]);
   const [healthTrends, setHealthTrends] = useState<HealthTrendData[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const { toast } = useToast();
+  const { user } = useAuth();
 
-  // Simulate wearable device data
-  const generateMockHealthData = (): FamilyMember[] => {
-    return [
-      {
-        name: 'You',
-        age: 35,
-        metrics: {
-          steps: 8500 + Math.floor(Math.random() * 3000),
-          heartRate: 68 + Math.floor(Math.random() * 15),
-          sleepHours: 7.2 + Math.random() * 1.5,
-          bloodPressureSys: 118 + Math.floor(Math.random() * 20),
-          bloodPressureDia: 78 + Math.floor(Math.random() * 15),
-          weight: 70 + Math.random() * 5,
-          glucose: 95 + Math.floor(Math.random() * 20),
-          exerciseMinutes: 45 + Math.floor(Math.random() * 30)
-        },
-        devices: ['Apple Watch', 'iPhone Health', 'Fitbit'],
-        lastSync: new Date(Date.now() - Math.floor(Math.random() * 3600000))
+  // Load family members from database
+  const loadFamilyMembers = useCallback(async () => {
+    if (!user?.id) return;
+    
+    try {
+      const members = await FamilyMembersService.getFamilyMembers(user.id);
+      setDbFamilyMembers(members);
+    } catch (error) {
+      console.error('Failed to load family members:', error);
+    }
+  }, [user?.id]);
+
+  // Generate health data based on real family members
+  const generateHealthDataFromDB = (): FamilyHealthMember[] => {
+    const healthMembers: FamilyHealthMember[] = [];
+    
+    // Add user as first member
+    healthMembers.push({
+      name: 'You',
+      age: 35, // Could calculate from date_of_birth if available
+      metrics: {
+        steps: 8500 + Math.floor(Math.random() * 3000),
+        heartRate: 68 + Math.floor(Math.random() * 15),
+        sleepHours: 7.2 + Math.random() * 1.5,
+        bloodPressureSys: 118 + Math.floor(Math.random() * 20),
+        bloodPressureDia: 78 + Math.floor(Math.random() * 15),
+        weight: 70 + Math.random() * 5,
+        glucose: 95 + Math.floor(Math.random() * 20),
+        exerciseMinutes: 45 + Math.floor(Math.random() * 30)
       },
-      {
-        name: 'Mle',
-        age: 32,
+      devices: ['Apple Watch', 'iPhone Health', 'Fitbit'],
+      lastSync: new Date(Date.now() - Math.floor(Math.random() * 3600000))
+    });
+
+    // Add real family members from database
+    dbFamilyMembers.forEach((member) => {
+      const age = member.date_of_birth 
+        ? new Date().getFullYear() - new Date(member.date_of_birth).getFullYear()
+        : 30;
+        
+      healthMembers.push({
+        name: member.name,
+        age,
         metrics: {
-          steps: 9200 + Math.floor(Math.random() * 2500),
-          heartRate: 72 + Math.floor(Math.random() * 12),
-          sleepHours: 8.1 + Math.random() * 1.2,
-          bloodPressureSys: 115 + Math.floor(Math.random() * 18),
-          bloodPressureDia: 75 + Math.floor(Math.random() * 12),
-          weight: 65 + Math.random() * 4,
-          glucose: 88 + Math.floor(Math.random() * 15),
-          exerciseMinutes: 50 + Math.floor(Math.random() * 25)
+          steps: 7000 + Math.floor(Math.random() * 4000),
+          heartRate: 65 + Math.floor(Math.random() * 20),
+          sleepHours: 6.5 + Math.random() * 2,
+          bloodPressureSys: 115 + Math.floor(Math.random() * 25),
+          bloodPressureDia: 75 + Math.floor(Math.random() * 20),
+          weight: 65 + Math.random() * 20,
+          glucose: 90 + Math.floor(Math.random() * 30),
+          exerciseMinutes: 30 + Math.floor(Math.random() * 40)
         },
-        devices: ['Samsung Health', 'Google Fit', 'Garmin'],
-        lastSync: new Date(Date.now() - Math.floor(Math.random() * 1800000))
-      },
-      {
-        name: 'Swapnil',
-        age: 28,
-        metrics: {
-          steps: 6800 + Math.floor(Math.random() * 2000),
-          heartRate: 75 + Math.floor(Math.random() * 18),
-          sleepHours: 6.5 + Math.random() * 1.8,
-          bloodPressureSys: 125 + Math.floor(Math.random() * 25),
-          bloodPressureDia: 82 + Math.floor(Math.random() * 18),
-          weight: 78 + Math.random() * 6,
-          glucose: 102 + Math.floor(Math.random() * 25),
-          exerciseMinutes: 25 + Math.floor(Math.random() * 20)
-        },
-        devices: ['Mi Band', 'Strava', 'MyFitnessPal'],
+        devices: ['Samsung Health', 'Google Fit', 'Fitness Tracker'],
         lastSync: new Date(Date.now() - Math.floor(Math.random() * 7200000))
-      }
-    ];
+      });
+    });
+
+    return healthMembers;
   };
 
   // Calculate dynamic health score based on multiple factors
@@ -141,7 +152,7 @@ const FamilyHealthAnalytics = memo(() => {
   };
 
   // Generate health trend data with pattern analysis
-  const generateHealthTrends = (familyData: FamilyMember[]): HealthTrendData[] => {
+  const generateHealthTrends = (familyHealthData: FamilyHealthMember[]): HealthTrendData[] => {
     const trends: HealthTrendData[] = [];
     const today = new Date();
     
@@ -153,22 +164,29 @@ const FamilyHealthAnalytics = memo(() => {
       const baseVariation = Math.sin(i * 0.2) * 5; // Cyclical pattern
       const randomVariation = (Math.random() - 0.5) * 10; // Random noise
       
-      const youScore = calculateHealthScore(familyData[0]?.metrics || {} as HealthMetrics, familyData[0]?.age || 35) + baseVariation + randomVariation;
-      const mleScore = calculateHealthScore(familyData[1]?.metrics || {} as HealthMetrics, familyData[1]?.age || 32) + baseVariation * 0.8 + randomVariation;
-      const swapnilScore = calculateHealthScore(familyData[2]?.metrics || {} as HealthMetrics, familyData[2]?.age || 28) + baseVariation * 1.2 + randomVariation;
+      const memberScores = familyHealthData.map((member, index) => 
+        calculateHealthScore(member.metrics, member.age) + baseVariation * (0.8 + index * 0.2) + randomVariation
+      );
       
-      const familyScore = (youScore + mleScore + swapnilScore) / 3;
+      const youScore = memberScores[0] || 75;
+      const familyScore = memberScores.length > 0 ? memberScores.reduce((a, b) => a + b, 0) / memberScores.length : 75;
       
-      trends.push({
+      const trendData: any = {
         date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
         familyScore: Math.max(60, Math.min(100, familyScore)),
         you: Math.max(60, Math.min(100, youScore)),
-        mle: Math.max(60, Math.min(100, mleScore)),
-        swapnil: Math.max(60, Math.min(100, swapnilScore)),
-        steps: (familyData[0]?.metrics.steps || 8000) + Math.floor(Math.random() * 2000),
-        heartRate: (familyData[0]?.metrics.heartRate || 70) + Math.floor(Math.random() * 10 - 5),
-        sleep: Math.max(5, Math.min(10, (familyData[0]?.metrics.sleepHours || 7.5) + Math.random() * 2 - 1))
+        steps: (familyHealthData[0]?.metrics.steps || 8000) + Math.floor(Math.random() * 2000),
+        heartRate: (familyHealthData[0]?.metrics.heartRate || 70) + Math.floor(Math.random() * 10 - 5),
+        sleep: Math.max(5, Math.min(10, (familyHealthData[0]?.metrics.sleepHours || 7.5) + Math.random() * 2 - 1))
+      };
+
+      // Add additional family members dynamically
+      familyHealthData.slice(1).forEach((member, index) => {
+        const memberKey = member.name.toLowerCase().replace(/\s+/g, '');
+        trendData[memberKey] = Math.max(60, Math.min(100, memberScores[index + 1] || 75));
       });
+
+      trends.push(trendData);
     }
     
     return trends;
@@ -177,10 +195,13 @@ const FamilyHealthAnalytics = memo(() => {
   const syncWithDevices = useCallback(async () => {
     setIsLoading(true);
     try {
-      // Simulate API calls to various health platforms
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Load family members from database first
+      await loadFamilyMembers();
       
-      const newFamilyData = generateMockHealthData();
+      // Simulate API calls to health platforms
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      const newFamilyData = generateHealthDataFromDB();
       const newTrends = generateHealthTrends(newFamilyData);
       
       setFamilyData(newFamilyData);
@@ -200,11 +221,19 @@ const FamilyHealthAnalytics = memo(() => {
     } finally {
       setIsLoading(false);
     }
-  }, [toast]);
+  }, [loadFamilyMembers, generateHealthDataFromDB, toast]);
 
   useEffect(() => {
-    syncWithDevices();
-  }, []);
+    if (user?.id) {
+      loadFamilyMembers();
+    }
+  }, [user?.id, loadFamilyMembers]);
+
+  useEffect(() => {
+    if (dbFamilyMembers.length >= 0) {
+      syncWithDevices();
+    }
+  }, [dbFamilyMembers, syncWithDevices]);
 
   const familyHealthScore = useMemo(() => 
     familyData.length > 0 ? {
@@ -218,12 +247,24 @@ const FamilyHealthAnalytics = memo(() => {
     } : { overall: 0, members: [] }
   , [familyData]);
 
-  const chartConfig = {
-    familyScore: { label: "Family Average", color: "#3b82f6" },
-    you: { label: "You", color: "#10b981" },
-    mle: { label: "Mle", color: "#8b5cf6" },
-    swapnil: { label: "Swapnil", color: "#f59e0b" }
-  };
+  const chartConfig = useMemo(() => {
+    const config: any = {
+      familyScore: { label: "Family Average", color: "#3b82f6" },
+      you: { label: "You", color: "#10b981" }
+    };
+    
+    // Add colors for each family member dynamically
+    const colors = ["#8b5cf6", "#f59e0b", "#ef4444", "#06b6d4", "#84cc16"];
+    familyData.slice(1).forEach((member, index) => {
+      const memberKey = member.name.toLowerCase().replace(/\s+/g, '');
+      config[memberKey] = { 
+        label: member.name, 
+        color: colors[index % colors.length] 
+      };
+    });
+    
+    return config;
+  }, [familyData]);
 
   return (
     <div className="space-y-6">
@@ -369,8 +410,21 @@ const FamilyHealthAnalytics = memo(() => {
               <ChartTooltip content={<ChartTooltipContent />} />
               <Line type="monotone" dataKey="familyScore" stroke="#3b82f6" strokeWidth={3} name="Family Average" />
               <Line type="monotone" dataKey="you" stroke="#10b981" strokeWidth={2} name="You" />
-              <Line type="monotone" dataKey="mle" stroke="#8b5cf6" strokeWidth={2} name="Mle" />
-              <Line type="monotone" dataKey="swapnil" stroke="#f59e0b" strokeWidth={2} name="Swapnil" />
+              {/* Render lines for each family member dynamically */}
+              {familyData.slice(1).map((member, index) => {
+                const memberKey = member.name.toLowerCase().replace(/\s+/g, '');
+                const colors = ["#8b5cf6", "#f59e0b", "#ef4444", "#06b6d4", "#84cc16"];
+                return (
+                  <Line 
+                    key={memberKey}
+                    type="monotone" 
+                    dataKey={memberKey} 
+                    stroke={colors[index % colors.length]} 
+                    strokeWidth={2} 
+                    name={member.name} 
+                  />
+                );
+              })}
             </LineChart>
           </ChartContainer>
         </CardContent>
