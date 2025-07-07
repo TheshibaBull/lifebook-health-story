@@ -240,6 +240,17 @@ const FamilyHealthAnalytics = memo(() => {
     }
   }, [dbFamilyMembers, generateHealthDataFromDB, generateHealthTrends]);
 
+  // Auto-sync every hour
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const interval = setInterval(() => {
+      syncWithDevices();
+    }, 3600000); // 1 hour = 3600000 milliseconds
+
+    return () => clearInterval(interval);
+  }, [user?.id, syncWithDevices]);
+
   const familyHealthScore = useMemo(() => 
     familyData.length > 0 ? {
       overall: Math.round(familyData.reduce((acc, member) => 
