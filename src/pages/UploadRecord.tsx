@@ -9,9 +9,6 @@ import { OfflineUpload } from '@/components/OfflineUpload';
 import { AIDocumentProcessor } from '@/services/aiDocumentProcessor';
 import { FileUploadService } from '@/services/fileUploadService';
 import { HealthRecordsService } from '@/services/healthRecordsService';
-import { OfflineUpload } from '@/components/OfflineUpload';
-import { AIDocumentProcessor } from '@/services/aiDocumentProcessor';
-import { FileUploadService } from '@/services/fileUploadService';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 
