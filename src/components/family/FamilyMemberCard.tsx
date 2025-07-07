@@ -26,15 +26,16 @@ const FamilyMemberCard = ({ member, onViewProfile }: FamilyMemberCardProps) => {
         <p className="text-sm text-gray-600">{member.relation}</p>
       </CardHeader>
       <CardContent>
-        <div className="space-y-2 text-sm">
-          {member.date_of_birth && (
-            <p className="text-gray-600">
-              Age: {new Date().getFullYear() - new Date(member.date_of_birth).getFullYear()}
-            </p>
-          )}
-          {member.blood_group && (
-            <p className="text-gray-600">Blood Group: {member.blood_group}</p>
-          )}
+        <div className="space-y-2 text-sm min-h-[80px]">
+          <p className="text-gray-600">
+            Age: {member.date_of_birth 
+              ? new Date().getFullYear() - new Date(member.date_of_birth).getFullYear()
+              : 'Not specified'
+            }
+          </p>
+          <p className="text-gray-600">
+            Blood Group: {member.blood_group || 'Not specified'}
+          </p>
           {member.medical_conditions && member.medical_conditions.length > 0 && (
             <div className="flex flex-wrap gap-1">
               {member.medical_conditions.slice(0, 2).map((condition, index) => (
