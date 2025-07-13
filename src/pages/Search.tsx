@@ -64,6 +64,33 @@ const Search = () => {
     handleSearch(query, filters);
   };
 
+  const handleQuickSearch = (filters: SearchFilters) => {
+    handleSearch(searchQuery, { ...activeFilters, ...filters });
+  };
+
+  const handleClearFilters = () => {
+    setActiveFilters({});
+    if (searchQuery) {
+      handleSearch(searchQuery, {});
+    }
+  };
+
+  const handleRemoveFilter = (filterType: string, value?: string) => {
+    const newFilters = { ...activeFilters };
+    
+    if (filterType === 'tags' && value) {
+      newFilters.tags = newFilters.tags?.filter(tag => tag !== value);
+      if (newFilters.tags?.length === 0) {
+        delete newFilters.tags;
+      }
+    } else {
+      delete (newFilters as any)[filterType];
+    }
+    
+    setActiveFilters(newFilters);
+    handleSearch(searchQuery, newFilters);
+  };
+
   const clearSearch = () => {
     setSearchQuery('');
     setSearchResults([]);
@@ -79,14 +106,14 @@ const Search = () => {
 
         <div className="max-w-3xl mx-auto space-y-6">
           <SearchBar
-            value={searchQuery}
-            onChange={setSearchQuery}
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
             onSearch={() => handleSearch()}
-            suggestions={suggestions}
-            onSuggestionClick={(suggestion) => {
-              setSearchQuery(suggestion);
-              handleSearch(suggestion);
-            }}
+            isSearching={isSearching}
+            hasActiveFilters={hasActiveFilters}
+            activeFilters={activeFilters}
+            onClearFilters={handleClearFilters}
+            onRemoveFilter={handleRemoveFilter}
           />
 
           <div className="flex items-center justify-between">
@@ -109,31 +136,6 @@ const Search = () => {
               </Button>
             )}
           </div>
-
-          {/* Active Filters Display */}
-          {hasActiveFilters && (
-            <Card>
-              <CardContent className="pt-4">
-                <div className="flex flex-wrap gap-2">
-                  {activeFilters.categories?.map((category) => (
-                    <Badge key={category} variant="secondary">
-                      Category: {category}
-                    </Badge>
-                  ))}
-                  {activeFilters.tags?.map((tag) => (
-                    <Badge key={tag} variant="secondary">
-                      Tag: {tag}
-                    </Badge>
-                  ))}
-                  {activeFilters.dateRange && (
-                    <Badge variant="secondary">
-                      Date: {format(activeFilters.dateRange.from, 'MMM dd')} - {format(activeFilters.dateRange.to, 'MMM dd')}
-                    </Badge>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          )}
 
           {/* Search Results */}
           {isSearching ? (
@@ -202,7 +204,7 @@ const Search = () => {
             </div>
           ) : (
             <div className="space-y-6">
-              <QuickActions onActionClick={(action) => console.log('Quick action:', action)} />
+              <QuickActions onQuickSearch={handleQuickSearch} />
               
               {/* Popular Searches */}
               <Card>

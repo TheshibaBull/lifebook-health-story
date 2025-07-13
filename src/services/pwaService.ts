@@ -106,9 +106,16 @@ export class PWAService {
       return;
     }
     
-    if ('sync' in this.swRegistration) {
+    // Type assertion for sync property which may not be recognized by TypeScript
+    const registration = this.swRegistration as ServiceWorkerRegistration & {
+      sync?: {
+        register: (tag: string) => Promise<void>;
+      };
+    };
+    
+    if (registration.sync) {
       try {
-        await this.swRegistration.sync.register(tag);
+        await registration.sync.register(tag);
         console.log('Background sync registered:', tag);
       } catch (error) {
         console.error('Background sync registration failed:', error);
