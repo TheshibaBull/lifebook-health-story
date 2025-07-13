@@ -75,6 +75,10 @@ export function useAuth() {
       
       // Track successful login
       try {
+        // Set user and session after successful login
+        setUser(data.user);
+        setSession(data.session);
+        
         await supabase.rpc('track_user_login', {
           p_user_id: data.user.id,
           p_email: email
@@ -197,6 +201,11 @@ export function useAuth() {
       if (error) {
         throw new Error(error.message)
       }
+      
+      // Clear user and session data
+      setUser(null);
+      setSession(null);
+      
       toast({
         title: "Signed Out",
         description: "You have been successfully signed out.",

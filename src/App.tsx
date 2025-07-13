@@ -47,6 +47,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   }
   
   if (!user) {
+    // If user is not authenticated, redirect to auth page
     return <Navigate to="/auth" replace />;
   }
   
@@ -66,6 +67,7 @@ const PublicRoute = ({ children }: { children: React.ReactNode }) => {
   }
   
   if (user) {
+    // If user is authenticated, redirect to dashboard
     return <Navigate to="/dashboard" replace />;
   }
   

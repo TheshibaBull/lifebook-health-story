@@ -9,10 +9,10 @@ const Index = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
 
-  useEffect(() => {
-    // This is handled by the PublicRoute component in App.tsx
-    // Authenticated users will be automatically redirected to dashboard
-  }, [navigate]);
+  const handleGetStarted = () => {
+    // Navigate to authentication page for new users
+    navigate('/auth');
+  };
 
   const handleGetStarted = () => {
     // Navigate to authentication page for new users
@@ -104,7 +104,7 @@ const Index = () => {
           <Button 
             onClick={handleGetStarted} 
             size="lg"
-            className="h-16 px-12 text-xl font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105"
+            className="h-16 px-12 text-xl font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-xl hover:shadow-2xl transition-all duration-300"
           >
             Get Started
             <ArrowRight className="w-6 h-6 ml-3" />
