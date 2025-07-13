@@ -77,7 +77,8 @@ export function useAuth() {
       try {
         await supabase.rpc('track_user_login', {
           p_user_id: data.user.id,
-          p_email: email
+          p_email: email,
+          p_ip_address: null
         });
       } catch (trackErr) {
         console.warn('Failed to track login (non-critical):', trackErr)
@@ -95,7 +96,8 @@ export function useAuth() {
       // Track failed login attempt (non-critical)
       try {
         await supabase.rpc('track_failed_login', {
-          p_email: email
+          p_email: email,
+          p_ip_address: null
         });
       } catch (trackErr) {
         console.warn('Failed to track failed login (non-critical):', trackErr)
