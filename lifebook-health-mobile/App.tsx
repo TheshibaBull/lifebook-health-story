@@ -2,7 +2,7 @@ import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Image } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -18,7 +18,11 @@ function LandingScreen({ navigation }: any) {
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
           <View style={styles.logoContainer}>
-            <Ionicons name="heart" size={40} color="white" />
+            <Image 
+              source={require('./assets/heart-icon.png')} 
+              style={{width: 40, height: 40}}
+              fallback={<Ionicons name="heart" size={40} color="white" />}
+            />
           </View>
           <Text style={styles.title}>Lifebook Health</Text>
           <Text style={styles.subtitle}>
