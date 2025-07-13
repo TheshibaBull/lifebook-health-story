@@ -14,11 +14,6 @@ const Index = () => {
     navigate('/auth');
   };
 
-  const handleGetStarted = () => {
-    // Navigate to authentication page for new users
-    navigate('/auth');
-  };
-
   const content = isMobile ? (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
       {/* Hero Section */}
