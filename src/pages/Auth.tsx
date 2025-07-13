@@ -192,26 +192,9 @@ const Auth = () => {
         navigate('/dashboard');
       }
     } catch (error: any) {
-      // Additional error handling for specific cases
-      if (error.message?.includes('Email not confirmed')) {
-        toast({
-          title: "Email Not Verified",
-          description: "Please check your inbox and click the verification link before signing in.",
-          variant: "destructive"
-        });
-      } else if (error.message?.includes('Invalid login credentials')) {
-        toast({
-          title: "Invalid Credentials",
-          description: "The email or password you entered is incorrect.",
-          variant: "destructive"
-        });
-      } else {
-        toast({
-          title: "Authentication Error",
-          description: error.message || "An error occurred during authentication.",
-          variant: "destructive"
-        });
-      }
+      // Error handling is already done in useAuth hook
+      // Just log the error here for debugging
+      console.error('Auth form error:', error);
     } finally {
       setIsLoading(false);
     }

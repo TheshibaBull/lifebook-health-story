@@ -75,21 +75,32 @@ export function useAuth() {
       
       // Track successful login
       try {
-        // Set user and session after successful login
-        setUser(data.user);
-        setSession(data.session);
-        
         await supabase.rpc('track_user_login', {
           p_user_id: data.user.id,
           p_email: email
         });
       } catch (trackErr) {
-        console.error('Failed to track login:', trackErr)
+        console.warn('Failed to track login (non-critical):', trackErr)
+        // Don't throw error for tracking failure - it's not critical for user experience
       }
+      
+      // Set user and session after successful login (moved after tracking)
+      setUser(data.user);
+      setSession(data.session);
       
       return data.user
     } catch (error: any) {
       console.error('Sign in error:', error)
+      
+      // Track failed login attempt (non-critical)
+      try {
+        await supabase.rpc('track_failed_login', {
+          p_email: email
+        });
+      } catch (trackErr) {
+        console.warn('Failed to track failed login (non-critical):', trackErr)
+      }
+      
       toast({
         title: "Sign In Failed",
         description: error.message,
