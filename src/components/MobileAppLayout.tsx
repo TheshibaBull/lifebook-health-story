@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
 import { MobileHeader } from './MobileHeader';
 import { MobileTabBar } from './MobileTabBar';
@@ -25,17 +25,27 @@ const MobileAppLayout = ({
   const location = useLocation();
   const [isScrolled, setIsScrolled] = useState(false);
 
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 10);
-    };
-
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+  const handleScroll = useCallback(() => {
+    setIsScrolled(window.scrollY > 10);
   }, []);
 
+  useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+    
+    const throttledHandleScroll = () => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(handleScroll, 10); // Throttle scroll events
+    };
+
+    window.addEventListener('scroll', throttledHandleScroll, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', throttledHandleScroll);
+      clearTimeout(timeoutId);
+    };
+  }, [handleScroll]);
+
   // Auto-generate title from route
-  const getPageTitle = () => {
+  const pageTitle = useMemo(() => {
     if (title) return title;
     
     const path = location.pathname;
@@ -47,7 +57,7 @@ const MobileAppLayout = ({
       case '/search': return 'Search Records';
       default: return 'Lifebook Health';
     }
-  };
+  }, [title, location.pathname]);
 
   if (!isMobile) {
     return <div className={className}>{children}</div>;
@@ -57,7 +67,7 @@ const MobileAppLayout = ({
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {showHeader && (
         <MobileHeader 
-          title={getPageTitle()}
+          title={pageTitle}
           className={cn(
             "transition-all duration-200",
             isScrolled && "shadow-sm bg-white/95 backdrop-blur-sm"

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { 
@@ -34,10 +34,12 @@ const Dashboard = () => {
       return;
     }
 
-    loadDashboardData();
-  }, [user, isAuthenticated, navigate]);
+    if (user && !loading) {
+      loadDashboardData();
+    }
+  }, [user?.id, isAuthenticated]);
 
-  const loadDashboardData = async () => {
+  const loadDashboardData = useCallback(async () => {
     if (!user) return;
 
     try {
@@ -86,11 +88,11 @@ const Dashboard = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, toast]);
 
-  const navigateToHealthScore = () => {
+  const navigateToHealthScore = useCallback(() => {
     navigate('/health-score');
-  };
+  }, [navigate]);
 
   if (loading) {
     return (

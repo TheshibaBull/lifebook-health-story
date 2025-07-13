@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { supabase } from '@/integrations/supabase/client'
 import type { User, Session } from '@supabase/supabase-js'
 import { useToast } from '@/hooks/use-toast'
@@ -18,40 +18,55 @@ export function useAuth() {
   const [user, setUser] = useState<User | null>(null)
   const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(true)
+  const [isInitialized, setIsInitialized] = useState(false)
   const { toast } = useToast()
 
   useEffect(() => {
     let mounted = true;
+    let eventCount = 0;
 
-    // Set up auth state listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        if (!mounted) return;
-        
-        console.log('Auth state changed:', event, session?.user?.email)
-        setSession(session)
-        setUser(session?.user ?? null)
-        setLoading(false)
-      }
-    )
-
-    // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    // Throttle auth state changes to prevent excessive re-renders
+    const throttleAuthChange = (event: string, session: Session | null) => {
       if (!mounted) return;
       
-      console.log('Initial session:', session?.user?.email)
+      eventCount++;
+      // Only log first few events to reduce console noise
+      if (eventCount <= 3) {
+        console.log('Auth state changed:', event, session?.user?.email)
+      }
+      
       setSession(session)
       setUser(session?.user ?? null)
-      setLoading(false)
-    })
+      
+      if (!isInitialized) {
+        setIsInitialized(true)
+        setLoading(false)
+      }
+    }
+
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(throttleAuthChange)
+
+    // Check for existing session only once
+    if (!isInitialized) {
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (!mounted) return;
+        
+        console.log('Initial session:', session?.user?.email)
+        setSession(session)
+        setUser(session?.user ?? null)
+        setIsInitialized(true)
+        setLoading(false)
+      })
+    }
 
     return () => {
       mounted = false;
       subscription.unsubscribe();
     }
-  }, [])
+  }, [isInitialized])
 
-  const signIn = async (email: string, password: string) => {
+  const signIn = useCallback(async (email: string, password: string) => {
     try {
       setLoading(true)
       
@@ -97,9 +112,9 @@ export function useAuth() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [toast])
 
-  const signUp = async (email: string, password: string, profileData?: SignUpData) => {
+  const signUp = useCallback(async (email: string, password: string, profileData?: SignUpData) => {
     try {
       setLoading(true)
       
@@ -207,9 +222,9 @@ export function useAuth() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [toast])
 
-  const signOut = async () => {
+  const signOut = useCallback(async () => {
     try {
       setLoading(true)
       const { error } = await supabase.auth.signOut()
@@ -231,9 +246,9 @@ export function useAuth() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [toast])
 
-  const resetPassword = async (email: string) => {
+  const resetPassword = useCallback(async (email: string) => {
     try {
       setLoading(true)
       
@@ -261,10 +276,10 @@ export function useAuth() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [toast])
   
   // Function to update user password after reset
-  const updatePassword = async (newPassword: string) => {
+  const updatePassword = useCallback(async (newPassword: string) => {
     try {
       setLoading(true)
       
@@ -293,7 +308,9 @@ export function useAuth() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [toast])
+
+  const isAuthenticated = useMemo(() => !!user, [user])
 
   return {
     user,
@@ -304,6 +321,6 @@ export function useAuth() {
     resetPassword,
     updatePassword,
     signOut,
-    isAuthenticated: !!user
+    isAuthenticated
   }
 }

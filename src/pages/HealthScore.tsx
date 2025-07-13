@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { ExerciseRecommendations } from '@/components/ExerciseRecommendations';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,7 +13,7 @@ const HealthScore = () => {
   const healthScore = 87;
   const [showExercisePlan, setShowExercisePlan] = useState(false);
   
-  const suggestions = [
+  const suggestions = useMemo(() => [
     {
       title: "Blood Pressure Monitoring",
       description: "Your blood pressure readings have been rising. Monitor it daily and consult your doctor.",
@@ -35,9 +35,9 @@ const HealthScore = () => {
       action: "View plan",
       actionType: "plan"
     }
-  ];
+  ], []);
 
-  const handleActionClick = (actionType: string) => {
+  const handleActionClick = useCallback((actionType: string) => {
     switch (actionType) {
       case 'appointment':
         navigate('/schedule-appointment');
@@ -51,22 +51,22 @@ const HealthScore = () => {
       default:
         break;
     }
-  };
+  }, [navigate]);
 
-  const getPriorityColor = (priority: string) => {
+  const getPriorityColor = useCallback((priority: string) => {
     switch (priority) {
       case 'high': return 'text-red-500';
       case 'medium': return 'text-amber-500';
       case 'low': return 'text-green-500';
       default: return 'text-gray-500';
     }
-  };
+  }, []);
 
-  const healthMetrics = [
+  const healthMetrics = useMemo(() => [
     { label: 'Physical', value: 85, color: 'text-green-500', bgColor: 'bg-green-50', icon: Activity },
     { label: 'Mental', value: 92, color: 'text-blue-500', bgColor: 'bg-blue-50', icon: Brain },
     { label: 'Preventive', value: 84, color: 'text-purple-500', bgColor: 'bg-purple-50', icon: Shield }
-  ];
+  ], []);
 
   if (isMobile) {
     return (
