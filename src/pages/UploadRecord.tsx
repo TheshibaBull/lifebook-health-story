@@ -1,11 +1,9 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
-import { Heart, FileText, Brain, CloudOff, CheckCircle, AlertCircle, Scan } from 'lucide-react';
+import { Heart, FileText, Brain, CloudOff, CheckCircle, AlertCircle, Scan, Upload, Wifi, WifiOff } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { OfflineUpload } from '@/components/OfflineUpload';
 import { AIDocumentProcessor } from '@/services/aiDocumentProcessor';
 import { FileUploadService } from '@/services/fileUploadService';
 import { HealthRecordsService } from '@/services/healthRecordsService';
@@ -23,9 +21,25 @@ const UploadRecord = () => {
   const [currentFile, setCurrentFile] = useState<File | null>(null);
   const [scanResult, setScanResult] = useState<any | null>(null);
   const [scanningStage, setScanningStage] = useState<'idle' | 'scanning' | 'results'>('idle');
+  const [isOffline, setIsOffline] = useState(!navigator.onLine);
+  const [pendingFiles, setPendingFiles] = useState<any[]>([]);
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
+
+  // Check online status
+  useState(() => {
+    const handleOnline = () => setIsOffline(false);
+    const handleOffline = () => setIsOffline(true);
+    
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  });
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -64,65 +78,94 @@ const UploadRecord = () => {
       return;
     }
 
-    // Process one file at a time for better UX
-    if (files.length > 0) {
-      const file = files[0];
-      
-      // Validate file first
-      const validation = FileUploadService.validateFile(file);
-      if (!validation.valid) {
-        toast({
-          title: "Invalid File",
-          description: validation.error,
-          variant: "destructive"
-        });
-        return;
-      }
-      
-      setCurrentFile(file);
-      setScanningStage('scanning');
-      setIsProcessing(true);
-      setUploadProgress(0);
-      
-      try {
-        // Start progress animation
-        const progressInterval = setInterval(() => {
-          setUploadProgress(prev => {
-            if (prev >= 90) {
-              clearInterval(progressInterval);
-              return prev;
-            }
-            return prev + 5;
+    if (isOffline) {
+      // Handle offline upload
+      handleOfflineUpload(files);
+    } else {
+      // Process one file at a time for better UX
+      if (files.length > 0) {
+        const file = files[0];
+        
+        // Validate file first
+        const validation = FileUploadService.validateFile(file);
+        if (!validation.valid) {
+          toast({
+            title: "Invalid File",
+            description: validation.error,
+            variant: "destructive"
           });
-        }, 300);
+          return;
+        }
         
-        // Scan document with enhanced AI
-        const scanResult = await DocumentScanningService.scanDocument(file);
+        setCurrentFile(file);
+        setScanningStage('scanning');
+        setIsProcessing(true);
+        setUploadProgress(0);
         
-        // Complete progress
-        clearInterval(progressInterval);
-        setUploadProgress(100);
-        
-        // Show results
-        setScanResult(scanResult);
-        setScanningStage('results');
-        
-        toast({
-          title: "Document Scanned",
-          description: `${file.name} analyzed with ${Math.round(scanResult.confidence * 100)}% confidence`,
-        });
-      } catch (error: any) {
-        console.error('Error scanning document:', error);
-        toast({
-          title: "Scanning Failed",
-          description: `Failed to scan ${file.name}: ${error.message}`,
-          variant: "destructive"
-        });
-        setScanningStage('idle');
-      } finally {
-        setIsProcessing(false);
+        try {
+          // Start progress animation
+          const progressInterval = setInterval(() => {
+            setUploadProgress(prev => {
+              if (prev >= 90) {
+                clearInterval(progressInterval);
+                return prev;
+              }
+              return prev + 5;
+            });
+          }, 300);
+          
+          // Scan document with enhanced AI
+          const scanResult = await DocumentScanningService.scanDocument(file);
+          
+          // Complete progress
+          clearInterval(progressInterval);
+          setUploadProgress(100);
+          
+          // Show results
+          setScanResult(scanResult);
+          setScanningStage('results');
+          
+          toast({
+            title: "Document Scanned",
+            description: `${file.name} analyzed with ${Math.round(scanResult.confidence * 100)}% confidence`,
+          });
+        } catch (error: any) {
+          console.error('Error scanning document:', error);
+          toast({
+            title: "Scanning Failed",
+            description: `Failed to scan ${file.name}: ${error.message}`,
+            variant: "destructive"
+          });
+          setScanningStage('idle');
+        } finally {
+          setIsProcessing(false);
+        }
       }
     }
+  };
+
+  const handleOfflineUpload = async (files: File[]) => {
+    // Store files locally for later sync
+    const newPendingFiles = Array.from(files).map(file => ({
+      id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+      name: file.name,
+      size: file.size,
+      type: file.type,
+      uploadedAt: new Date(),
+      status: 'pending'
+    }));
+    
+    setPendingFiles([...pendingFiles, ...newPendingFiles]);
+    
+    // Store in localStorage
+    const stored = localStorage.getItem('lifebook-offline-uploads');
+    const storedFiles = stored ? JSON.parse(stored) : [];
+    localStorage.setItem('lifebook-offline-uploads', JSON.stringify([...storedFiles, ...newPendingFiles]));
+    
+    toast({
+      title: "Saved Offline",
+      description: `${files.length} file(s) will sync when you're back online`,
+    });
   };
 
   const handleSaveRecord = async () => {
@@ -211,44 +254,54 @@ const UploadRecord = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-cyan-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-2xl">
-        <CardHeader className="text-center">
-          <div className="flex items-center justify-center gap-2 mb-4">
-            <Heart className="w-8 h-8 text-red-500" />
-            <CardTitle className="text-2xl">Upload Medical Records</CardTitle>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center p-4">
+      <Card className="w-full max-w-3xl shadow-xl border-0">
+        <CardHeader className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-t-lg">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+                <Heart className="w-6 h-6" />
+              </div>
+              <CardTitle className="text-2xl font-bold">Upload Medical Records</CardTitle>
+            </div>
+            <div className="flex items-center gap-2">
+              {isOffline ? (
+                <div className="flex items-center gap-1 bg-orange-500/20 text-white px-3 py-1 rounded-full text-sm">
+                  <WifiOff className="w-4 h-4" />
+                  <span>Offline Mode</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-1 bg-green-500/20 text-white px-3 py-1 rounded-full text-sm">
+                  <Wifi className="w-4 h-4" />
+                  <span>Online</span>
+                </div>
+              )}
+            </div>
           </div>
+          <p className="text-white/80 mt-2 text-sm">
+            {isOffline 
+              ? "Files will be stored locally and synced when you're back online" 
+              : "Upload and analyze your medical documents with AI-powered scanning"}
+          </p>
         </CardHeader>
-        <CardContent>
-          <Tabs defaultValue="standard" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="standard" className="flex items-center gap-2">
-                <FileText className="w-4 h-4" />
-                Enhanced AI Upload
-              </TabsTrigger>
-              <TabsTrigger value="offline" className="flex items-center gap-2">
-                <CloudOff className="w-4 h-4" />
-                Offline Mode
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="standard" className="space-y-6">
-              <div
-                className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
-                  isDragging 
-                    ? 'border-blue-500 bg-blue-50' 
-                    : 'border-gray-300 hover:border-gray-400'
-                }`}
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onDrop={handleDrop}
-              >
+        <CardContent className="p-8">
+          <div className="space-y-6">
+            <div
+              className={`border-2 border-dashed rounded-xl p-8 text-center transition-all ${
+                isDragging 
+                  ? 'border-blue-500 bg-blue-50 shadow-md' 
+                  : 'border-gray-300 hover:border-gray-400'
+              }`}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+            >
                 {isProcessing ? (
                   <div className="space-y-4">
-                    <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
-                    <p className="text-gray-600">Scanning document with Enhanced AI...</p>
-                    <Progress value={uploadProgress} className="w-full" />
-                    <p className="text-sm text-gray-500">{Math.round(uploadProgress)}% complete</p>
+                    <div className="w-20 h-20 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                    <p className="text-gray-700 text-lg font-medium">Scanning document with Enhanced AI...</p>
+                    <Progress value={uploadProgress} className="w-full h-2" />
+                    <p className="text-sm text-gray-600">{Math.round(uploadProgress)}% complete</p>
                   </div>
                 ) : scanningStage === 'results' && scanResult ? (
                   <DocumentScanResults 
@@ -258,19 +311,24 @@ const UploadRecord = () => {
                     onRescan={handleRescan}
                   />
                 ) : processedFiles.length > 0 && scanningStage === 'idle' ? (
-                  <div className="space-y-4">
-                    <CheckCircle className="w-16 h-16 text-green-500 mx-auto" />
+                  <div className="space-y-6">
+                    <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto">
+                      <CheckCircle className="w-12 h-12 text-green-600" />
+                    </div>
                     <div>
-                      <p className="text-lg font-medium mb-2 text-green-700">Enhanced AI Processing Complete!</p>
-                      <p className="text-sm text-gray-600 mb-4">
+                      <p className="text-xl font-bold mb-2 text-green-700">Enhanced AI Processing Complete!</p>
+                      <p className="text-base text-gray-600 mb-4">
                         {processedFiles.length} file(s) analyzed with advanced OCR and medical entity extraction
                       </p>
                       <div className="space-y-1 mb-4">
                         {processedFiles.map((fileName, index) => (
-                          <p key={index} className="text-xs text-gray-500">✓ {fileName}</p>
+                          <p key={index} className="text-sm text-gray-600 flex items-center gap-2">
+                            <CheckCircle className="w-4 h-4 text-green-500" />
+                            {fileName}
+                          </p>
                         ))}
                       </div>
-                      <Button onClick={handleViewRecords} className="mr-2">
+                      <Button onClick={handleViewRecords} className="mr-2 bg-blue-600 hover:bg-blue-700">
                         View Dashboard
                       </Button>
                       <Button variant="outline" onClick={() => setProcessedFiles([])}>
@@ -279,29 +337,45 @@ const UploadRecord = () => {
                     </div>
                   </div>
                 ) : (
-                  <div className="space-y-4">
-                    <Scan className="w-16 h-16 text-purple-500 mx-auto" />
+                  <div className="space-y-6">
+                    <div className="w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center mx-auto">
+                      <Scan className="w-14 h-14 text-blue-600" />
+                    </div>
                     <div>
-                      <p className="text-lg font-medium mb-2">Document Scanning & Analysis</p>
-                      <p className="text-sm text-gray-600 mb-4">
-                        Scan your medical documents to extract key information and get a summary
+                      <p className="text-xl font-bold mb-3">Smart Document Analysis</p>
+                      <p className="text-base text-gray-600 mb-6">
+                        {isOffline 
+                          ? "Upload your medical documents for later processing when you're back online" 
+                          : "Scan your medical documents to extract key information and get a summary"}
                       </p>
-                      <div className="grid grid-cols-2 gap-3 mb-6 text-xs">
-                        <div className="flex items-center gap-2">
-                          <CheckCircle className="w-4 h-4 text-green-500" />
-                          <span>Advanced OCR Text Extraction</span>
+                      <div className="grid grid-cols-2 gap-4 mb-8">
+                        <div className="bg-blue-50 p-4 rounded-lg">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Brain className="w-5 h-5 text-blue-600" />
+                            <span className="font-medium">AI Analysis</span>
+                          </div>
+                          <p className="text-sm text-gray-600">Advanced OCR and medical entity recognition</p>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <CheckCircle className="w-4 h-4 text-green-500" />
-                          <span>Medical Entity Recognition</span>
+                        <div className="bg-green-50 p-4 rounded-lg">
+                          <div className="flex items-center gap-2 mb-2">
+                            <FileText className="w-5 h-5 text-green-600" />
+                            <span className="font-medium">Auto-Categorization</span>
+                          </div>
+                          <p className="text-sm text-gray-600">Intelligent document classification</p>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <CheckCircle className="w-4 h-4 text-green-500" />
-                          <span>Intelligent Auto-Categorization</span>
+                        <div className="bg-purple-50 p-4 rounded-lg">
+                          <div className="flex items-center gap-2 mb-2">
+                            <CloudOff className="w-5 h-5 text-purple-600" />
+                            <span className="font-medium">Offline Support</span>
+                          </div>
+                          <p className="text-sm text-gray-600">Works even without internet connection</p>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <CheckCircle className="w-4 h-4 text-green-500" />
-                          <span>Confidence Scoring</span>
+                        <div className="bg-amber-50 p-4 rounded-lg">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Shield className="w-5 h-5 text-amber-600" />
+                            <span className="font-medium">Secure Storage</span>
+                          </div>
+                          <p className="text-sm text-gray-600">End-to-end encrypted document storage</p>
                         </div>
                       </div>
                       <input
@@ -312,39 +386,79 @@ const UploadRecord = () => {
                         id="file-upload"
                        multiple
                       />
-                      <label htmlFor="file-upload">
-                        <Button className="cursor-pointer" size="lg" type="button">
-                          <Scan className="w-5 h-5 mr-2" />
-                          Scan Document with AI
+                      <label htmlFor="file-upload" className="w-full">
+                        <Button className="cursor-pointer w-full" size="lg" type="button">
+                          {isOffline ? (
+                            <>
+                              <Upload className="w-5 h-5 mr-2" />
+                              Upload Document for Later
+                            </>
+                          ) : (
+                            <>
+                              <Scan className="w-5 h-5 mr-2" />
+                              Scan Document with AI
+                            </>
+                          )}
                         </Button>
                       </label>
                     </div>
                   </div>
                 )}
-              </div>
-
-              <div className="text-center text-sm text-gray-500 space-y-1">
-                <p>Supported formats: PDF, JPG, PNG, DOC, DOCX</p>
-                <p>Maximum file size: 10MB per file</p>
-                <div className="flex items-center justify-center gap-2 text-purple-600">
-                  <AlertCircle className="w-4 h-4" />
-                  <span>Enhanced AI processing includes OCR and medical entity extraction</span>
+            </div>
+            
+            {/* Pending Files Section (Only shown when there are pending files) */}
+            {pendingFiles.length > 0 && (
+              <div className="mt-8 border-t pt-6">
+                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                  <CloudOff className="w-5 h-5 text-orange-500" />
+                  Pending Uploads ({pendingFiles.length})
+                </h3>
+                <div className="space-y-3 max-h-60 overflow-y-auto pr-2">
+                  {pendingFiles.map((file) => (
+                    <div key={file.id} className="flex items-center justify-between p-3 border rounded-lg bg-gray-50">
+                      <div className="flex items-center gap-3">
+                        <FileText className="w-5 h-5 text-gray-400" />
+                        <div>
+                          <p className="font-medium text-sm">{file.name}</p>
+                          <p className="text-xs text-gray-600">
+                            {(file.size / 1024 / 1024).toFixed(2)} MB • {new Date(file.uploadedAt).toLocaleDateString()}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="text-xs px-2 py-1 bg-orange-100 text-orange-800 rounded-full">
+                          Pending
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
-            </TabsContent>
-
-            <TabsContent value="offline">
-              <OfflineUpload />
-            </TabsContent>
-          </Tabs>
-
-          <div className="flex gap-3 mt-6">
-            <Button variant="outline" onClick={handleSkip} className="flex-1">
-              Skip for now
-            </Button>
-            <Button onClick={() => navigate('/dashboard')} className="flex-1">
-              View Dashboard
-            </Button>
+            )}
+            
+            <div className="bg-gray-50 p-4 rounded-lg mt-6">
+              <div className="flex items-center gap-2 mb-2">
+                <AlertCircle className="w-5 h-5 text-blue-600" />
+                <h3 className="font-medium">Upload Information</h3>
+              </div>
+              <div className="space-y-2 text-sm text-gray-600">
+                <p>• Supported formats: PDF, JPG, PNG, DOC, DOCX</p>
+                <p>• Maximum file size: 10MB per file</p>
+                <p>• {isOffline 
+                  ? "Files will be stored locally and processed when you're back online" 
+                  : "Enhanced AI processing includes OCR and medical entity extraction"}
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex gap-3 mt-8">
+              <Button variant="outline" onClick={handleSkip} className="flex-1">
+                Skip for now
+              </Button>
+              <Button onClick={() => navigate('/dashboard')} className="flex-1 bg-blue-600 hover:bg-blue-700">
+                View Dashboard
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
