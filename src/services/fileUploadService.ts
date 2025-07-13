@@ -1,5 +1,4 @@
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 
 export interface UploadResult {
   success: boolean;
@@ -70,6 +69,23 @@ export class FileUploadService {
       const filePath = `${userId}/${fileName}`;
       
       console.log(`Uploading file ${file.name} to path: ${filePath}`);
+      
+      // Create a mock progress update if onProgress is provided
+      if (onProgress) {
+        let mockProgress = 0;
+        const progressInterval = setInterval(() => {
+          mockProgress += 10;
+          if (mockProgress <= 100) {
+            onProgress({
+              loaded: mockProgress,
+              total: 100,
+              percentage: mockProgress
+            });
+          } else {
+            clearInterval(progressInterval);
+          }
+        }, 300);
+      }
 
       // Upload file to Supabase Storage
       const { data, error } = await supabase.storage
@@ -79,7 +95,7 @@ export class FileUploadService {
           upsert: false
         });
 
-      if (error) {
+      if (error) { 
       console.log('File uploaded successfully:', data.path);
       
         console.error('Upload error:', error);

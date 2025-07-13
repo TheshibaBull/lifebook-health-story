@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
-import { Heart, FileText, Brain, CloudOff, CheckCircle, AlertCircle, Scan, Upload, Wifi, WifiOff, Shield } from 'lucide-react';
+import { Progress } from '@/components/ui/progress'; 
+import { Heart, FileText, Brain, CloudOff, CheckCircle, AlertCircle, Scan, Upload, Wifi, WifiOff, Shield, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { AIDocumentProcessor } from '@/services/aiDocumentProcessor';
 import { FileUploadService } from '@/services/fileUploadService';
@@ -23,12 +23,13 @@ const UploadRecord = () => {
   const [scanningStage, setScanningStage] = useState<'idle' | 'scanning' | 'results'>('idle');
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
   const [pendingFiles, setPendingFiles] = useState<any[]>([]);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
 
   // Check online status
-  useState(() => {
+  useEffect(() => {
     const handleOnline = () => setIsOffline(false);
     const handleOffline = () => setIsOffline(true);
     
@@ -60,10 +61,10 @@ const UploadRecord = () => {
     }
   };
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files && files.length > 0) {
-      processFiles(Array.from(files));
+      await processFiles(Array.from(files));
     }
   };
 
@@ -81,7 +82,7 @@ const UploadRecord = () => {
     // Process one file at a time for better UX
     if (files.length === 0) return;
     
-    const file = files[0];
+    const file = files[0]; 
     
     // Validate file first
     const validation = FileUploadService.validateFile(file);
@@ -99,7 +100,7 @@ const UploadRecord = () => {
     setIsProcessing(true);
     setUploadProgress(0);
     
-    try {
+    try { 
       // Start progress animation
       const progressInterval = setInterval(() => {
         setUploadProgress(prev => {
@@ -112,7 +113,7 @@ const UploadRecord = () => {
       }, 300);
       
       // Step 1: Upload file to Supabase Storage
-      if (!isOffline) {
+      if (!isOffline && user) {
         const uploadResult = await FileUploadService.uploadFile(
           file, 
           user.id,
@@ -121,7 +122,7 @@ const UploadRecord = () => {
           }
         );
         
-        if (!uploadResult.success) {
+        if (!uploadResult || !uploadResult.success) {
           throw new Error(uploadResult.error || 'Upload failed');
         }
         
@@ -129,7 +130,7 @@ const UploadRecord = () => {
         setUploadProgress(70);
         
         // Step 2: Scan document with enhanced AI
-        const scanResult = await DocumentScanningService.scanDocument(file);
+        const scanResult = await DocumentScanningService.scanDocument(file); 
         
         // Update progress to indicate scanning is complete
         setUploadProgress(100);
@@ -137,7 +138,7 @@ const UploadRecord = () => {
         // Step 3: Process with AI for categorization and tagging
         const analysis = await AIDocumentProcessor.analyzeDocument(file);
         
-        // Step 4: Create health record in database
+        // Step 4: Create health record in database 
         await HealthRecordsService.createRecord({
           user_id: user.id,
           title: file.name,
@@ -163,7 +164,7 @@ const UploadRecord = () => {
         
         // Show results
         setScanResult(scanResult);
-        setScanningStage('results');
+        setScanningStage('results'); 
         
         toast({
           title: "Document Processed Successfully",
@@ -171,7 +172,7 @@ const UploadRecord = () => {
         });
       } else {
         // Handle offline mode
-        handleOfflineUpload([file]);
+        handleOfflineUpload([file]); 
         clearInterval(progressInterval);
         setUploadProgress(0);
         setScanningStage('idle');
@@ -179,7 +180,7 @@ const UploadRecord = () => {
     } catch (error: any) {
       console.error('Error processing document:', error);
       toast({
-        title: "Processing Failed",
+        title: "Processing Failed", 
         description: `Failed to process ${file.name}: ${error.message}`,
         variant: "destructive"
       });
@@ -189,7 +190,7 @@ const UploadRecord = () => {
     setIsProcessing(false);
   };
 
-  const handleOfflineUpload = async (files: File[]) => {
+  const handleOfflineUpload = async (files: File[]) => { 
     // Store files locally for later sync
     const newPendingFiles = Array.from(files).map(file => ({
       id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
@@ -213,7 +214,7 @@ const UploadRecord = () => {
     });
   };
 
-  const handleSaveRecord = async () => {
+  const handleSaveRecord = async () => { 
     if (!currentFile || !scanResult || !user) return;
     
     setIsProcessing(true);
@@ -227,7 +228,7 @@ const UploadRecord = () => {
         }
       );
       
-      if (!uploadResult.success) {
+      if (!uploadResult.success) { 
         throw new Error(uploadResult.error || 'Upload failed');
       }
       
@@ -235,7 +236,7 @@ const UploadRecord = () => {
       const analysis = await AIDocumentProcessor.analyzeDocument(currentFile);
       
       // Create health record in database
-      await HealthRecordsService.createRecord({
+      await HealthRecordsService.createRecord({ 
         user_id: user.id,
         title: currentFile.name,
         category: analysis.category,
@@ -261,7 +262,7 @@ const UploadRecord = () => {
       setProcessedFiles([...processedFiles, currentFile.name]);
       
       toast({
-        title: "Record Saved",
+        title: "Record Saved", 
         description: `${currentFile.name} has been saved to your health records`,
       });
       
@@ -274,7 +275,7 @@ const UploadRecord = () => {
       await PWAService.scheduleBackgroundSync('health-data-sync');
     } catch (error: any) {
       console.error('Error saving record:', error);
-      toast({
+      toast({ 
         title: "Save Failed",
         description: `Failed to save ${currentFile.name}: ${error.message}`,
         variant: "destructive"
@@ -284,7 +285,7 @@ const UploadRecord = () => {
     }
   };
 
-  const handleRescan = () => {
+  const handleRescan = () => { 
     setScanningStage('idle');
     setCurrentFile(null);
     setScanResult(null);
@@ -298,7 +299,15 @@ const UploadRecord = () => {
     navigate('/dashboard');
   };
 
-  return (
+  const handleScanButtonClick = () => {
+    // Trigger the hidden file input
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
+  
+  return ( 
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center p-4">
       <Card className="w-full max-w-3xl shadow-xl border-0">
         <CardHeader className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-t-lg">
@@ -310,7 +319,7 @@ const UploadRecord = () => {
               <CardTitle className="text-2xl font-bold">Upload Medical Records</CardTitle>
             </div>
             <div className="flex items-center gap-2">
-              {isOffline ? (
+              {isOffline ? ( 
                 <div className="flex items-center gap-1 bg-orange-500/20 text-white px-3 py-1 rounded-full text-sm">
                   <WifiOff className="w-4 h-4" />
                   <span>Offline Mode</span>
@@ -325,7 +334,7 @@ const UploadRecord = () => {
           </div>
           <p className="text-white/80 mt-2 text-sm">
             {isOffline 
-              ? "Files will be stored locally and synced when you're back online" 
+              ? "Files will be stored locally and synced when you're back online"  
               : "Upload and analyze your medical documents with AI-powered scanning"}
           </p>
         </CardHeader>
@@ -341,7 +350,7 @@ const UploadRecord = () => {
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
             >
-                {isProcessing ? (
+                {isProcessing ? ( 
                   <div className="space-y-4">
                     <div className="w-20 h-20 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
                     <p className="text-gray-700 text-lg font-medium">Scanning document with Enhanced AI...</p>
@@ -349,7 +358,7 @@ const UploadRecord = () => {
                     <p className="text-sm text-gray-600">{Math.round(uploadProgress)}% complete</p>
                   </div>
                 ) : scanningStage === 'results' && scanResult ? (
-                  <DocumentScanResults 
+                  <DocumentScanResults  
                     result={scanResult}
                     fileName={currentFile?.name || 'Document'}
                     onSave={handleSaveRecord}
@@ -357,7 +366,7 @@ const UploadRecord = () => {
                   />
                 ) : processedFiles.length > 0 && scanningStage === 'idle' ? (
                   <div className="space-y-6">
-                    <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto">
+                    <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto"> 
                       <CheckCircle className="w-12 h-12 text-green-600" />
                     </div>
                     <div>
@@ -365,7 +374,7 @@ const UploadRecord = () => {
                       <p className="text-base text-gray-600 mb-4">
                         {processedFiles.length} file(s) analyzed with advanced OCR and medical entity extraction
                       </p>
-                      <div className="space-y-1 mb-4">
+                      <div className="space-y-1 mb-4"> 
                         {processedFiles.map((fileName, index) => (
                           <p key={index} className="text-sm text-gray-600 flex items-center gap-2">
                             <CheckCircle className="w-4 h-4 text-green-500" />
@@ -373,7 +382,7 @@ const UploadRecord = () => {
                           </p>
                         ))}
                       </div>
-                      <Button onClick={handleViewRecords} className="mr-2 bg-blue-600 hover:bg-blue-700">
+                      <Button onClick={handleViewRecords} className="mr-2 bg-blue-600 hover:bg-blue-700"> 
                         View Dashboard
                       </Button>
                       <Button variant="outline" onClick={() => setProcessedFiles([])}>
@@ -381,7 +390,7 @@ const UploadRecord = () => {
                       </Button>
                     </div>
                   </div>
-                ) : (
+                ) : ( 
                   <div className="space-y-6">
                     <div className="w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center mx-auto">
                       <Scan className="w-14 h-14 text-blue-600" />
@@ -389,7 +398,7 @@ const UploadRecord = () => {
                     <div>
                       <p className="text-xl font-bold mb-3">Smart Document Analysis</p>
                       <p className="text-base text-gray-600 mb-6">
-                        {isOffline 
+                        {isOffline  
                           ? "Upload your medical documents for later processing when you're back online" 
                           : "Scan your medical documents to extract key information and get a summary"}
                       </p>
@@ -397,7 +406,7 @@ const UploadRecord = () => {
                         <div className="bg-blue-50 p-4 rounded-lg">
                           <div className="flex items-center gap-2 mb-2">
                             <Brain className="w-5 h-5 text-blue-600" />
-                            <span className="font-medium">AI Analysis</span>
+                            <span className="font-medium">AI Analysis</span> 
                           </div>
                           <p className="text-sm text-gray-600">Advanced OCR and medical entity recognition</p>
                         </div>
@@ -405,7 +414,7 @@ const UploadRecord = () => {
                           <div className="flex items-center gap-2 mb-2">
                             <FileText className="w-5 h-5 text-green-600" />
                             <span className="font-medium">Auto-Categorization</span>
-                          </div>
+                          </div> 
                           <p className="text-sm text-gray-600">Intelligent document classification</p>
                         </div>
                         <div className="bg-purple-50 p-4 rounded-lg">
@@ -413,7 +422,7 @@ const UploadRecord = () => {
                             <CloudOff className="w-5 h-5 text-purple-600" />
                             <span className="font-medium">Offline Support</span>
                           </div>
-                          <p className="text-sm text-gray-600">Works even without internet connection</p>
+                          <p className="text-sm text-gray-600">Works even without internet connection</p> 
                         </div>
                         <div className="bg-amber-50 p-4 rounded-lg">
                           <div className="flex items-center gap-2 mb-2">
@@ -425,22 +434,21 @@ const UploadRecord = () => {
                       </div>
                       <input
                         type="file"
-                        accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                        ref={fileInputRef}
+                        accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" 
                         onChange={handleFileSelect}
                         className="hidden"
                         id="file-upload"
-                       multiple
+                        multiple
                       />
-                      <label htmlFor="file-upload" className="w-full">
-                        <Button className="cursor-pointer w-full" size="lg" type="button">
-                          {isOffline ? (
+                      <Button className="cursor-pointer w-full" size="lg" type="button" onClick={handleScanButtonClick}>
+                        {isOffline ? (
                             <Upload className="w-5 h-5 mr-2" />
                           ) : (
                             <Scan className="w-5 h-5 mr-2" />
                           )}
                           {isOffline ? "Upload Document for Later" : "Scan Document with AI"}
                         </Button>
-                      </label>
                     </div>
                   </div>
                 )}
@@ -448,7 +456,7 @@ const UploadRecord = () => {
             
             {/* Pending Files Section (Only shown when there are pending files) */}
             {pendingFiles.length > 0 && (
-              <div className="mt-8 border-t pt-6">
+              <div className="mt-8 border-t pt-6"> 
                 <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
                   <CloudOff className="w-5 h-5 text-orange-500" />
                   Pending Uploads ({pendingFiles.length})
@@ -456,7 +464,7 @@ const UploadRecord = () => {
                 <div className="space-y-3 max-h-60 overflow-y-auto pr-2">
                   {pendingFiles.map((file) => (
                     <div key={file.id} className="flex items-center justify-between p-3 border rounded-lg bg-gray-50">
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3"> 
                         <FileText className="w-5 h-5 text-gray-400" />
                         <div>
                           <p className="font-medium text-sm">{file.name}</p>
@@ -464,7 +472,7 @@ const UploadRecord = () => {
                             {(file.size / 1024 / 1024).toFixed(2)} MB • {new Date(file.uploadedAt).toLocaleDateString()}
                           </p>
                         </div>
-                      </div>
+                      </div> 
                       <div className="flex items-center gap-2">
                         <div className="text-xs px-2 py-1 bg-orange-100 text-orange-800 rounded-full">
                           Pending
@@ -477,7 +485,7 @@ const UploadRecord = () => {
             )}
             
             <div className="bg-gray-50 p-4 rounded-lg mt-6">
-              <div className="flex items-center gap-2 mb-2">
+              <div className="flex items-center gap-2 mb-2"> 
                 <AlertCircle className="w-5 h-5 text-blue-600" />
                 <h3 className="font-medium">Upload Information</h3>
               </div>
@@ -485,7 +493,7 @@ const UploadRecord = () => {
                 <p>• Supported formats: PDF, JPG, PNG, DOC, DOCX</p>
                 <p>• Maximum file size: 10MB per file</p>
                 <p>• {isOffline 
-                  ? "Files will be stored locally and processed when you're back online" 
+                  ? "Files will be stored locally and processed when you're back online"  
                   : "Enhanced AI processing includes OCR and medical entity extraction"}
                 </p>
               </div>
