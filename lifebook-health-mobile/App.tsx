@@ -1,12 +1,24 @@
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, SafeAreaView } from 'react-native';
+import { 
+  StyleSheet, 
+  Text, 
+  View, 
+  TouchableOpacity, 
+  ScrollView, 
+  SafeAreaView,
+  Image,
+  ActivityIndicator
+} from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 
+// Create navigators
 const Stack = createStackNavigator();
+const Tab = createBottomTabNavigator();
 
 // Landing Screen Component
 function LandingScreen({ navigation }) {
@@ -29,7 +41,7 @@ function LandingScreen({ navigation }) {
 
           <TouchableOpacity
             style={styles.getStartedButton}
-            onPress={() => navigation.navigate('Dashboard')}
+            onPress={() => navigation.navigate('Main')}
           >
             <Text style={styles.buttonText}>Get Started</Text>
             <Ionicons name="arrow-forward" size={20} color="white" style={styles.buttonIcon} />
@@ -80,8 +92,8 @@ function DashboardScreen() {
           <View style={styles.statsRow}>
             <View style={[styles.smallStatCard, { backgroundColor: '#10b981' }]}>
               <Ionicons name="trending-up" size={24} color="white" />
-              <Text style={styles.smallStatNumber}>↗ 5%</Text>
-              <Text style={styles.smallStatLabel}>Trends</Text>
+              <Text style={styles.smallStatNumber}>5</Text>
+              <Text style={styles.smallStatLabel}>Records</Text>
             </View>
             <View style={[styles.smallStatCard, { backgroundColor: '#8b5cf6' }]}>
               <Ionicons name="calendar" size={24} color="white" />
@@ -118,6 +130,116 @@ function DashboardScreen() {
   );
 }
 
+// Records Screen
+function RecordsScreen() {
+  return (
+    <SafeAreaView style={styles.screenContainer}>
+      <View style={styles.screenHeader}>
+        <Text style={styles.screenTitle}>Health Records</Text>
+      </View>
+      <View style={styles.emptyState}>
+        <Ionicons name="document-text" size={60} color="#d1d5db" />
+        <Text style={styles.emptyStateTitle}>No Records Yet</Text>
+        <Text style={styles.emptyStateText}>Upload your first health record to get started</Text>
+        <TouchableOpacity style={styles.primaryButton}>
+          <Ionicons name="add-circle" size={20} color="white" style={{marginRight: 8}} />
+          <Text style={styles.primaryButtonText}>Upload Record</Text>
+        </TouchableOpacity>
+      </View>
+    </SafeAreaView>
+  );
+}
+
+// Family Screen
+function FamilyScreen() {
+  return (
+    <SafeAreaView style={styles.screenContainer}>
+      <View style={styles.screenHeader}>
+        <Text style={styles.screenTitle}>Family Health</Text>
+      </View>
+      <View style={styles.emptyState}>
+        <Ionicons name="people" size={60} color="#d1d5db" />
+        <Text style={styles.emptyStateTitle}>No Family Members</Text>
+        <Text style={styles.emptyStateText}>Add family members to manage their health records</Text>
+        <TouchableOpacity style={styles.primaryButton}>
+          <Ionicons name="add-circle" size={20} color="white" style={{marginRight: 8}} />
+          <Text style={styles.primaryButtonText}>Add Family Member</Text>
+        </TouchableOpacity>
+      </View>
+    </SafeAreaView>
+  );
+}
+
+// Settings Screen
+function SettingsScreen() {
+  return (
+    <SafeAreaView style={styles.screenContainer}>
+      <View style={styles.screenHeader}>
+        <Text style={styles.screenTitle}>Settings</Text>
+      </View>
+      <View style={styles.settingsContainer}>
+        <TouchableOpacity style={styles.settingsItem}>
+          <Ionicons name="person" size={24} color="#3b82f6" />
+          <Text style={styles.settingsText}>Profile</Text>
+          <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.settingsItem}>
+          <Ionicons name="notifications" size={24} color="#3b82f6" />
+          <Text style={styles.settingsText}>Notifications</Text>
+          <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.settingsItem}>
+          <Ionicons name="shield-checkmark" size={24} color="#3b82f6" />
+          <Text style={styles.settingsText}>Privacy</Text>
+          <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.settingsItem}>
+          <Ionicons name="color-palette" size={24} color="#3b82f6" />
+          <Text style={styles.settingsText}>Appearance</Text>
+          <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
+        </TouchableOpacity>
+        <TouchableOpacity style={[styles.settingsItem, {borderBottomWidth: 0}]}>
+          <Ionicons name="log-out" size={24} color="#ef4444" />
+          <Text style={[styles.settingsText, {color: "#ef4444"}]}>Logout</Text>
+        </TouchableOpacity>
+      </View>
+    </SafeAreaView>
+  );
+}
+
+// Main Tab Navigator
+function MainTabs() {
+  return (
+    <Tab.Navigator
+      screenOptions={({ route }) => ({
+        tabBarIcon: ({ focused, color, size }) => {
+          let iconName;
+
+          if (route.name === 'Dashboard') {
+            iconName = focused ? 'heart' : 'heart-outline';
+          } else if (route.name === 'Records') {
+            iconName = focused ? 'document-text' : 'document-text-outline';
+          } else if (route.name === 'Family') {
+            iconName = focused ? 'people' : 'people-outline';
+          } else if (route.name === 'Settings') {
+            iconName = focused ? 'settings' : 'settings-outline';
+          }
+
+          return <Ionicons name={iconName} size={size} color={color} />;
+        },
+        tabBarActiveTintColor: '#3b82f6',
+        tabBarInactiveTintColor: 'gray',
+        headerShown: false,
+      })}
+    >
+      <Tab.Screen name="Dashboard" component={DashboardScreen} />
+      <Tab.Screen name="Records" component={RecordsScreen} />
+      <Tab.Screen name="Family" component={FamilyScreen} />
+      <Tab.Screen name="Settings" component={SettingsScreen} />
+    </Tab.Navigator>
+  );
+}
+
 // Feature Card Component
 function FeatureCard({ icon, title, description }) {
   return (
@@ -142,7 +264,7 @@ export default function App() {
         }}
       >
         <Stack.Screen name="Landing" component={LandingScreen} />
-        <Stack.Screen name="Dashboard" component={DashboardScreen} />
+        <Stack.Screen name="Main" component={MainTabs} />
       </Stack.Navigator>
     </NavigationContainer>
   );
@@ -369,5 +491,77 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 14,
     fontWeight: '600',
+  },
+  // Generic Screen Styles
+  screenContainer: {
+    flex: 1,
+    backgroundColor: '#f8fafc',
+  },
+  screenHeader: {
+    paddingHorizontal: 24,
+    paddingTop: 60,
+    paddingBottom: 20,
+    backgroundColor: 'white',
+    borderBottomWidth: 1,
+    borderBottomColor: '#f1f5f9',
+  },
+  screenTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#1f2937',
+  },
+  emptyState: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  emptyStateTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#1f2937',
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  emptyStateText: {
+    fontSize: 16,
+    color: '#6b7280',
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  primaryButton: {
+    backgroundColor: '#3b82f6',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  primaryButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  // Settings Screen
+  settingsContainer: {
+    backgroundColor: 'white',
+    marginTop: 20,
+    marginHorizontal: 16,
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  settingsItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f1f5f9',
+  },
+  settingsText: {
+    fontSize: 16,
+    color: '#1f2937',
+    flex: 1,
+    marginLeft: 16,
   },
 });
