@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Heart, FileText, Brain, CloudOff, CheckCircle, AlertCircle, Scan, Upload, Wifi, WifiOff } from 'lucide-react';
+import { Heart, FileText, Brain, CloudOff, CheckCircle, AlertCircle, Scan, Upload, Wifi, WifiOff, Shield } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { AIDocumentProcessor } from '@/services/aiDocumentProcessor';
 import { FileUploadService } from '@/services/fileUploadService';
