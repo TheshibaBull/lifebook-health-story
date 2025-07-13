@@ -1,6 +1,5 @@
 import * as React from "react"
 import * as RechartsPrimitive from "recharts"
-
 import { cn } from "@/lib/utils"
 
 // Format: { THEME_NAME: CSS_SELECTOR }
@@ -18,7 +17,7 @@ export type ChartConfig = {
 
 type ChartContextProps = {
   config: ChartConfig
-}
+} 
 
 const ChartContext = React.createContext<ChartContextProps | null>(null)
 
@@ -44,7 +43,7 @@ const ChartContainer = React.forwardRef<
   const uniqueId = React.useId()
   const chartId = `chart-${id || uniqueId.replace(/:/g, "")}`
 
-  return (
+  return ( 
     <ChartContext.Provider value={{ config }}>
       <div
         data-chart={chartId}
@@ -67,7 +66,7 @@ ChartContainer.displayName = "Chart"
 
 const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
   const colorConfig = Object.entries(config).filter(
-    ([_, config]) => config.theme || config.color
+    ([_, itemConfig]) => itemConfig.theme || itemConfig.color
   )
 
   if (!colorConfig.length) {
@@ -100,7 +99,7 @@ ${colorConfig
 
 const ChartTooltip = RechartsPrimitive.Tooltip
 
-const ChartTooltipContent = React.forwardRef<
+const ChartTooltipContent = React.forwardRef< 
   HTMLDivElement,
   React.ComponentProps<typeof RechartsPrimitive.Tooltip> &
     React.ComponentProps<"div"> & {
@@ -136,7 +135,7 @@ const ChartTooltipContent = React.forwardRef<
         return null
       }
 
-      const [item] = payload
+      const [item] = payload 
       const key = `${labelKey || item.dataKey || item.name || "value"}`
       const itemConfig = getPayloadConfigFromPayload(config, item, key)
       const value =
@@ -256,7 +255,7 @@ ChartTooltipContent.displayName = "ChartTooltip"
 
 const ChartLegend = RechartsPrimitive.Legend
 
-const ChartLegendContent = React.forwardRef<
+const ChartLegendContent = React.forwardRef< 
   HTMLDivElement,
   React.ComponentProps<"div"> &
     Pick<RechartsPrimitive.LegendProps, "payload" | "verticalAlign"> & {
@@ -277,7 +276,7 @@ const ChartLegendContent = React.forwardRef<
     return (
       <div
         ref={ref}
-        className={cn(
+        className={cn( 
           "flex items-center justify-center gap-4",
           verticalAlign === "top" ? "pb-3" : "pt-3",
           className
@@ -290,7 +289,7 @@ const ChartLegendContent = React.forwardRef<
           return (
             <div
               key={item.value}
-              className={cn(
+              className={cn( 
                 "flex items-center gap-1.5 [&>svg]:h-3 [&>svg]:w-3 [&>svg]:text-muted-foreground"
               )}
             >
@@ -316,7 +315,7 @@ ChartLegendContent.displayName = "ChartLegend"
 
 // Helper to extract item config from a payload.
 function getPayloadConfigFromPayload(
-  config: ChartConfig,
+  config: ChartConfig, 
   payload: unknown,
   key: string
 ) {
@@ -325,7 +324,7 @@ function getPayloadConfigFromPayload(
   }
 
   const payloadPayload =
-    "payload" in payload &&
+    "payload" in payload && 
     typeof payload.payload === "object" &&
     payload.payload !== null
       ? payload.payload
