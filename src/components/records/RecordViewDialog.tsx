@@ -149,7 +149,7 @@ const RecordViewDialog = ({ record, open, onOpenChange, onDownload, onDelete }: 
           {/* Medical Entities */}
           {record.medical_entities && Object.keys(record.medical_entities).length > 0 && (
             <div>
-              <p className="font-medium text-gray-700 mb-2">Medical Information</p>
+              <p className="font-medium text-gray-700 mb-2">Extracted Medical Information</p>
               <div className="bg-blue-50 p-4 rounded-lg text-sm">
                 {Object.entries(record.medical_entities).map(([key, values]) => {
                   if (Array.isArray(values) && values.length > 0) {
@@ -162,6 +162,38 @@ const RecordViewDialog = ({ record, open, onOpenChange, onDownload, onDelete }: 
                   }
                   return null;
                 })}
+              </div>
+            </div>
+          )}
+          
+          {/* AI Summary */}
+          {record.ai_analysis?.summary && (
+            <div>
+              <p className="font-medium text-gray-700 mb-2">AI Summary</p>
+              <div className="bg-purple-50 p-4 rounded-lg text-sm border border-purple-200">
+                <p className="text-purple-900">{record.ai_analysis.summary}</p>
+                
+                {record.ai_analysis.keyFindings && record.ai_analysis.keyFindings.length > 0 && (
+                  <div className="mt-3">
+                    <p className="font-medium text-purple-900 mb-1">Key Findings:</p>
+                    <ul className="list-disc pl-5 text-purple-800 space-y-1">
+                      {record.ai_analysis.keyFindings.map((finding: string, index: number) => (
+                        <li key={index}>{finding}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                
+                {record.ai_analysis.recommendations && record.ai_analysis.recommendations.length > 0 && (
+                  <div className="mt-3">
+                    <p className="font-medium text-purple-900 mb-1">Recommendations:</p>
+                    <ul className="list-disc pl-5 text-purple-800 space-y-1">
+                      {record.ai_analysis.recommendations.map((rec: string, index: number) => (
+                        <li key={index}>{rec}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </div>
             </div>
           )}

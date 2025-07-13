@@ -3,13 +3,15 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
-import { Heart, FileText, Brain, CloudOff, CheckCircle, AlertCircle } from 'lucide-react';
+import { Heart, FileText, Brain, CloudOff, CheckCircle, AlertCircle, Scan } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { OfflineUpload } from '@/components/OfflineUpload';
 import { AIDocumentProcessor } from '@/services/aiDocumentProcessor';
 import { FileUploadService } from '@/services/fileUploadService';
 import { HealthRecordsService } from '@/services/healthRecordsService';
 import { PWAService } from '@/services/pwaService';
+import { DocumentScanningService } from '@/services/documentScanningService';
+import { DocumentScanResults } from '@/components/DocumentScanResults';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -18,6 +20,9 @@ const UploadRecord = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [processedFiles, setProcessedFiles] = useState<string[]>([]);
+  const [currentFile, setCurrentFile] = useState<File | null>(null);
+  const [scanResult, setScanResult] = useState<any | null>(null);
+  const [scanningStage, setScanningStage] = useState<'idle' | 'scanning' | 'results'>('idle');
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
@@ -59,101 +64,142 @@ const UploadRecord = () => {
       return;
     }
 
-    setIsProcessing(true);
-    setUploadProgress(0);
-    const processed: string[] = [];
-
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
+    // Process one file at a time for better UX
+    if (files.length > 0) {
+      const file = files[0];
       
-      try {
-        // Validate file first
-        const validation = FileUploadService.validateFile(file);
-        if (!validation.valid) {
-          toast({
-            title: "Invalid File",
-            description: validation.error,
-            variant: "destructive"
-          });
-          continue;
-        }
-
-        setUploadProgress((i / files.length) * 25);
-
+      // Validate file first
+      const validation = FileUploadService.validateFile(file);
+      if (!validation.valid) {
         toast({
-          title: "Processing File",
-          description: `Analyzing ${file.name} with enhanced AI...`,
-        });
-
-        // Upload file to Supabase Storage
-        const uploadResult = await FileUploadService.uploadFile(
-          file, 
-          user.id,
-          (progress) => {
-            const totalProgress = ((i + progress.percentage / 100 * 0.3) / files.length) * 50;
-            setUploadProgress(totalProgress);
-          }
-        );
-        setUploadProgress(((i + 0.3) / files.length) * 50);
-        
-        if (!uploadResult.success) {
-          throw new Error(uploadResult.error || 'Upload failed');
-        }
-
-        // Process with Enhanced AI (now includes real OCR and medical entity extraction)
-        const analysis = await AIDocumentProcessor.analyzeDocument(file);
-        setUploadProgress(((i + 0.7) / files.length) * 75);
-
-        // Create health record in database
-        await HealthRecordsService.createRecord({
-          user_id: user.id,
-          title: file.name,
-          category: analysis.category,
-          tags: analysis.tags,
-          file_name: file.name,
-          file_path: uploadResult.data?.path,
-          file_size: file.size,
-          file_type: file.type,
-          extracted_text: analysis.extractedText,
-          medical_entities: analysis.medicalEntities,
-          ai_analysis: {
-            confidence: analysis.confidence,
-            category: analysis.category,
-            tags: analysis.tags
-          },
-          date_of_record: new Date().toISOString().split('T')[0]
-        });
-
-        processed.push(file.name);
-        setUploadProgress(((i + 1) / files.length) * 100);
-        
-        toast({
-          title: "Document Processed",
-          description: `${file.name} analyzed with ${Math.round(analysis.confidence * 100)}% confidence`,
-        });
-
-        // Schedule background sync for offline capability
-        await PWAService.scheduleBackgroundSync('health-data-sync');
-        
-      } catch (error: any) {
-        console.error('Error processing file:', error);
-        toast({
-          title: "Processing Failed",
-          description: `Failed to process ${file.name}: ${error.message}`,
+          title: "Invalid File",
+          description: validation.error,
           variant: "destructive"
         });
+        return;
+      }
+      
+      setCurrentFile(file);
+      setScanningStage('scanning');
+      setIsProcessing(true);
+      setUploadProgress(0);
+      
+      try {
+        // Start progress animation
+        const progressInterval = setInterval(() => {
+          setUploadProgress(prev => {
+            if (prev >= 90) {
+              clearInterval(progressInterval);
+              return prev;
+            }
+            return prev + 5;
+          });
+        }, 300);
+        
+        // Scan document with enhanced AI
+        const scanResult = await DocumentScanningService.scanDocument(file);
+        
+        // Complete progress
+        clearInterval(progressInterval);
+        setUploadProgress(100);
+        
+        // Show results
+        setScanResult(scanResult);
+        setScanningStage('results');
+        
+        toast({
+          title: "Document Scanned",
+          description: `${file.name} analyzed with ${Math.round(scanResult.confidence * 100)}% confidence`,
+        });
+      } catch (error: any) {
+        console.error('Error scanning document:', error);
+        toast({
+          title: "Scanning Failed",
+          description: `Failed to scan ${file.name}: ${error.message}`,
+          variant: "destructive"
+        });
+        setScanningStage('idle');
+      } finally {
+        setIsProcessing(false);
       }
     }
+  };
 
-    setProcessedFiles(processed);
-    setIsProcessing(false);
+  const handleSaveRecord = async () => {
+    if (!currentFile || !scanResult || !user) return;
     
-    if (processed.length > 0) {
-      toast({
-        title: "Upload Complete",
-        description: `Successfully processed ${processed.length} file(s) with enhanced AI analysis`,
+    setIsProcessing(true);
+    try {
+      // Upload file to Supabase Storage
+      const uploadResult = await FileUploadService.uploadFile(
+        currentFile, 
+        user.id,
+        (progress) => {
+          setUploadProgress(progress.percentage);
+        }
+      );
+      
+      if (!uploadResult.success) {
+        throw new Error(uploadResult.error || 'Upload failed');
+      }
+      
+      // Process with Enhanced AI for categorization and tagging
+      const analysis = await AIDocumentProcessor.analyzeDocument(currentFile);
+      
+      // Create health record in database
+      await HealthRecordsService.createRecord({
+        user_id: user.id,
+        title: currentFile.name,
+        category: analysis.category,
+        tags: analysis.tags,
+        file_name: currentFile.name,
+        file_path: uploadResult.data?.path,
+        file_size: currentFile.size,
+        file_type: currentFile.type,
+        extracted_text: analysis.extractedText,
+        medical_entities: analysis.medicalEntities,
+        ai_analysis: {
+          confidence: analysis.confidence,
+          category: analysis.category,
+          tags: analysis.tags,
+          summary: scanResult.summary,
+          keyFindings: scanResult.keyFindings,
+          criticalValues: scanResult.criticalValues,
+          recommendations: scanResult.recommendations
+        },
+        date_of_record: new Date().toISOString().split('T')[0]
       });
+      
+      setProcessedFiles([...processedFiles, currentFile.name]);
+      
+      toast({
+        title: "Record Saved",
+        description: `${currentFile.name} has been saved to your health records`,
+      });
+      
+      // Reset state
+      setCurrentFile(null);
+      setScanResult(null);
+      setScanningStage('idle');
+      
+      // Schedule background sync for offline capability
+      await PWAService.scheduleBackgroundSync('health-data-sync');
+    } catch (error: any) {
+      console.error('Error saving record:', error);
+      toast({
+        title: "Save Failed",
+        description: `Failed to save ${currentFile.name}: ${error.message}`,
+        variant: "destructive"
+      });
+    } finally {
+      setIsProcessing(false);
     }
+  };
+
+  const handleRescan = () => {
+    setScanningStage('idle');
+    setCurrentFile(null);
+    setScanResult(null);
   };
 
   const handleSkip = () => {
@@ -200,11 +246,18 @@ const UploadRecord = () => {
                 {isProcessing ? (
                   <div className="space-y-4">
                     <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
-                    <p className="text-gray-600">Processing with Enhanced AI...</p>
+                    <p className="text-gray-600">Scanning document with Enhanced AI...</p>
                     <Progress value={uploadProgress} className="w-full" />
                     <p className="text-sm text-gray-500">{Math.round(uploadProgress)}% complete</p>
                   </div>
-                ) : processedFiles.length > 0 ? (
+                ) : scanningStage === 'results' && scanResult ? (
+                  <DocumentScanResults 
+                    result={scanResult}
+                    fileName={currentFile?.name || 'Document'}
+                    onSave={handleSaveRecord}
+                    onRescan={handleRescan}
+                  />
+                ) : processedFiles.length > 0 && scanningStage === 'idle' ? (
                   <div className="space-y-4">
                     <CheckCircle className="w-16 h-16 text-green-500 mx-auto" />
                     <div>
@@ -227,11 +280,11 @@ const UploadRecord = () => {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    <Brain className="w-16 h-16 text-purple-500 mx-auto" />
+                    <Scan className="w-16 h-16 text-purple-500 mx-auto" />
                     <div>
-                      <p className="text-lg font-medium mb-2">Enhanced AI Document Processing</p>
+                      <p className="text-lg font-medium mb-2">Document Scanning & Analysis</p>
                       <p className="text-sm text-gray-600 mb-4">
-                        Advanced OCR, medical entity extraction, and intelligent categorization
+                        Scan your medical documents to extract key information and get a summary
                       </p>
                       <div className="grid grid-cols-2 gap-3 mb-6 text-xs">
                         <div className="flex items-center gap-2">
@@ -260,9 +313,9 @@ const UploadRecord = () => {
                         multiple
                       />
                       <label htmlFor="file-upload">
-                        <Button className="cursor-pointer">
-                          <Brain className="w-4 h-4 mr-2" />
-                          Choose Files for Enhanced AI Processing
+                        <Button className="cursor-pointer" size="lg">
+                          <Scan className="w-5 h-5 mr-2" />
+                          Scan Document with AI
                         </Button>
                       </label>
                     </div>
