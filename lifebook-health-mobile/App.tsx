@@ -2,72 +2,67 @@ import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Image } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, SafeAreaView } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 
 const Stack = createStackNavigator();
 
 // Landing Screen Component
-function LandingScreen({ navigation }: any) {
+function LandingScreen({ navigation }) {
   return (
     <LinearGradient
       colors={['#3b82f6', '#1e40af']}
       style={styles.container}
     >
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={styles.header}>
-          <View style={styles.logoContainer}>
-            <Image 
-              source={require('./assets/heart-icon.png')} 
-              style={{width: 40, height: 40}}
-              fallback={<Ionicons name="heart" size={40} color="white" />}
+      <SafeAreaView style={styles.safeArea}>
+        <ScrollView contentContainerStyle={styles.scrollContent}>
+          <View style={styles.header}>
+            <View style={styles.logoContainer}>
+              <Ionicons name="heart" size={40} color="white" />
+            </View>
+            <Text style={styles.title}>Lifebook Health</Text>
+            <Text style={styles.subtitle}>
+              Your lifetime health record vault—secure, smart, accessible anytime, anywhere.
+            </Text>
+          </View>
+
+          <TouchableOpacity
+            style={styles.getStartedButton}
+            onPress={() => navigation.navigate('Dashboard')}
+          >
+            <Text style={styles.buttonText}>Get Started</Text>
+            <Ionicons name="arrow-forward" size={20} color="white" style={styles.buttonIcon} />
+          </TouchableOpacity>
+
+          <View style={styles.featuresContainer}>
+            <FeatureCard
+              icon="document-text"
+              title="Smart Records"
+              description="AI-powered organization of all your medical documents and health data."
+            />
+            <FeatureCard
+              icon="shield-checkmark"
+              title="Secure & Private"
+              description="Bank-level encryption with HIPAA compliance for your peace of mind."
+            />
+            <FeatureCard
+              icon="people"
+              title="Family Health"
+              description="Manage health records for your entire family in one secure place."
             />
           </View>
-          <Text style={styles.title}>Lifebook Health</Text>
-          <Text style={styles.subtitle}>
-            Your lifetime health record vault—secure, smart, accessible anytime, anywhere.
-          </Text>
-        </View>
-
-        <TouchableOpacity
-          style={styles.getStartedButton}
-          onPress={() => navigation.navigate('Dashboard')}
-        >
-          <Text style={styles.buttonText}>Get Started</Text>
-          <Ionicons name="arrow-forward" size={20} color="white" style={styles.buttonIcon} />
-        </TouchableOpacity>
-
-        <View style={styles.featuresContainer}>
-          <FeatureCard
-            icon="document-text"
-            title="Smart Records"
-            description="AI-powered organization of all your medical documents and health data."
-          />
-          <FeatureCard
-            icon="shield-checkmark"
-            title="Secure & Private"
-            description="Bank-level encryption with HIPAA compliance for your peace of mind."
-          />
-          <FeatureCard
-            icon="people"
-            title="Family Health"
-            description="Manage health records for your entire family in one secure place."
-          />
-        </View>
-      </ScrollView>
+        </ScrollView>
+      </SafeAreaView>
       <StatusBar style="light" />
     </LinearGradient>
   );
 }
 
 // Dashboard Screen Component
-function DashboardScreen({ navigation }: any) {
+function DashboardScreen() {
   return (
-    <LinearGradient
-      colors={['#f8fafc', '#e2e8f0']}
-      style={styles.container}
-    >
+    <SafeAreaView style={styles.dashboardContainer}>
       <ScrollView contentContainerStyle={styles.dashboardContent}>
         <View style={styles.dashboardHeader}>
           <Text style={styles.dashboardTitle}>Good Morning!</Text>
@@ -119,12 +114,12 @@ function DashboardScreen({ navigation }: any) {
         </View>
       </ScrollView>
       <StatusBar style="dark" />
-    </LinearGradient>
+    </SafeAreaView>
   );
 }
 
 // Feature Card Component
-function FeatureCard({ icon, title, description }: any) {
+function FeatureCard({ icon, title, description }) {
   return (
     <View style={styles.featureCard}>
       <View style={styles.featureIconContainer}>
@@ -155,6 +150,9 @@ export default function App() {
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+  },
+  safeArea: {
     flex: 1,
   },
   scrollContent: {
@@ -218,6 +216,7 @@ const styles = StyleSheet.create({
     padding: 24,
     borderRadius: 16,
     alignItems: 'center',
+    marginBottom: 16,
   },
   featureIconContainer: {
     width: 48,
@@ -241,6 +240,10 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   // Dashboard Styles
+  dashboardContainer: {
+    flex: 1,
+    backgroundColor: '#f8fafc',
+  },
   dashboardContent: {
     paddingHorizontal: 24,
     paddingTop: 60,
