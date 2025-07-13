@@ -51,7 +51,8 @@ export class FileUploadService {
   static async uploadFile(
     file: File, 
     userId: string,
-    onProgress?: (progress: UploadProgress) => void
+    onProgress?: (progress: UploadProgress) => void,
+    retryCount: number = 0
   ): Promise<UploadResult> {
     try {
       // Validate file
@@ -67,6 +68,8 @@ export class FileUploadService {
       const fileExt = file.name.split('.').pop();
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
       const filePath = `${userId}/${fileName}`;
+      
+      console.log(`Uploading file ${file.name} to path: ${filePath}`);
 
       // Upload file to Supabase Storage
       const { data, error } = await supabase.storage
@@ -77,6 +80,8 @@ export class FileUploadService {
         });
 
       if (error) {
+      console.log('File uploaded successfully:', data.path);
+      
         console.error('Upload error:', error);
         return {
           success: false,
@@ -99,6 +104,19 @@ export class FileUploadService {
       };
 
     } catch (error: any) {
+      // Implement retry logic for network errors
+      if (retryCount < 3 && (
+        error.message.includes('network') || 
+        error.message.includes('timeout') ||
+        error.message.includes('connection')
+      )) {
+        console.log(`Retrying upload (attempt ${retryCount + 1})...`);
+        // Wait before retrying (exponential backoff)
+        await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, retryCount)));
+        // Retry the upload
+        return this.uploadFile(file, userId, onProgress, retryCount + 1);
+      }
+      
       console.error('File upload failed:', error);
       return {
         success: false,

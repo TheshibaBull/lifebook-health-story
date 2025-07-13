@@ -13,17 +13,21 @@ export class DocumentScanningService {
   static async scanDocument(file: File): Promise<ScanResult> {
     try {
       // Step 1: Extract text using OCR
+      console.log('Starting OCR extraction for:', file.name);
       const ocrResult = await OCRService.extractText(file);
       
       // Step 2: Extract medical entities
+      console.log('Extracting medical entities from text');
       const entities = MedicalEntityExtractor.extractEntities(ocrResult.text);
       
       // Step 3: Generate summary and key findings
+      console.log('Generating summary and key findings');
       const summary = this.generateSummary(ocrResult.text, entities);
       const keyFindings = this.extractKeyFindings(ocrResult.text, entities);
       const criticalValues = this.extractCriticalValues(entities);
       const recommendations = this.generateRecommendations(entities);
       
+      console.log('Document scanning complete with confidence:', ocrResult.confidence);
       return {
         summary,
         keyFindings,

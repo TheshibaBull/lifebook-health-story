@@ -63,11 +63,11 @@ const UploadRecord = () => {
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files && files.length > 0) {
-      handleFileUpload(Array.from(files));
+      processFiles(Array.from(files));
     }
   };
 
-  const handleFileUpload = async (files: File[]) => {
+  const processFiles = async (files: File[]) => {
     if (!user) {
       toast({
         title: "Authentication Required",
@@ -78,70 +78,115 @@ const UploadRecord = () => {
       return;
     }
 
-    if (isOffline) {
-      // Handle offline upload
-      handleOfflineUpload(files);
-    } else {
-      // Process one file at a time for better UX
-      if (files.length > 0) {
-        const file = files[0];
-        
-        // Validate file first
-        const validation = FileUploadService.validateFile(file);
-        if (!validation.valid) {
-          toast({
-            title: "Invalid File",
-            description: validation.error,
-            variant: "destructive"
-          });
-          return;
-        }
-        
-        setCurrentFile(file);
-        setScanningStage('scanning');
-        setIsProcessing(true);
-        setUploadProgress(0);
-        
-        try {
-          // Start progress animation
-          const progressInterval = setInterval(() => {
-            setUploadProgress(prev => {
-              if (prev >= 90) {
-                clearInterval(progressInterval);
-                return prev;
-              }
-              return prev + 5;
-            });
-          }, 300);
-          
-          // Scan document with enhanced AI
-          const scanResult = await DocumentScanningService.scanDocument(file);
-          
-          // Complete progress
-          clearInterval(progressInterval);
-          setUploadProgress(100);
-          
-          // Show results
-          setScanResult(scanResult);
-          setScanningStage('results');
-          
-          toast({
-            title: "Document Scanned",
-            description: `${file.name} analyzed with ${Math.round(scanResult.confidence * 100)}% confidence`,
-          });
-        } catch (error: any) {
-          console.error('Error scanning document:', error);
-          toast({
-            title: "Scanning Failed",
-            description: `Failed to scan ${file.name}: ${error.message}`,
-            variant: "destructive"
-          });
-          setScanningStage('idle');
-        } finally {
-          setIsProcessing(false);
-        }
-      }
+    // Process one file at a time for better UX
+    if (files.length === 0) return;
+    
+    const file = files[0];
+    
+    // Validate file first
+    const validation = FileUploadService.validateFile(file);
+    if (!validation.valid) {
+      toast({
+        title: "Invalid File",
+        description: validation.error,
+        variant: "destructive"
+      });
+      return;
     }
+    
+    setCurrentFile(file);
+    setScanningStage('scanning');
+    setIsProcessing(true);
+    setUploadProgress(0);
+    
+    try {
+      // Start progress animation
+      const progressInterval = setInterval(() => {
+        setUploadProgress(prev => {
+          if (prev >= 40) {
+            clearInterval(progressInterval);
+            return prev;
+          }
+          return prev + 5;
+        });
+      }, 300);
+      
+      // Step 1: Upload file to Supabase Storage
+      if (!isOffline) {
+        const uploadResult = await FileUploadService.uploadFile(
+          file, 
+          user.id,
+          (progress) => {
+            setUploadProgress(40 + progress.percentage * 0.3); // 40-70% progress
+          }
+        );
+        
+        if (!uploadResult.success) {
+          throw new Error(uploadResult.error || 'Upload failed');
+        }
+        
+        // Update progress to indicate upload is complete
+        setUploadProgress(70);
+        
+        // Step 2: Scan document with enhanced AI
+        const scanResult = await DocumentScanningService.scanDocument(file);
+        
+        // Update progress to indicate scanning is complete
+        setUploadProgress(100);
+        
+        // Step 3: Process with AI for categorization and tagging
+        const analysis = await AIDocumentProcessor.analyzeDocument(file);
+        
+        // Step 4: Create health record in database
+        await HealthRecordsService.createRecord({
+          user_id: user.id,
+          title: file.name,
+          category: analysis.category,
+          tags: analysis.tags,
+          file_name: file.name,
+          file_path: uploadResult.data?.path,
+          file_size: file.size,
+          file_type: file.type,
+          extracted_text: analysis.extractedText,
+          medical_entities: analysis.medicalEntities,
+          ai_analysis: {
+            confidence: analysis.confidence,
+            category: analysis.category,
+            tags: analysis.tags,
+            summary: scanResult.summary,
+            keyFindings: scanResult.keyFindings,
+            criticalValues: scanResult.criticalValues,
+            recommendations: scanResult.recommendations
+          },
+          date_of_record: new Date().toISOString().split('T')[0]
+        });
+        
+        // Show results
+        setScanResult(scanResult);
+        setScanningStage('results');
+        
+        toast({
+          title: "Document Processed Successfully",
+          description: `${file.name} analyzed with ${Math.round(scanResult.confidence * 100)}% confidence`,
+        });
+      } else {
+        // Handle offline mode
+        handleOfflineUpload([file]);
+        clearInterval(progressInterval);
+        setUploadProgress(0);
+        setScanningStage('idle');
+      }
+    } catch (error: any) {
+      console.error('Error processing document:', error);
+      toast({
+        title: "Processing Failed",
+        description: `Failed to process ${file.name}: ${error.message}`,
+        variant: "destructive"
+      });
+      setScanningStage('idle');
+    }
+    
+    setIsProcessing(false);
   };
 
   const handleOfflineUpload = async (files: File[]) => {
@@ -389,16 +434,11 @@ const UploadRecord = () => {
                       <label htmlFor="file-upload" className="w-full">
                         <Button className="cursor-pointer w-full" size="lg" type="button">
                           {isOffline ? (
-                            <>
-                              <Upload className="w-5 h-5 mr-2" />
-                              Upload Document for Later
-                            </>
+                            <Upload className="w-5 h-5 mr-2" />
                           ) : (
-                            <>
-                              <Scan className="w-5 h-5 mr-2" />
-                              Scan Document with AI
-                            </>
+                            <Scan className="w-5 h-5 mr-2" />
                           )}
+                          {isOffline ? "Upload Document for Later" : "Scan Document with AI"}
                         </Button>
                       </label>
                     </div>
