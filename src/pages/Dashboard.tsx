@@ -34,7 +34,7 @@ const Dashboard = () => {
       return;
     }
 
-    if (user && !loading) {
+    if (user) {
       loadDashboardData();
     }
   }, [user?.id, isAuthenticated]);
