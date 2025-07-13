@@ -310,10 +310,10 @@ const UploadRecord = () => {
                         onChange={handleFileSelect}
                         className="hidden"
                         id="file-upload"
-                        multiple
+                       multiple
                       />
                       <label htmlFor="file-upload">
-                        <Button className="cursor-pointer" size="lg">
+                        <Button className="cursor-pointer" size="lg" type="button">
                           <Scan className="w-5 h-5 mr-2" />
                           Scan Document with AI
                         </Button>
