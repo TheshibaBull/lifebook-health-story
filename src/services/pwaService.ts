@@ -2,23 +2,10 @@
 export class PWAService {
   private static swRegistration: ServiceWorkerRegistration | null = null;
   
-  private static isUnsupportedEnvironment(): boolean {
-    // Check if running in StackBlitz or other iframe-based environments
-    try {
-      return window.self !== window.top || 
-             window.location.hostname.includes('stackblitz') ||
-             window.location.hostname.includes('webcontainer');
-    } catch {
-      // If we can't access window.top due to cross-origin restrictions,
-      // we're likely in an iframe
-      return true;
-    }
-  }
-  
   static async initialize(): Promise<void> {
-    // Skip Service Worker registration in unsupported environments
-    if (this.isUnsupportedEnvironment()) {
-      console.log('Service Worker registration skipped: unsupported environment');
+    // Skip Service Worker registration in development environments
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('Service Worker registration skipped in development environment');
       return;
     }
     
@@ -66,8 +53,8 @@ export class PWAService {
   }
   
   static async subscribeToPushNotifications(): Promise<PushSubscription | null> {
-    if (this.isUnsupportedEnvironment()) {
-      console.log('Push notifications not available in this environment');
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('Push notifications not available in development environment');
       return null;
     }
     
@@ -96,8 +83,8 @@ export class PWAService {
   }
   
   static async scheduleBackgroundSync(tag: string): Promise<void> {
-    if (this.isUnsupportedEnvironment()) {
-      console.log('Background sync not available in this environment');
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('Background sync not available in development environment');
       return;
     }
     
@@ -124,7 +111,7 @@ export class PWAService {
   }
   
   static isInstallable(): boolean {
-    return 'BeforeInstallPromptEvent' in window;
+    return typeof window !== 'undefined' && 'BeforeInstallPromptEvent' in window;
   }
   
   static async installApp(): Promise<void> {
@@ -139,17 +126,22 @@ export class PWAService {
   }
   
   private static urlBase64ToUint8Array(base64String: string): Uint8Array {
-    const padding = '='.repeat((4 - base64String.length % 4) % 4);
-    const base64 = (base64String + padding)
-      .replace(/-/g, '+')
-      .replace(/_/g, '/');
+    try {
+      const padding = '='.repeat((4 - base64String.length % 4) % 4);
+      const base64 = (base64String + padding)
+        .replace(/-/g, '+')
+        .replace(/_/g, '/');
 
-    const rawData = window.atob(base64);
-    const outputArray = new Uint8Array(rawData.length);
+      const rawData = window.atob(base64);
+      const outputArray = new Uint8Array(rawData.length);
 
-    for (let i = 0; i < rawData.length; ++i) {
-      outputArray[i] = rawData.charCodeAt(i);
+      for (let i = 0; i < rawData.length; ++i) {
+        outputArray[i] = rawData.charCodeAt(i);
+      }
+      return outputArray;
+    } catch (error) {
+      console.error('Error converting base64 to Uint8Array:', error);
+      return new Uint8Array();
     }
-    return outputArray;
   }
 }

@@ -1,24 +1,25 @@
 import { supabase } from '@/integrations/supabase/client';
 import type { Tables } from '@/integrations/supabase/types';
 
-type UserProfile = Tables<'user_profiles'>;
+export type UserProfile = Tables<'user_profiles'>;
 
 export class UserProfileService {
   static async getProfile(userId: string): Promise<UserProfile | null> {
     try {
-      const { data, error } = await supabase
+      const { data, error, status } = await supabase
         .from('user_profiles')
         .select('*')
         .eq('id', userId)
         .maybeSingle();
 
-      if (error && error.code !== 'PGRST116') {
+      // PGRST116 is "Results contain 0 rows" which is not an error for us
+      if (error && error.code !== 'PGRST116' && status !== 406) {
         throw error;
       }
 
       return data;
     } catch (error) {
-      console.error('Error fetching profile:', error);
+      console.error('Error fetching user profile:', error);
       throw error;
     }
   }
@@ -35,7 +36,7 @@ export class UserProfileService {
         throw error;
       }
 
-      return data;
+      return data as UserProfile;
     } catch (error) {
       console.error('Error creating profile:', error);
       throw error;
@@ -55,7 +56,7 @@ export class UserProfileService {
         throw error;
       }
 
-      return data;
+      return data as UserProfile;
     } catch (error) {
       console.error('Error updating profile:', error);
       throw error;
@@ -64,7 +65,7 @@ export class UserProfileService {
 
   static async ensureProfileExists(userId: string, userEmail: string, userData?: any): Promise<UserProfile> {
     try {
-      // First try to get existing profile
+      // First check if profile exists
       let profile = await this.getProfile(userId);
       
       if (!profile) {
@@ -89,7 +90,7 @@ export class UserProfileService {
         };
 
         profile = await this.createProfile(basicProfile);
-        console.log('Created basic profile for user:', userEmail);
+        console.log('Created new user profile for:', userEmail);
       }
 
       return profile;

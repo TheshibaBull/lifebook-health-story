@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useAuth } from '@/hooks/useAuth';
@@ -45,15 +45,15 @@ export const MainNavigation = () => {
   const [isOpen, setIsOpen] = useState(false);
   const { signOut, user } = useAuth();
   const { toast } = useToast();
+  
+  const isActive = useCallback((path: string) => location.pathname === path, [location.pathname]);
 
-  const isActive = (path: string) => location.pathname === path;
-
-  const handleNavigate = (path: string) => {
+  const handleNavigate = useCallback((path: string) => {
     navigate(path);
     setIsOpen(false);
-  };
+  }, [navigate]);
 
-  const handleLogout = async () => {
+  const handleLogout = useCallback(async () => {
     try {
       await signOut();
       toast({
@@ -68,7 +68,7 @@ export const MainNavigation = () => {
         variant: "destructive",
       });
     }
-  };
+  }, [signOut, toast, navigate]);
 
   if (isMobile) {
     return (
@@ -79,7 +79,7 @@ export const MainNavigation = () => {
           </Button>
         </SheetTrigger>
         <SheetContent side="left" className="w-64 p-0">
-          <div className="flex flex-col h-full">
+          <div className="flex flex-col h-full overflow-hidden">
             <SheetHeader className="p-6 border-b">
               <SheetTitle className="flex items-center gap-2">
                 <Heart className="w-6 h-6 text-red-500" />
@@ -87,7 +87,7 @@ export const MainNavigation = () => {
               </SheetTitle>
             </SheetHeader>
             <nav className="flex-1 p-4">
-              <div className="space-y-2">
+              <div className="space-y-2 overflow-y-auto">
                 {navigationItems.map((item) => {
                   const Icon = item.icon;
                   return (
@@ -105,7 +105,7 @@ export const MainNavigation = () => {
               </div>
             </nav>
             <div className="p-4 border-t">
-              <Button
+              <Button 
                 variant="ghost"
                 className="w-full justify-start gap-3 text-red-600 hover:text-red-700 hover:bg-red-50"
                 onClick={handleLogout}
@@ -121,7 +121,7 @@ export const MainNavigation = () => {
   }
 
   return (
-    <nav className="bg-white border-b shadow-sm">
+    <nav className="bg-white border-b shadow-sm sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center gap-8">
@@ -134,7 +134,7 @@ export const MainNavigation = () => {
             </div>
             
             <div className="hidden md:flex items-center space-x-1">
-              {navigationItems.slice(0, 6).map((item) => {
+              {navigationItems.slice(0, 5).map((item) => {
                 const Icon = item.icon;
                 return (
                   <Button
@@ -152,7 +152,7 @@ export const MainNavigation = () => {
           </div>
 
           <div className="flex items-center gap-2">
-            <Button
+            <Button 
               variant="ghost"
               size="sm"
               onClick={() => handleNavigate('/notifications')}

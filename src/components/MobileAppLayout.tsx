@@ -1,5 +1,4 @@
-
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 import { MobileHeader } from './MobileHeader';
 import { MobileTabBar } from './MobileTabBar';
@@ -26,26 +25,35 @@ const MobileAppLayout = ({
   const [isScrolled, setIsScrolled] = useState(false);
 
   const handleScroll = useCallback(() => {
-    setIsScrolled(window.scrollY > 10);
+    if (typeof window !== 'undefined') {
+      setIsScrolled(window.scrollY > 10);
+    }
   }, []);
 
   useEffect(() => {
-    let timeoutId: NodeJS.Timeout;
-    
-    const throttledHandleScroll = () => {
-      clearTimeout(timeoutId);
-      timeoutId = setTimeout(handleScroll, 10); // Throttle scroll events
-    };
+    if (typeof window === 'undefined') return;
 
-    window.addEventListener('scroll', throttledHandleScroll, { passive: true });
+    // Use requestAnimationFrame for better performance
+    let ticking = false;
+    const scrollListener = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          handleScroll();
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+    
+    window.addEventListener('scroll', scrollListener, { passive: true });
+    
     return () => {
-      window.removeEventListener('scroll', throttledHandleScroll);
-      clearTimeout(timeoutId);
+      window.removeEventListener('scroll', scrollListener);
     };
   }, [handleScroll]);
 
   // Auto-generate title from route
-  const pageTitle = useMemo(() => {
+  const pageTitle = (() => {
     if (title) return title;
     
     const path = location.pathname;
@@ -57,7 +65,7 @@ const MobileAppLayout = ({
       case '/search': return 'Search Records';
       default: return 'Lifebook Health';
     }
-  }, [title, location.pathname]);
+  })();
 
   if (!isMobile) {
     return <div className={className}>{children}</div>;
@@ -68,7 +76,7 @@ const MobileAppLayout = ({
       {showHeader && (
         <MobileHeader 
           title={pageTitle}
-          className={cn(
+          className={cn( 
             "transition-all duration-200",
             isScrolled && "shadow-sm bg-white/95 backdrop-blur-sm"
           )}
@@ -77,7 +85,7 @@ const MobileAppLayout = ({
       
       <main className={cn(
         "flex-1 overflow-x-hidden",
-        showTabBar && "pb-20", // Account for tab bar height
+        showTabBar && "pb-16", // Account for tab bar height
         className
       )}>
         <div className="safe-area-inset">

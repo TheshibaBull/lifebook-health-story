@@ -1,15 +1,13 @@
 import { useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider, QueryClientConfig } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "./hooks/useAuth";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { LoadingSpinner } from "./components/LoadingSpinner";
 import { PWAService } from '@/services/pwaService';
 
-// Direct imports for reliable navigation
 import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import UploadRecord from "./pages/UploadRecord";
@@ -28,9 +26,17 @@ import ScheduleAppointment from "./pages/ScheduleAppointment";
 import BookTest from "./pages/BookTest";
 import RecordsList from "./pages/RecordsList";
 
-const queryClient = new QueryClient();
-
-// Loading component for better UX
+// Configure React Query with optimized settings
+const queryClientConfig: QueryClientConfig = {
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      retry: 1,
+      staleTime: 5 * 60 * 1000, // 5 minutes
+    },
+  },
+};
+const queryClient = new QueryClient(queryClientConfig);
 
 // Protected Route Component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -79,100 +85,98 @@ function App() {
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <Routes>
-              {/* Public Routes - Accessible only when not authenticated */}
-              <Route path="/" element={
-                <PublicRoute>
-                  <Index />
-                </PublicRoute>
-              } />
-              <Route path="/onboarding" element={
-                <PublicRoute>
-                  <Welcome />
-                </PublicRoute>
-              } />
-              <Route path="/auth" element={
-                <PublicRoute>
-                  <Auth />
-                </PublicRoute>
-              } />
-              <Route path="/reset-password" element={
-                <PublicRoute>
-                  <ResetPassword />
-                </PublicRoute>
-              } />
-              <Route path="/verify-email" element={
-                <PublicRoute>
-                  <EmailVerification />
-                </PublicRoute>
-              } />
-              
-              {/* Protected Routes - Require authentication */}
-              <Route path="/dashboard" element={
-                <ProtectedRoute>
-                  <Dashboard />
-                </ProtectedRoute>
-              } />
-              <Route path="/health-score" element={
-                <ProtectedRoute>
-                  <HealthScore />
-                </ProtectedRoute>
-              } />
-              <Route path="/upload-record" element={
-                <ProtectedRoute>
-                  <UploadRecord />
-                </ProtectedRoute>
-              } />
-              <Route path="/records" element={
-                <ProtectedRoute>
-                  <RecordsList />
-                </ProtectedRoute>
-              } />
-              <Route path="/search" element={
-                <ProtectedRoute>
-                  <Search />
-                </ProtectedRoute>
-              } />
-              <Route path="/family" element={
-                <ProtectedRoute>
-                  <Family />
-                </ProtectedRoute>
-              } />
-              <Route path="/settings" element={
-                <ProtectedRoute>
-                  <Settings />
-                </ProtectedRoute>
-              } />
-              <Route path="/scanning" element={
-                <ProtectedRoute>
-                  <Scanning />
-                </ProtectedRoute>
-              } />
-              <Route path="/notifications" element={
-                <ProtectedRoute>
-                  <Notifications />
-                </ProtectedRoute>
-              } />
-              <Route path="/schedule-appointment" element={
-                <ProtectedRoute>
-                  <ScheduleAppointment />
-                </ProtectedRoute>
-              } />
-              <Route path="/book-test" element={
-                <ProtectedRoute>
-                  <BookTest />
-                </ProtectedRoute>
-              } />
-              
-              {/* 404 Route */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            {/* Public Routes - Accessible only when not authenticated */}
+            <Route path="/" element={
+              <PublicRoute>
+                <Index />
+              </PublicRoute>
+            } />
+            <Route path="/onboarding" element={
+              <PublicRoute>
+                <Welcome />
+              </PublicRoute>
+            } />
+            <Route path="/auth" element={
+              <PublicRoute>
+                <Auth />
+              </PublicRoute>
+            } />
+            <Route path="/reset-password" element={
+              <PublicRoute>
+                <ResetPassword />
+              </PublicRoute>
+            } />
+            <Route path="/verify-email" element={
+              <PublicRoute>
+                <EmailVerification />
+              </PublicRoute>
+            } />
+            
+            {/* Protected Routes - Require authentication */}
+            <Route path="/dashboard" element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/health-score" element={
+              <ProtectedRoute>
+                <HealthScore />
+              </ProtectedRoute>
+            } />
+            <Route path="/upload-record" element={
+              <ProtectedRoute>
+                <UploadRecord />
+              </ProtectedRoute>
+            } />
+            <Route path="/records" element={
+              <ProtectedRoute>
+                <RecordsList />
+              </ProtectedRoute>
+            } />
+            <Route path="/search" element={
+              <ProtectedRoute>
+                <Search />
+              </ProtectedRoute>
+            } />
+            <Route path="/family" element={
+              <ProtectedRoute>
+                <Family />
+              </ProtectedRoute>
+            } />
+            <Route path="/settings" element={
+              <ProtectedRoute>
+                <Settings />
+              </ProtectedRoute>
+            } />
+            <Route path="/scanning" element={
+              <ProtectedRoute>
+                <Scanning />
+              </ProtectedRoute>
+            } />
+            <Route path="/notifications" element={
+              <ProtectedRoute>
+                <Notifications />
+              </ProtectedRoute>
+            } />
+            <Route path="/schedule-appointment" element={
+              <ProtectedRoute>
+                <ScheduleAppointment />
+              </ProtectedRoute>
+            } />
+            <Route path="/book-test" element={
+              <ProtectedRoute>
+                <BookTest />
+              </ProtectedRoute>
+            } />
+            
+            {/* 404 Route */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
       </QueryClientProvider>
     </ErrorBoundary>
   );

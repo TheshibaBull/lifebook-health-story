@@ -1,6 +1,4 @@
-
 import { z } from 'zod';
-import React from 'react';
 
 // Common validation schemas
 export const emailSchema = z.string()
@@ -14,7 +12,7 @@ export const passwordSchema = z.string()
   .regex(/[0-9]/, 'Password must contain at least one number');
 
 export const phoneSchema = z.string()
-  .regex(/^[\+]?[1-9][\d]{0,15}$/, 'Please enter a valid phone number')
+  .regex(/^[+]?[1-9][\d]{0,15}$/, 'Please enter a valid phone number')
   .optional()
   .or(z.literal(''));
 
@@ -23,7 +21,7 @@ export const nameSchema = z.string()
   .max(50, 'Name must be less than 50 characters')
   .regex(/^[a-zA-Z\s]+$/, 'Name can only contain letters and spaces');
 
-// Sign up form validation schema
+// Sign up form validation schema with improved error messages
 export const signUpSchema = z.object({
   firstName: nameSchema,
   lastName: nameSchema,
@@ -34,7 +32,7 @@ export const signUpSchema = z.object({
   }),
   dateOfBirth: z.string()
     .min(1, 'Date of birth is required')
-    .refine((date) => {
+    .refine((date: string) => {
       const birthDate = new Date(date);
       const today = new Date();
       const age = today.getFullYear() - birthDate.getFullYear();
@@ -42,7 +40,7 @@ export const signUpSchema = z.object({
     }, 'Age must be between 13 and 120 years'),
   bloodGroup: z.enum(['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'])
     .optional(),
-  allergies: z.array(z.string()).optional(),
+  allergies: z.array(z.string()).optional().default([]),
   password: passwordSchema,
   confirmPassword: z.string(),
   agreeToTerms: z.boolean().refine(val => val === true, {
@@ -54,7 +52,7 @@ export const signUpSchema = z.object({
 });
 
 // Sign in form validation schema
-export const signInSchema = z.object({
+export const signInSchema = z.object({ 
   email: emailSchema,
   password: z.string().min(1, 'Password is required')
 });
@@ -66,7 +64,7 @@ export const familyMemberSchema = z.object({
   email: emailSchema.optional().or(z.literal('')),
   phone: phoneSchema,
   dateOfBirth: z.string().optional(),
-  bloodGroup: z.enum(['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'])
+  bloodGroup: z.enum(['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-', ''])
     .optional(),
   medicalConditions: z.array(z.string()).optional(),
   allergies: z.array(z.string()).optional(),
@@ -84,7 +82,7 @@ export const appointmentSchema = z.object({
 });
 
 // Validation helper function with proper generic syntax
-export function validateForm<T>(schema: z.ZodSchema<T>, data: unknown): {
+export function validateForm<T>(schema: z.ZodSchema<T>, data: any): {
   success: boolean;
   data?: T;
   errors?: Record<string, string>;
@@ -94,7 +92,7 @@ export function validateForm<T>(schema: z.ZodSchema<T>, data: unknown): {
     return { success: true, data: validatedData };
   } catch (error) {
     if (error instanceof z.ZodError) {
-      const errors: Record<string, string> = {};
+      const errors = {} as Record<string, string>;
       error.errors.forEach((err) => {
         if (err.path.length > 0) {
           errors[err.path[0].toString()] = err.message;
@@ -106,19 +104,4 @@ export function validateForm<T>(schema: z.ZodSchema<T>, data: unknown): {
   }
 }
 
-// Form field validation component
-interface FormFieldProps {
-  error?: string;
-  children: React.ReactNode;
-}
-
-export const FormField = ({ error, children }: FormFieldProps) => (
-  <div className="space-y-1">
-    {children}
-    {error && (
-      <p className="text-sm text-red-600" role="alert">
-        {error}
-      </p>
-    )}
-  </div>
-);
+export default validateForm;

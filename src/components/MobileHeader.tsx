@@ -1,4 +1,3 @@
-
 import { ArrowLeft, Bell, Search } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -18,7 +17,7 @@ interface MobileHeaderProps {
 
 const MobileHeader = ({
   title = "Lifebook Health",
-  showBack = false,
+  showBack = true,
   showMenu = true,
   showNotifications = true,
   showSearch = false,
@@ -29,7 +28,7 @@ const MobileHeader = ({
   const location = useLocation();
   const notificationCount = 3; // Mock notification count
 
-  const handleBackClick = () => {
+  const handleBackClick = (e: React.MouseEvent) => {
     if (location.pathname === '/dashboard') {
       navigate('/');
     } else {
@@ -40,7 +39,7 @@ const MobileHeader = ({
   return (
     <header className={cn(
       "lg:hidden sticky top-0 z-50 bg-white border-b border-gray-200 px-4 py-3",
-      className
+      className 
     )}>
       <div className="flex items-center justify-between">
         {/* Left side */}
@@ -50,7 +49,7 @@ const MobileHeader = ({
               variant="ghost"
               size="sm"
               onClick={handleBackClick}
-              className="p-2"
+              className="p-2 -ml-2"
             >
               <ArrowLeft className="w-5 h-5" />
             </Button>
@@ -66,7 +65,7 @@ const MobileHeader = ({
         {/* Right side */}
         <div className="flex items-center gap-2">
           {showSearch && (
-            <Button variant="ghost" size="sm" className="p-2">
+            <Button variant="ghost" size="sm" className="p-2" onClick={() => navigate('/search')}>
               <Search className="w-5 h-5" />
             </Button>
           )}

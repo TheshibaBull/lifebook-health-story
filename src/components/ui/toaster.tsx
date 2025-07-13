@@ -1,5 +1,5 @@
 import { useToast } from "@/hooks/use-toast"
-import {
+import { 
   Toast,
   ToastClose,
   ToastDescription,
@@ -11,7 +11,7 @@ import {
 export function Toaster() {
   const { toasts } = useToast()
 
-  return (
+  return toasts.length > 0 ? (
     <ToastProvider>
       {toasts.map(function ({ id, title, description, action, ...props }) {
         return (
@@ -29,5 +29,5 @@ export function Toaster() {
       })}
       <ToastViewport />
     </ToastProvider>
-  )
+  ) : null
 }

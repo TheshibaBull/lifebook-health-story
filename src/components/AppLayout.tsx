@@ -1,7 +1,7 @@
-
 import { useIsMobile } from '@/hooks/use-mobile';
 import { MainNavigation } from './MainNavigation';
 import { MobileAppLayout } from './MobileAppLayout';
+import { cn } from '@/lib/utils';
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -23,7 +23,7 @@ export const AppLayout = ({
   if (isMobile) {
     return (
       <MobileAppLayout 
-        title={title} 
+        title={title}
         showTabBar={showTabBar} 
         showHeader={showHeader}
         className={className}
@@ -34,9 +34,9 @@ export const AppLayout = ({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className={cn("min-h-screen bg-background", className)}>
       <MainNavigation />
-      <main className={className}>
+      <main>
         {children}
       </main>
     </div>
