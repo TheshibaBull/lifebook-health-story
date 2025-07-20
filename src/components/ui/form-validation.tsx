@@ -29,7 +29,7 @@ export const signUpSchema = z.object({
   email: emailSchema,
   phone: phoneSchema,
   gender: z.enum(['male', 'female', 'other', 'prefer-not-to-say'], {
-    errorMap: () => ({ message: 'Please select a gender' })
+    message: 'Please select a gender'
   }),
   dateOfBirth: z.string()
     .min(1, 'Date of birth is required')
