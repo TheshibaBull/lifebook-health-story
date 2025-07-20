@@ -97,7 +97,12 @@ export const RecordViewer = ({ recordId, open, onOpenChange, onDelete }: RecordV
   };
 
   const handleDetailedAnalysis = () => {
+    console.log('Starting detailed AI analysis...');
     setShowAnalysisDialog(true);
+    toast({
+      title: "Starting AI Analysis",
+      description: "Opening detailed analysis dialog...",
+    });
   };
 
   const getRecordIcon = (category?: string) => {
@@ -139,51 +144,54 @@ export const RecordViewer = ({ recordId, open, onOpenChange, onDelete }: RecordV
               </DialogHeader>
               
               <div className="space-y-6 py-4">
-                {/* AI Analysis Section - Prominent placement for images */}
+                {/* AI Analysis Section - Always visible and prominent for images */}
                 {isImageFile(record.file_type) && (
-                  <div className="bg-gradient-to-r from-purple-50 via-blue-50 to-indigo-50 p-6 rounded-xl border-2 border-purple-200 shadow-sm">
-                    <div className="flex items-center gap-4 mb-4">
-                      <div className="flex items-center justify-center w-12 h-12 bg-purple-100 rounded-full">
-                        <Brain className="w-6 h-6 text-purple-600" />
+                  <div className="bg-gradient-to-br from-purple-100 via-blue-100 to-indigo-100 p-8 rounded-2xl border-2 border-purple-300 shadow-lg">
+                    <div className="text-center mb-6">
+                      <div className="flex justify-center mb-4">
+                        <div className="flex items-center justify-center w-16 h-16 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full shadow-lg">
+                          <Brain className="w-8 h-8 text-white" />
+                        </div>
                       </div>
-                      <div className="flex-1">
-                        <h3 className="text-lg font-semibold text-purple-900 flex items-center gap-2">
-                          <Sparkles className="w-5 h-5" />
-                          AI Detailed Analysis Available
-                        </h3>
-                        <p className="text-sm text-purple-700 mt-1">
-                          Get comprehensive AI insights including object detection, text extraction, medical findings, and personalized recommendations.
-                        </p>
+                      <h2 className="text-2xl font-bold text-purple-900 mb-2 flex items-center justify-center gap-2">
+                        <Sparkles className="w-6 h-6 text-yellow-500" />
+                        AI-Powered Medical Analysis
+                      </h2>
+                      <p className="text-purple-700 text-lg max-w-2xl mx-auto">
+                        Get comprehensive AI insights including medical findings, text extraction, object detection, and personalized health recommendations.
+                      </p>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                      <div className="bg-white/70 backdrop-blur-sm p-4 rounded-xl text-center border border-purple-200">
+                        <Eye className="w-8 h-8 text-purple-600 mx-auto mb-2" />
+                        <span className="text-sm font-semibold text-purple-800">Object Detection</span>
+                      </div>
+                      <div className="bg-white/70 backdrop-blur-sm p-4 rounded-xl text-center border border-purple-200">
+                        <FileText className="w-8 h-8 text-blue-600 mx-auto mb-2" />
+                        <span className="text-sm font-semibold text-purple-800">Text Extraction</span>
+                      </div>
+                      <div className="bg-white/70 backdrop-blur-sm p-4 rounded-xl text-center border border-purple-200">
+                        <Activity className="w-8 h-8 text-green-600 mx-auto mb-2" />
+                        <span className="text-sm font-semibold text-purple-800">Medical Analysis</span>
+                      </div>
+                      <div className="bg-white/70 backdrop-blur-sm p-4 rounded-xl text-center border border-purple-200">
+                        <Sparkles className="w-8 h-8 text-yellow-500 mx-auto mb-2" />
+                        <span className="text-sm font-semibold text-purple-800">Smart Insights</span>
                       </div>
                     </div>
                     
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-                      <div className="flex items-center gap-2 text-sm text-purple-700">
-                        <Eye className="w-4 h-4" />
-                        <span>Object Detection</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm text-purple-700">
-                        <FileText className="w-4 h-4" />
-                        <span>Text Extraction</span>  
-                      </div>
-                      <div className="flex items-center gap-2 text-sm text-purple-700">
-                        <Activity className="w-4 h-4" />
-                        <span>Medical Analysis</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm text-purple-700">
-                        <Sparkles className="w-4 h-4" />
-                        <span>Smart Insights</span>
-                      </div>
+                    <div className="text-center">
+                      <Button 
+                        onClick={handleDetailedAnalysis}
+                        className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-bold text-lg px-8 py-4 rounded-xl shadow-lg transform hover:scale-105 transition-all duration-200"
+                        size="lg"
+                      >
+                        <Brain className="w-6 h-6 mr-3" />
+                        Start Detailed AI Analysis
+                        <Sparkles className="w-5 h-5 ml-2" />
+                      </Button>
                     </div>
-                    
-                    <Button 
-                      onClick={handleDetailedAnalysis}
-                      className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-medium py-3"
-                      size="lg"
-                    >
-                      <Brain className="w-5 h-5 mr-2" />
-                      Start AI Analysis
-                    </Button>
                   </div>
                 )}
 
@@ -304,7 +312,7 @@ export const RecordViewer = ({ recordId, open, onOpenChange, onDelete }: RecordV
                 )}
               </div>
               
-              <DialogFooter>
+              <DialogFooter className="bg-gray-50 -mx-6 -mb-6 px-6 py-4 mt-6">
                 <div className="flex justify-between w-full">
                   <Button 
                     variant="outline" 
@@ -312,14 +320,13 @@ export const RecordViewer = ({ recordId, open, onOpenChange, onDelete }: RecordV
                   >
                     Close
                   </Button>
-                  <div className="flex gap-2">
+                  <div className="flex gap-3">
                     {isImageFile(record.file_type) && (
                       <Button 
-                        variant="outline"
                         onClick={handleDetailedAnalysis}
-                        className="text-purple-600 border-purple-200 hover:bg-purple-50"
+                        className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold px-6"
                       >
-                        <Brain className="mr-2 h-4 w-4" />
+                        <Brain className="mr-2 h-5 w-5" />
                         AI Analysis
                       </Button>
                     )}
