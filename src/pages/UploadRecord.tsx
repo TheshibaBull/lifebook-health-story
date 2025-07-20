@@ -62,6 +62,10 @@ const UploadRecord = () => {
     }
   };
 
+  const handleFileUpload = async (files: File[]) => {
+    await processFiles(files);
+  };
+
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files && files.length > 0) {
@@ -307,7 +311,6 @@ const UploadRecord = () => {
     }
   };
 
-  
   return ( 
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center p-4">
       <Card className="w-full max-w-3xl shadow-xl border-0">

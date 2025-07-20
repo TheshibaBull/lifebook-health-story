@@ -1,3 +1,4 @@
+
 import { z } from 'zod';
 
 // Common validation schemas
@@ -28,7 +29,7 @@ export const signUpSchema = z.object({
   email: emailSchema,
   phone: phoneSchema,
   gender: z.enum(['male', 'female', 'other', 'prefer-not-to-say'], {
-    required_error: 'Please select a gender'
+    errorMap: () => ({ message: 'Please select a gender' })
   }),
   dateOfBirth: z.string()
     .min(1, 'Date of birth is required')
@@ -93,7 +94,7 @@ export function validateForm<T>(schema: z.ZodSchema<T>, data: any): {
   } catch (error) {
     if (error instanceof z.ZodError) {
       const errors = {} as Record<string, string>;
-      error.errors.forEach((err) => {
+      error.issues.forEach((err) => {
         if (err.path.length > 0) {
           errors[err.path[0].toString()] = err.message;
         }

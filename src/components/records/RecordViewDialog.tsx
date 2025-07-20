@@ -16,6 +16,16 @@ import type { Tables } from '@/integrations/supabase/types';
 
 type HealthRecord = Tables<'health_records'> & { fileUrl?: string };
 
+interface AIAnalysis {
+  summary?: string;
+  keyFindings?: string[];
+  recommendations?: string[];
+  confidence?: number;
+  category?: string;
+  tags?: string[];
+  criticalValues?: any[];
+}
+
 interface RecordViewDialogProps {
   record: HealthRecord | null;
   open: boolean;
@@ -26,6 +36,9 @@ interface RecordViewDialogProps {
 
 const RecordViewDialog = ({ record, open, onOpenChange, onDownload, onDelete }: RecordViewDialogProps) => {
   if (!record) return null;
+
+  // Safely parse the ai_analysis JSON field
+  const aiAnalysis = record.ai_analysis as AIAnalysis | null;
 
   const getRecordIcon = (category: string) => {
     switch (category) {
@@ -167,28 +180,28 @@ const RecordViewDialog = ({ record, open, onOpenChange, onDownload, onDelete }: 
           )}
           
           {/* AI Summary */}
-          {record.ai_analysis?.summary && (
+          {aiAnalysis?.summary && (
             <div>
               <p className="font-medium text-gray-700 mb-2">AI Summary</p>
               <div className="bg-purple-50 p-4 rounded-lg text-sm border border-purple-200">
-                <p className="text-purple-900">{record.ai_analysis.summary}</p>
+                <p className="text-purple-900">{aiAnalysis.summary}</p>
                 
-                {record.ai_analysis.keyFindings && record.ai_analysis.keyFindings.length > 0 && (
+                {aiAnalysis.keyFindings && aiAnalysis.keyFindings.length > 0 && (
                   <div className="mt-3">
                     <p className="font-medium text-purple-900 mb-1">Key Findings:</p>
                     <ul className="list-disc pl-5 text-purple-800 space-y-1">
-                      {record.ai_analysis.keyFindings.map((finding: string, index: number) => (
+                      {aiAnalysis.keyFindings.map((finding: string, index: number) => (
                         <li key={index}>{finding}</li>
                       ))}
                     </ul>
                   </div>
                 )}
                 
-                {record.ai_analysis.recommendations && record.ai_analysis.recommendations.length > 0 && (
+                {aiAnalysis.recommendations && aiAnalysis.recommendations.length > 0 && (
                   <div className="mt-3">
                     <p className="font-medium text-purple-900 mb-1">Recommendations:</p>
                     <ul className="list-disc pl-5 text-purple-800 space-y-1">
-                      {record.ai_analysis.recommendations.map((rec: string, index: number) => (
+                      {aiAnalysis.recommendations.map((rec: string, index: number) => (
                         <li key={index}>{rec}</li>
                       ))}
                     </ul>

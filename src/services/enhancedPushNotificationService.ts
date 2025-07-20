@@ -66,7 +66,7 @@ export class EnhancedPushNotificationService {
       const existingSubscription = await registration.pushManager.getSubscription();
       if (existingSubscription) {
         this.subscription = existingSubscription;
-        await this.saveSubscriptionToDatabase(existingSubscription);
+        await this.saveSubscriptionToStorage(existingSubscription);
         return;
       }
 
@@ -77,7 +77,7 @@ export class EnhancedPushNotificationService {
       });
 
       this.subscription = subscription;
-      await this.saveSubscriptionToDatabase(subscription);
+      await this.saveSubscriptionToStorage(subscription);
       
       console.log('Push subscription successful');
     } catch (error) {
@@ -86,20 +86,10 @@ export class EnhancedPushNotificationService {
     }
   }
 
-  static async saveSubscriptionToDatabase(subscription: PushSubscription): Promise<void> {
+  static async saveSubscriptionToStorage(subscription: PushSubscription): Promise<void> {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { error } = await supabase
-        .from('user_profiles')
-        .upsert({
-          id: user.id,
-          push_subscription: subscription.toJSON(),
-          updated_at: new Date().toISOString()
-        });
-
-      if (error) throw error;
+      // Store in localStorage for now since we don't have a push_subscription field in the database
+      localStorage.setItem('lifebook-push-subscription', JSON.stringify(subscription.toJSON()));
     } catch (error) {
       console.error('Failed to save push subscription:', error);
     }
@@ -110,15 +100,15 @@ export class EnhancedPushNotificationService {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Send via edge function
-      const { error } = await supabase.functions.invoke('send-push-notification', {
-        body: {
-          userId: user.id,
-          ...payload
-        }
-      });
-
-      if (error) throw error;
+      // Send via edge function (when implemented)
+      // For now, just send local notification
+      if (await this.requestPermission()) {
+        new Notification(payload.title, {
+          body: payload.body,
+          icon: '/favicon.ico',
+          tag: payload.type,
+        });
+      }
     } catch (error) {
       console.error('Failed to send notification:', error);
     }
