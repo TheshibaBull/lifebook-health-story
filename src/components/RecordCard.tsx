@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,7 +11,8 @@ import {
   TestTube,
   Pill,
   Activity,
-  FileImage
+  FileImage,
+  Brain
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
@@ -31,10 +33,11 @@ interface RecordCardProps {
   };
   onView: (recordId: string) => void;
   onDelete: (recordId: string) => void;
+  onAIAnalysis?: (record: any) => void;
   compact?: boolean;
 }
 
-export const RecordCard = ({ record, onView, onDelete, compact = false }: RecordCardProps) => {
+export const RecordCard = ({ record, onView, onDelete, onAIAnalysis, compact = false }: RecordCardProps) => {
   const [isDownloading, setIsDownloading] = useState(false);
   const { toast } = useToast();
 
@@ -77,6 +80,13 @@ export const RecordCard = ({ record, onView, onDelete, compact = false }: Record
     }
   };
 
+  const handleAIAnalysis = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onAIAnalysis) {
+      onAIAnalysis(record);
+    }
+  };
+
   const getRecordIcon = (category: string) => {
     switch (category) {
       case 'Lab Results':
@@ -97,6 +107,10 @@ export const RecordCard = ({ record, onView, onDelete, compact = false }: Record
     return FileUploadService.formatFileSize(bytes);
   };
 
+  const isImageFile = (fileType?: string) => {
+    return fileType?.toLowerCase().includes('image');
+  };
+
   if (compact) {
     return (
       <Card className="overflow-hidden hover:shadow-md transition-shadow cursor-pointer" onClick={() => onView(record.id)}>
@@ -112,17 +126,30 @@ export const RecordCard = ({ record, onView, onDelete, compact = false }: Record
                 )}
               </div>
             </div>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="h-7 w-7 p-0" 
-              onClick={(e) => {
-                e.stopPropagation();
-                onView(record.id);
-              }}
-            >
-              <Eye className="h-3.5 w-3.5" />
-            </Button>
+            <div className="flex items-center gap-1">
+              {isImageFile(record.file_type) && onAIAnalysis && (
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="h-7 w-7 p-0 bg-gradient-to-r from-purple-50 to-blue-50 hover:from-purple-100 hover:to-blue-100" 
+                  onClick={handleAIAnalysis}
+                  title="AI Analysis"
+                >
+                  <Brain className="h-3.5 w-3.5 text-purple-600" />
+                </Button>
+              )}
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-7 w-7 p-0" 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onView(record.id);
+                }}
+              >
+                <Eye className="h-3.5 w-3.5" />
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -172,6 +199,17 @@ export const RecordCard = ({ record, onView, onDelete, compact = false }: Record
           >
             <Eye className="h-4 w-4" />
           </Button>
+          {isImageFile(record.file_type) && onAIAnalysis && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-8 w-8 p-0 bg-gradient-to-r from-purple-50 to-blue-50 hover:from-purple-100 hover:to-blue-100" 
+              onClick={handleAIAnalysis}
+              title="AI Analysis"
+            >
+              <Brain className="h-4 w-4 text-purple-600" />
+            </Button>
+          )}
           {record.file_path && (
             <Button 
               variant="ghost" 

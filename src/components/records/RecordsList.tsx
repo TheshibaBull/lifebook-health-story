@@ -11,7 +11,9 @@ import {
   Pill,
   Activity,
   FileImage,
-  Calendar as CalendarIcon
+  Calendar as CalendarIcon,
+  Brain,
+  Sparkles
 } from 'lucide-react';
 import { format } from 'date-fns';
 import type { Tables } from '@/integrations/supabase/types';
@@ -23,6 +25,7 @@ interface RecordsListProps {
   onViewRecord: (record: HealthRecord) => void;
   onDownloadRecord: (record: HealthRecord) => void;
   onDeleteRecord: (recordId: string) => void;
+  onAIAnalysis?: (record: HealthRecord) => void;
   isMobile?: boolean;
 }
 
@@ -31,6 +34,7 @@ const RecordsList = ({
   onViewRecord,
   onDownloadRecord,
   onDeleteRecord,
+  onAIAnalysis,
   isMobile = false
 }: RecordsListProps) => {
   const getRecordIcon = (category: string) => {
@@ -66,6 +70,10 @@ const RecordsList = ({
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  const isImageFile = (fileType?: string) => {
+    return fileType?.toLowerCase().includes('image');
   };
 
   if (isMobile) {
@@ -114,6 +122,17 @@ const RecordsList = ({
                 >
                   <Eye className="h-4 w-4" />
                 </Button>
+                {isImageFile(record.file_type) && onAIAnalysis && (
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-8 w-8 p-0 bg-gradient-to-r from-purple-50 to-blue-50 hover:from-purple-100 hover:to-blue-100" 
+                    onClick={() => onAIAnalysis(record)}
+                    title="AI Analysis"
+                  >
+                    <Brain className="h-4 w-4 text-purple-600" />
+                  </Button>
+                )}
                 {record.file_path && (
                   <Button 
                     variant="ghost" 
@@ -195,6 +214,17 @@ const RecordsList = ({
                 <Eye className="mr-2 h-4 w-4" />
                 View
               </Button>
+              {isImageFile(record.file_type) && onAIAnalysis && (
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  className="bg-gradient-to-r from-purple-50 to-blue-50 hover:from-purple-100 hover:to-blue-100 border-purple-200"
+                  onClick={() => onAIAnalysis(record)}
+                >
+                  <Brain className="mr-2 h-4 w-4 text-purple-600" />
+                  AI Analysis
+                </Button>
+              )}
               {record.file_path && (
                 <Button 
                   variant="outline" 

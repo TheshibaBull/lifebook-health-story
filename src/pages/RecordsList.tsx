@@ -17,6 +17,7 @@ import { RecordsHeader } from '@/components/records/RecordsHeader';
 import { RecordsSearchBar } from '@/components/records/RecordsSearchBar';
 import { RecordsList as RecordsListComponent } from '@/components/records/RecordsList';
 import { RecordViewDialog } from '@/components/records/RecordViewDialog';
+import { DetailedAnalysisDialog } from '@/components/DetailedAnalysisDialog';
 import type { DateRange } from 'react-day-picker';
 import type { Tables } from '@/integrations/supabase/types';
 
@@ -33,6 +34,8 @@ const RecordsList = () => {
   const [recordToDelete, setRecordToDelete] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showViewDialog, setShowViewDialog] = useState(false);
+  const [showAnalysisDialog, setShowAnalysisDialog] = useState(false);
+  const [selectedAnalysisRecord, setSelectedAnalysisRecord] = useState<HealthRecord | null>(null);
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
   
   const navigate = useNavigate();
@@ -153,6 +156,25 @@ const RecordsList = () => {
     setShowViewDialog(true);
   };
 
+  const handleAIAnalysis = async (record: HealthRecord) => {
+    if (!record.file_type?.includes('image')) {
+      toast({
+        title: "AI Analysis Not Available",
+        description: "AI analysis is only available for image files.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    setSelectedAnalysisRecord(record);
+    setShowAnalysisDialog(true);
+    
+    toast({
+      title: "Starting AI Analysis",
+      description: `Analyzing ${record.title}...`,
+    });
+  };
+
   const handleDownloadRecord = async (record: HealthRecord) => {
     if (!record.file_path) {
       toast({
@@ -251,6 +273,7 @@ const RecordsList = () => {
             setRecordToDelete(recordId);
             setShowDeleteDialog(true);
           }}
+          onAIAnalysis={handleAIAnalysis}
           isMobile={true}
         />
       )}
@@ -305,6 +328,7 @@ const RecordsList = () => {
                 setRecordToDelete(recordId);
                 setShowDeleteDialog(true);
               }}
+              onAIAnalysis={handleAIAnalysis}
               isMobile={false}
             />
           )}
@@ -359,6 +383,16 @@ const RecordsList = () => {
             setShowDeleteDialog(true);
           }}
         />
+
+        {/* AI Analysis Dialog */}
+        {selectedAnalysisRecord && (
+          <DetailedAnalysisDialog
+            open={showAnalysisDialog}
+            onOpenChange={setShowAnalysisDialog}
+            imageUrl={selectedAnalysisRecord.fileUrl}
+            fileName={selectedAnalysisRecord.file_name || selectedAnalysisRecord.title}
+          />
+        )}
       </div>
     </AppLayout>
   );

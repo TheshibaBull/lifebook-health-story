@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { RecordCard } from '@/components/RecordCard';
 import { RecordViewer } from '@/components/RecordViewer';
+import { DetailedAnalysisDialog } from '@/components/DetailedAnalysisDialog';
 import { FileText, Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -25,6 +26,8 @@ export const RecentRecords = ({ limit = 3, showViewAll = true, className }: Rece
   const [selectedRecordId, setSelectedRecordId] = useState<string | null>(null);
   const [showViewDialog, setShowViewDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showAnalysisDialog, setShowAnalysisDialog] = useState(false);
+  const [selectedAnalysisRecord, setSelectedAnalysisRecord] = useState<any>(null);
   const [recordToDelete, setRecordToDelete] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   
@@ -73,6 +76,25 @@ export const RecentRecords = ({ limit = 3, showViewAll = true, className }: Rece
   const handleViewRecord = (recordId: string) => {
     setSelectedRecordId(recordId);
     setShowViewDialog(true);
+  };
+
+  const handleAIAnalysis = (record: any) => {
+    if (!record.file_type?.includes('image')) {
+      toast({
+        title: "AI Analysis Not Available",
+        description: "AI analysis is only available for image files.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    setSelectedAnalysisRecord(record);
+    setShowAnalysisDialog(true);
+    
+    toast({
+      title: "Starting AI Analysis",
+      description: `Analyzing ${record.title}...`,
+    });
   };
 
   const handleDeletePrompt = (recordId: string) => {
@@ -157,6 +179,7 @@ export const RecentRecords = ({ limit = 3, showViewAll = true, className }: Rece
                 record={record}
                 onView={handleViewRecord}
                 onDelete={handleDeletePrompt}
+                onAIAnalysis={handleAIAnalysis}
                 compact
               />
             ))}
@@ -171,6 +194,16 @@ export const RecentRecords = ({ limit = 3, showViewAll = true, className }: Rece
         onOpenChange={setShowViewDialog}
         onDelete={handleDeletePrompt}
       />
+
+      {/* AI Analysis Dialog */}
+      {selectedAnalysisRecord && (
+        <DetailedAnalysisDialog
+          open={showAnalysisDialog}
+          onOpenChange={setShowAnalysisDialog}
+          imageUrl={selectedAnalysisRecord.fileUrl}
+          fileName={selectedAnalysisRecord.file_name || selectedAnalysisRecord.title}
+        />
+      )}
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
