@@ -4,6 +4,7 @@ import { Progress } from '@/components/ui/progress';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { FileText, Brain, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { RealTimeOCRService } from '@/services/realTimeOCRService';
+import { FallbackOCRService } from '@/services/fallbackOCRService';
 import { EnhancedPushNotificationService } from '@/services/enhancedPushNotificationService';
 import { OfflineDataSyncService } from '@/services/offlineDataSyncService';
 import { useToast } from '@/hooks/use-toast';
@@ -43,12 +44,22 @@ export const EnhancedDocumentProcessor = ({
       // Stage 1: Initialize OCR
       setCurrentStage('Initializing AI models...');
       setProgress(10);
-      await RealTimeOCRService.initialize();
       
-      // Stage 2: Extract text
-      setCurrentStage('Extracting text with OCR...');
-      setProgress(30);
-      const ocrResult = await RealTimeOCRService.extractText(file);
+      let ocrResult;
+      let usedFallback = false;
+      
+      try {
+        await RealTimeOCRService.initialize();
+        setCurrentStage('Extracting text with advanced AI...');
+        setProgress(30);
+        ocrResult = await RealTimeOCRService.extractText(file);
+      } catch (error) {
+        console.log('Primary OCR failed, using fallback service:', error);
+        usedFallback = true;
+        setCurrentStage('Using fallback OCR service...');
+        setProgress(25);
+        ocrResult = await FallbackOCRService.extractText(file);
+      }
       
       // Stage 3: Analyze content
       setCurrentStage('Analyzing medical content...');
@@ -56,7 +67,11 @@ export const EnhancedDocumentProcessor = ({
       const category = categorizeDocument(file.name, ocrResult.text, ocrResult.entities);
       const tags = generateTags(ocrResult.text, ocrResult.entities);
       
-      // Stage 4: Finalize
+      // Stage 4: Generate recommendations
+      setCurrentStage('Generating personalized recommendations...');
+      setProgress(80);
+      
+      // Stage 5: Finalize
       setCurrentStage('Finalizing analysis...');
       setProgress(90);
       
@@ -77,9 +92,13 @@ export const EnhancedDocumentProcessor = ({
       
       onProcessingComplete(result);
       
+      const confidenceText = usedFallback ? 
+        `Successfully processed ${file.name} using fallback OCR with ${Math.round(result.confidence * 100)}% confidence` :
+        `Successfully analyzed ${file.name} with ${Math.round(result.confidence * 100)}% confidence`;
+      
       toast({
         title: "Document Processed",
-        description: `Successfully analyzed ${file.name} with ${Math.round(result.confidence * 100)}% confidence`,
+        description: confidenceText,
       });
       
     } catch (error) {
