@@ -14,9 +14,12 @@ import {
   Target,
   Loader2,
   CheckCircle,
-  AlertTriangle
+  AlertTriangle,
+  Zap,
+  Calendar
 } from 'lucide-react';
-import { AIImageAnalysisService, ImageAnalysisResult } from '@/services/aiImageAnalysisService';
+import { ChatGPTMedicalAnalysisService } from '@/services/chatGPTMedicalAnalysisService';
+import { ChatGPTApiKeyDialog } from '@/components/ChatGPTApiKeyDialog';
 import { useToast } from '@/hooks/use-toast';
 
 interface DetailedAnalysisDialogProps {
@@ -24,7 +27,7 @@ interface DetailedAnalysisDialogProps {
   onOpenChange: (open: boolean) => void;
   imageUrl: string;
   fileName: string;
-  existingAnalysis?: any; // Pass existing analysis if available
+  existingAnalysis?: any;
 }
 
 export const DetailedAnalysisDialog = ({ 
@@ -35,306 +38,336 @@ export const DetailedAnalysisDialog = ({
   existingAnalysis 
 }: DetailedAnalysisDialogProps) => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [analysisResult, setAnalysisResult] = useState<ImageAnalysisResult | null>(null);
+  const [analysisResult, setAnalysisResult] = useState<any>(null);
+  const [showApiKeyDialog, setShowApiKeyDialog] = useState(false);
   const { toast } = useToast();
 
-  // Check for existing analysis when dialog opens
   useEffect(() => {
     if (open && existingAnalysis && Object.keys(existingAnalysis).length > 0) {
       console.log('Processing existing analysis:', existingAnalysis);
-      
-      // Convert existing analysis to our format with better field mapping
-      const convertedAnalysis: ImageAnalysisResult = {
-        summary: existingAnalysis.summary || existingAnalysis.description || 'Analysis completed successfully.',
-        detectedObjects: existingAnalysis.detectedObjects || existingAnalysis.detected_objects || existingAnalysis.objects || [],
-        textContent: existingAnalysis.textContent || existingAnalysis.extracted_text || existingAnalysis.text || '',
-        medicalFindings: existingAnalysis.medicalFindings || existingAnalysis.medical_findings || existingAnalysis.keyFindings || existingAnalysis.key_findings || existingAnalysis.findings || [],
-        keyMetrics: existingAnalysis.keyMetrics || existingAnalysis.key_metrics || existingAnalysis.metrics || existingAnalysis.measurements || [],
-        recommendations: existingAnalysis.recommendations || existingAnalysis.ai_recommendations || existingAnalysis.suggestion || existingAnalysis.suggestions || [
-          "Review this document with your healthcare provider",
-          "Keep this record for future medical consultations",
-          "Ensure all information is accurate and up to date"
-        ], // Provide default recommendations if none exist
-        confidence: existingAnalysis.confidence || 0.85,
-        analysisType: existingAnalysis.analysisType || existingAnalysis.analysis_type || existingAnalysis.category || 'Medical Document'
-      };
-      
-      console.log('Converted analysis result:', convertedAnalysis);
-      setAnalysisResult(convertedAnalysis);
+      setAnalysisResult(existingAnalysis);
     } else if (open) {
       setAnalysisResult(null);
     }
   }, [open, existingAnalysis]);
 
-  const startAnalysis = async () => {
+  const startChatGPTAnalysis = async () => {
+    const apiKey = ChatGPTMedicalAnalysisService.getAPIKey();
+    
+    if (!apiKey) {
+      setShowApiKeyDialog(true);
+      return;
+    }
+
     setIsAnalyzing(true);
     setAnalysisResult(null);
 
     try {
-      const result = await AIImageAnalysisService.analyzeImage(imageUrl);
+      const result = await ChatGPTMedicalAnalysisService.analyzeImage(imageUrl, fileName);
       setAnalysisResult(result);
       
       toast({
-        title: "Analysis Complete",
-        description: "AI has successfully analyzed the image",
+        title: "ChatGPT Analysis Complete",
+        description: "Detailed medical analysis has been generated with personalized recommendations",
       });
     } catch (error) {
-      console.error('Analysis failed:', error);
+      console.error('ChatGPT analysis failed:', error);
       toast({
         title: "Analysis Failed",
-        description: error instanceof Error ? error.message : "Failed to analyze image",
+        description: error instanceof Error ? error.message : "Failed to analyze with ChatGPT. Please check your API key.",
         variant: "destructive",
       });
+      
+      if (error instanceof Error && error.message.includes('API key')) {
+        setShowApiKeyDialog(true);
+      }
     } finally {
       setIsAnalyzing(false);
     }
   };
 
+  const handleApiKeySet = () => {
+    startChatGPTAnalysis();
+  };
+
   const getAnalysisIcon = (type: string) => {
-    if (type.includes('Medical')) return <Activity className="w-5 h-5 text-red-500" />;
+    if (type.includes('Medical') || type.includes('Lab')) return <Activity className="w-5 h-5 text-red-500" />;
     if (type.includes('Data')) return <Target className="w-5 h-5 text-blue-500" />;
     return <FileText className="w-5 h-5 text-gray-500" />;
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Brain className="w-5 h-5 text-purple-600" />
-            AI Detailed Analysis - {fileName}
-          </DialogTitle>
-        </DialogHeader>
-        
-        <div className="space-y-6 py-4">
-          {/* Image Preview */}
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex justify-center">
-                <img 
-                  src={imageUrl} 
-                  alt={fileName} 
-                  className="max-w-full max-h-64 object-contain rounded-lg border"
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Show existing analysis if available, otherwise show ready state */}
-          {!analysisResult && !isAnalyzing && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Eye className="w-5 h-5 text-blue-600" />
-                  Ready for AI Analysis
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-600 mb-4">
-                  Our AI will analyze this image to extract text, identify objects, 
-                  detect medical information, and provide insights and recommendations.
-                </p>
-                <div className="grid grid-cols-2 gap-4 text-sm mb-6">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4 text-green-500" />
-                    <span>Object Detection</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4 text-green-500" />
-                    <span>Text Extraction (OCR)</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4 text-green-500" />
-                    <span>Medical Entity Recognition</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4 text-green-500" />
-                    <span>Smart Recommendations</span>
-                  </div>
-                </div>
-                <Button onClick={startAnalysis} className="w-full">
-                  <Brain className="w-4 h-4 mr-2" />
-                  Start AI Analysis
-                </Button>
-              </CardContent>
-            </Card>
-          )}
-
-          {isAnalyzing && (
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Brain className="w-5 h-5 text-purple-600" />
+              AI Medical Analysis - {fileName}
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-6 py-4">
+            {/* Image Preview */}
             <Card>
               <CardContent className="pt-6">
-                <div className="text-center space-y-4">
-                  <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto" />
-                  <h3 className="text-lg font-semibold">Analyzing Image with AI...</h3>
-                  <p className="text-gray-600">
-                    Please wait while our AI processes and analyzes the image content.
-                  </p>
+                <div className="flex justify-center">
+                  <img 
+                    src={imageUrl} 
+                    alt={fileName} 
+                    className="max-w-full max-h-64 object-contain rounded-lg border"
+                  />
                 </div>
               </CardContent>
             </Card>
-          )}
 
-          {analysisResult && (
-            <div className="space-y-6">
-              {/* Analysis Overview */}
-              <Card>
+            {/* ChatGPT Analysis Button */}
+            {!analysisResult && !isAnalyzing && (
+              <Card className="border-2 border-green-200 bg-gradient-to-br from-green-50 to-blue-50">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    {getAnalysisIcon(analysisResult.analysisType)}
-                    Analysis Summary
+                    <Zap className="w-5 h-5 text-green-600" />
+                    ChatGPT Medical Analysis
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">Analysis Type:</span>
-                      <Badge variant="outline">{analysisResult.analysisType}</Badge>
+                  <p className="text-gray-700 mb-4">
+                    Get detailed medical analysis powered by ChatGPT-4 Vision, including:
+                  </p>
+                  <div className="grid grid-cols-2 gap-4 text-sm mb-6">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="w-4 h-4 text-green-500" />
+                      <span>Accurate Text Extraction</span>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">Confidence:</span>
-                      <div className="flex items-center gap-2">
-                        <div className="w-20 bg-gray-200 rounded-full h-2">
-                          <div 
-                            className="bg-green-600 h-2 rounded-full" 
-                            style={{ width: `${analysisResult.confidence * 100}%` }}
-                          />
-                        </div>
-                        <span className="text-sm font-medium">{Math.round(analysisResult.confidence * 100)}%</span>
-                      </div>
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="w-4 h-4 text-green-500" />
+                      <span>Medical Findings Detection</span>
                     </div>
-                    <Separator />
-                    <p className="text-gray-700">{analysisResult.summary}</p>
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="w-4 h-4 text-green-500" />
+                      <span>Personalized Recommendations</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="w-4 h-4 text-green-500" />
+                      <span>Urgent Items Identification</span>
+                    </div>
+                  </div>
+                  <Button onClick={startChatGPTAnalysis} className="w-full bg-green-600 hover:bg-green-700">
+                    <Zap className="w-4 h-4 mr-2" />
+                    Analyze with ChatGPT
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+
+            {isAnalyzing && (
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="text-center space-y-4">
+                    <Loader2 className="w-12 h-12 text-green-600 animate-spin mx-auto" />
+                    <h3 className="text-lg font-semibold">Analyzing with ChatGPT...</h3>
+                    <p className="text-gray-600">
+                      ChatGPT is examining your medical document and generating detailed insights...
+                    </p>
                   </div>
                 </CardContent>
               </Card>
+            )}
 
-              {/* Detected Objects */}
-              {analysisResult.detectedObjects.length > 0 && (
-                <Card>
+            {analysisResult && (
+              <div className="space-y-6">
+                {/* Analysis Overview */}
+                <Card className="border-green-200 bg-green-50">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                      <Eye className="w-5 h-5 text-blue-600" />
-                      Detected Objects
+                      {getAnalysisIcon(analysisResult.analysisType)}
+                      Analysis Summary
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="flex flex-wrap gap-2">
-                      {analysisResult.detectedObjects.map((object, index) => (
-                        <Badge key={index} variant="secondary">{object}</Badge>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Extracted Text */}
-              {analysisResult.textContent && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <FileText className="w-5 h-5 text-green-600" />
-                      Extracted Text (OCR)
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="bg-gray-50 p-4 rounded-lg max-h-32 overflow-y-auto">
-                      <p className="text-sm text-gray-700 whitespace-pre-wrap">
-                        {analysisResult.textContent}
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Medical Findings */}
-              {analysisResult.medicalFindings.length > 0 && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Activity className="w-5 h-5 text-red-600" />
-                      Medical Findings
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      {analysisResult.medicalFindings.map((finding, index) => (
-                        <div key={index} className="flex items-center gap-2">
-                          <AlertTriangle className="w-4 h-4 text-orange-500" />
-                          <span className="text-sm">{finding}</span>
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-600">Analysis Type:</span>
+                        <Badge variant="outline">{analysisResult.analysisType}</Badge>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-600">Confidence:</span>
+                        <div className="flex items-center gap-2">
+                          <div className="w-20 bg-gray-200 rounded-full h-2">
+                            <div 
+                              className="bg-green-600 h-2 rounded-full" 
+                              style={{ width: `${(analysisResult.confidence || 0.85) * 100}%` }}
+                            />
+                          </div>
+                          <span className="text-sm font-medium">{Math.round((analysisResult.confidence || 0.85) * 100)}%</span>
                         </div>
-                      ))}
+                      </div>
+                      <Separator />
+                      <p className="text-gray-700">{analysisResult.summary}</p>
                     </div>
                   </CardContent>
                 </Card>
-              )}
 
-              {/* Key Metrics */}
-              {analysisResult.keyMetrics.length > 0 && (
+                {/* Urgent Items */}
+                {analysisResult.urgentItems && analysisResult.urgentItems.length > 0 && (
+                  <Card className="border-red-200 bg-red-50">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-red-700">
+                        <AlertTriangle className="w-5 h-5" />
+                        Urgent Items Requiring Attention
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2">
+                        {analysisResult.urgentItems.map((item: string, index: number) => (
+                          <div key={index} className="flex items-start gap-2 p-2 bg-red-100 rounded">
+                            <AlertTriangle className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" />
+                            <span className="text-sm text-red-800 font-medium">{item}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Extracted Text */}
+                {analysisResult.textContent && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <FileText className="w-5 h-5 text-green-600" />
+                        Extracted Text Content
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="bg-gray-50 p-4 rounded-lg max-h-40 overflow-y-auto">
+                        <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                          {analysisResult.textContent}
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Medical Findings */}
+                {analysisResult.medicalFindings && analysisResult.medicalFindings.length > 0 && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Activity className="w-5 h-5 text-red-600" />
+                        Medical Findings
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2">
+                        {analysisResult.medicalFindings.map((finding: string, index: number) => (
+                          <div key={index} className="flex items-center gap-2">
+                            <CheckCircle className="w-4 h-4 text-blue-500" />
+                            <span className="text-sm">{finding}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Key Metrics */}
+                {analysisResult.keyMetrics && analysisResult.keyMetrics.length > 0 && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Target className="w-5 h-5 text-purple-600" />
+                        Key Measurements & Values
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex flex-wrap gap-2">
+                        {analysisResult.keyMetrics.map((metric: string, index: number) => (
+                          <Badge key={index} variant="outline" className="font-mono">
+                            {metric}
+                          </Badge>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Recommendations */}
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                      <Target className="w-5 h-5 text-purple-600" />
-                      Key Measurements
+                      <Lightbulb className="w-5 h-5 text-yellow-600" />
+                      Personalized Medical Recommendations
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="flex flex-wrap gap-2">
-                      {analysisResult.keyMetrics.map((metric, index) => (
-                        <Badge key={index} variant="outline" className="font-mono">
-                          {metric}
-                        </Badge>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* AI Recommendations - Always show this section */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Lightbulb className="w-5 h-5 text-yellow-600" />
-                    AI Recommendations
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {analysisResult.recommendations && analysisResult.recommendations.length > 0 ? (
-                      analysisResult.recommendations.map((recommendation, index) => (
-                        <div key={index} className="flex items-start gap-3">
+                    <div className="space-y-3">
+                      {analysisResult.recommendations && analysisResult.recommendations.length > 0 ? (
+                        analysisResult.recommendations.map((recommendation: string, index: number) => (
+                          <div key={index} className="flex items-start gap-3 p-3 bg-yellow-50 rounded-lg">
+                            <CheckCircle className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
+                            <span className="text-sm text-gray-700">{recommendation}</span>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="flex items-start gap-3">
                           <CheckCircle className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
-                          <span className="text-sm text-gray-700">{recommendation}</span>
+                          <span className="text-sm text-gray-700">Document analysis completed successfully.</span>
                         </div>
-                      ))
-                    ) : (
-                      <div className="flex items-start gap-3">
-                        <CheckCircle className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
-                        <span className="text-sm text-gray-700">Document has been successfully analyzed and processed.</span>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Follow-up Actions */}
+                {analysisResult.followUpActions && analysisResult.followUpActions.length > 0 && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Calendar className="w-5 h-5 text-blue-600" />
+                        Recommended Follow-up Actions
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2">
+                        {analysisResult.followUpActions.map((action: string, index: number) => (
+                          <div key={index} className="flex items-start gap-2 p-2 bg-blue-50 rounded">
+                            <Calendar className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                            <span className="text-sm text-blue-800">{action}</span>
+                          </div>
+                        ))}
                       </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          )}
-        </div>
-        
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Close
-          </Button>
-          {analysisResult && (
-            <Button onClick={() => {
-              toast({
-                title: "Analysis Saved",
-                description: "The detailed analysis has been noted for your records",
-              });
-            }}>
-              Save Analysis
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            )}
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              Close
             </Button>
-          )}
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+            {analysisResult && (
+              <Button onClick={() => {
+                toast({
+                  title: "Analysis Saved",
+                  description: "The detailed ChatGPT analysis has been noted for your records",
+                });
+              }}>
+                Save Analysis
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* API Key Dialog */}
+      <ChatGPTApiKeyDialog
+        open={showApiKeyDialog}
+        onOpenChange={setShowApiKeyDialog}
+        onKeySet={handleApiKeySet}
+      />
+    </>
   );
 };
