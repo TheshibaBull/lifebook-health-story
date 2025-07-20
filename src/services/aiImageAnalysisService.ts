@@ -62,13 +62,17 @@ export class AIImageAnalysisService {
         }
       }
 
+      console.log('Processing image with AI models...');
+
       // Extract visual description
       const visionResult = await this.visionPipeline(processableImageUrl);
       const description = visionResult[0]?.generated_text || '';
+      console.log('Vision analysis result:', description);
       
       // Extract text content
       const ocrResult = await this.ocrPipeline(processableImageUrl);
       const textContent = ocrResult[0]?.generated_text || '';
+      console.log('OCR extraction result:', textContent);
       
       // Clean up blob URL if we created one
       if (processableImageUrl !== imageUrl && processableImageUrl.startsWith('blob:')) {
@@ -77,6 +81,7 @@ export class AIImageAnalysisService {
       
       // Analyze the content
       const analysis = this.generateAnalysis(description, textContent);
+      console.log('Generated analysis:', analysis);
       
       return {
         summary: analysis.summary,
@@ -90,7 +95,26 @@ export class AIImageAnalysisService {
       };
     } catch (error) {
       console.error('AI image analysis failed:', error);
-      throw new Error(`Image analysis failed: ${error.message}`);
+      
+      // Provide fallback analysis with debugging info
+      return {
+        summary: `AI analysis encountered an issue: ${error.message}. The system attempted to process the image but may need manual review.`,
+        detectedObjects: ['document', 'text'],
+        textContent: 'Text extraction failed - please ensure image is clear and text is readable',
+        medicalFindings: [],
+        keyMetrics: [],
+        recommendations: [
+          '📸 Try uploading a clearer, high-resolution image',
+          '🔍 Ensure all text in the document is clearly visible',
+          '💡 Consider cropping the image to focus on the main content',
+          '🖨️ If possible, scan the document instead of taking a photo',
+          '👨‍⚕️ Manually review the document and share key findings with your healthcare provider',
+          '📱 Try uploading from a different device or browser',
+          '🔄 Refresh the page and try the analysis again'
+        ],
+        confidence: 0.3,
+        analysisType: 'Error Recovery'
+      };
     }
   }
 
@@ -98,6 +122,26 @@ export class AIImageAnalysisService {
     const combinedContent = (description + ' ' + textContent).toLowerCase();
     console.log('Analyzing combined content:', combinedContent);
     
+    // If we have very little content, provide specific guidance
+    if (combinedContent.length < 20) {
+      return {
+        analysisType: 'Limited Content',
+        detectedObjects: ['document'],
+        medicalFindings: [],
+        keyMetrics: [],
+        summary: 'Limited content was extracted from this image. The document may need better image quality for comprehensive analysis.',
+        recommendations: [
+          '📸 Upload a higher resolution image for better text extraction',
+          '🔍 Ensure the document is well-lit and all text is clearly visible',
+          '📱 Try taking the photo from directly above the document',
+          '🖨️ Consider scanning the document instead of photographing it',
+          '✂️ Crop the image to focus only on the relevant document content',
+          '👨‍⚕️ Manually review the document with your healthcare provider',
+          '📋 Keep this record for your medical history even if AI analysis is limited'
+        ]
+      };
+    }
+
     // Determine analysis type
     let analysisType = 'General Document';
     if (combinedContent.includes('blood') || combinedContent.includes('lab') || combinedContent.includes('test')) {
@@ -120,7 +164,7 @@ export class AIImageAnalysisService {
     const keyMetrics = this.extractMetrics(textContent);
     
     // Generate summary
-    const summary = this.generateSummary(analysisType, detectedObjects, medicalFindings, keyMetrics);
+    const summary = this.generateSummary(analysisType, detectedObjects, medicalFindings, keyMetrics, combinedContent);
     
     // Generate comprehensive personalized recommendations
     const recommendations = this.generateComprehensiveRecommendations(analysisType, medicalFindings, keyMetrics, textContent, combinedContent);
@@ -137,174 +181,77 @@ export class AIImageAnalysisService {
 
   private static generateComprehensiveRecommendations(type: string, findings: string[], metrics: string[], textContent: string, combinedContent: string): string[] {
     const recommendations = [];
-    const lowerText = textContent.toLowerCase();
     
     console.log('Generating recommendations for type:', type);
-    console.log('Text content length:', textContent.length);
-    console.log('Medical findings:', findings);
-    console.log('Key metrics:', metrics);
+    console.log('Combined content for analysis:', combinedContent);
     
-    // Analyze actual health values and conditions
-    const healthAnalysis = this.analyzeHealthConditions(combinedContent);
-    
-    // Priority recommendations based on health analysis
-    if (healthAnalysis.urgentFindings.length > 0) {
-      recommendations.push('🚨 URGENT: Schedule immediate follow-up for abnormal findings');
-      healthAnalysis.urgentFindings.forEach(finding => {
-        recommendations.push(`⚠️ Address ${finding} with your healthcare provider`);
-      });
+    // Always provide actionable recommendations based on document type
+    if (type === 'Medical Lab Report' || combinedContent.includes('lab') || combinedContent.includes('test') || combinedContent.includes('result')) {
+      recommendations.push('📊 Compare these results with previous lab work to track trends');
+      recommendations.push('📅 Schedule a follow-up appointment to discuss results with your doctor');
+      recommendations.push('📋 Ask your healthcare provider to explain any values outside normal ranges');
+      recommendations.push('💾 Keep this report easily accessible for future medical visits');
     }
     
-    // Specific health condition recommendations
-    if (healthAnalysis.conditions.diabetes) {
-      recommendations.push('🍎 Monitor carbohydrate intake and maintain stable blood sugar levels');
-      recommendations.push('📱 Consider using a glucose monitoring app to track patterns');
+    if (type === 'Prescription Document' || combinedContent.includes('medication') || combinedContent.includes('prescription')) {
+      recommendations.push('💊 Set up medication reminders to ensure consistent dosing');
+      recommendations.push('📝 Keep an updated list of all medications for healthcare visits');
+      recommendations.push('⚠️ Review potential side effects and drug interactions');
+      recommendations.push('💰 Check if generic alternatives are available to reduce costs');
+    }
+    
+    // Health-specific recommendations based on content
+    if (combinedContent.includes('cholesterol') || combinedContent.includes('lipid')) {
+      recommendations.push('❤️ Follow a heart-healthy diet with omega-3 rich foods');
+      recommendations.push('🏃‍♂️ Aim for 150 minutes of moderate exercise weekly');
+      recommendations.push('🥗 Increase fiber intake with whole grains and vegetables');
+    }
+    
+    if (combinedContent.includes('glucose') || combinedContent.includes('sugar') || combinedContent.includes('diabetes')) {
+      recommendations.push('🍎 Monitor carbohydrate intake and maintain stable blood sugar');
+      recommendations.push('📱 Consider using a glucose monitoring app');
       recommendations.push('🏃‍♂️ Regular exercise helps improve insulin sensitivity');
     }
     
-    if (healthAnalysis.conditions.hypertension) {
+    if (combinedContent.includes('blood pressure') || combinedContent.includes('hypertension')) {
       recommendations.push('🧂 Reduce sodium intake to less than 2,300mg per day');
       recommendations.push('📊 Monitor blood pressure daily and keep a log');
       recommendations.push('🧘‍♀️ Practice stress-reduction techniques like meditation');
     }
     
-    if (healthAnalysis.conditions.highCholesterol) {
-      recommendations.push('❤️ Follow a heart-healthy diet rich in omega-3 fatty acids');
-      recommendations.push('🚶‍♀️ Aim for 150 minutes of moderate exercise weekly');
-      recommendations.push('🥗 Increase fiber intake with whole grains and vegetables');
-    }
-    
-    // Medication-specific recommendations
-    if (healthAnalysis.medications.length > 0) {
-      recommendations.push('💊 Set up medication reminders to ensure consistent dosing');
-      recommendations.push('📋 Keep an updated medication list for all healthcare visits');
-      healthAnalysis.medications.forEach(med => {
-        recommendations.push(`ℹ️ Learn about ${med} side effects and interactions`);
-      });
-    }
-    
-    // Preventive care recommendations
-    if (healthAnalysis.needsPreventiveCare) {
-      recommendations.push('🔄 Schedule routine preventive screenings as recommended');
-      recommendations.push('💉 Ensure vaccinations are up to date');
-    }
-    
-    // Lifestyle recommendations based on findings
-    if (healthAnalysis.lifestyle.needsWeightManagement) {
+    // General health recommendations
+    if (combinedContent.includes('weight') || combinedContent.includes('bmi')) {
       recommendations.push('⚖️ Work with a nutritionist for personalized weight management');
       recommendations.push('🍽️ Practice portion control and mindful eating habits');
     }
     
-    if (healthAnalysis.lifestyle.needsExercise) {
-      recommendations.push('🏋️‍♀️ Start with 10-15 minutes of daily physical activity');
-      recommendations.push('🚴‍♀️ Find enjoyable activities to make exercise sustainable');
+    // Emergency and follow-up recommendations
+    if (combinedContent.includes('abnormal') || combinedContent.includes('elevated') || combinedContent.includes('high') || combinedContent.includes('low')) {
+      recommendations.push('🚨 Schedule immediate follow-up for any abnormal findings');
+      recommendations.push('⚠️ Don\'t ignore unusual results - discuss with your healthcare provider');
     }
     
-    // Mental health and wellness
-    if (healthAnalysis.stressIndicators) {
-      recommendations.push('🧠 Consider stress management techniques or counseling');
-      recommendations.push('😴 Prioritize 7-9 hours of quality sleep nightly');
-    }
-    
-    // Record-keeping recommendations
-    recommendations.push('📁 Save this analysis to track health trends over time');
+    // Always include these essential recommendations
+    recommendations.push('📁 Save this document to track your health journey over time');
     recommendations.push('📤 Share relevant findings with all your healthcare providers');
+    recommendations.push('🔄 Schedule regular check-ups to monitor your health status');
     
-    // Follow-up recommendations
-    if (type === 'Medical Lab Report') {
-      recommendations.push('📅 Schedule follow-up labs as recommended by your doctor');
-      recommendations.push('📈 Compare results with previous tests to identify trends');
-    }
-    
-    // Emergency preparedness
-    if (healthAnalysis.hasChronicConditions) {
-      recommendations.push('🆘 Keep emergency contact info and medical history easily accessible');
-      recommendations.push('💳 Consider a medical alert bracelet for chronic conditions');
-    }
-    
-    // If no specific recommendations were generated, provide actionable general ones
+    // If no specific recommendations were generated, provide comprehensive general ones
     if (recommendations.length === 0) {
-      recommendations.push('📋 Review all information in this document with your healthcare provider');
-      recommendations.push('🔍 Ask your doctor to explain any values or terms you don\'t understand');
-      recommendations.push('📊 Request reference ranges for any lab values to understand results');
-      recommendations.push('📝 Keep this record easily accessible for future medical appointments');
-      recommendations.push('🔄 Schedule regular check-ups to monitor your health status');
+      recommendations.push('📋 Review this document thoroughly with your healthcare provider');
+      recommendations.push('❓ Ask your doctor to explain any medical terms you don\'t understand');
+      recommendations.push('📊 Request reference ranges for any test values to understand results');
+      recommendations.push('📝 Keep this record organized and easily accessible');
+      recommendations.push('🔄 Follow up as recommended by your healthcare team');
+      recommendations.push('💡 Consider keeping a health journal to track patterns');
+      recommendations.push('🏥 Ensure all your healthcare providers have copies of important results');
+      recommendations.push('📱 Use health apps to track and monitor relevant metrics');
     }
     
     console.log('Generated recommendations:', recommendations);
     
     // Return top 8 most relevant recommendations
     return recommendations.slice(0, 8);
-  }
-
-  private static analyzeHealthConditions(content: string) {
-    const analysis = {
-      conditions: {
-        diabetes: false,
-        hypertension: false,
-        highCholesterol: false
-      },
-      medications: [] as string[],
-      urgentFindings: [] as string[],
-      needsPreventiveCare: false,
-      lifestyle: {
-        needsWeightManagement: false,
-        needsExercise: false
-      },
-      stressIndicators: false,
-      hasChronicConditions: false
-    };
-    
-    // Check for diabetes indicators
-    if (content.includes('glucose') || content.includes('a1c') || content.includes('diabetes') || content.includes('insulin')) {
-      analysis.conditions.diabetes = true;
-      analysis.hasChronicConditions = true;
-    }
-    
-    // Check for hypertension
-    if (content.includes('blood pressure') || content.includes('hypertension') || content.includes('mmhg')) {
-      analysis.conditions.hypertension = true;
-      analysis.hasChronicConditions = true;
-    }
-    
-    // Check for cholesterol issues
-    if (content.includes('cholesterol') || content.includes('ldl') || content.includes('hdl') || content.includes('triglycerides')) {
-      analysis.conditions.highCholesterol = true;
-    }
-    
-    // Extract medications
-    const commonMeds = ['metformin', 'lisinopril', 'atorvastatin', 'amlodipine', 'levothyroxine', 'omeprazole'];
-    commonMeds.forEach(med => {
-      if (content.includes(med)) {
-        analysis.medications.push(med);
-      }
-    });
-    
-    // Check for urgent findings
-    if (content.includes('abnormal') || content.includes('elevated') || content.includes('high') || content.includes('low')) {
-      analysis.urgentFindings.push('abnormal test results requiring attention');
-    }
-    
-    // Check for preventive care needs
-    if (content.includes('annual') || content.includes('screening') || content.includes('routine')) {
-      analysis.needsPreventiveCare = true;
-    }
-    
-    // Check lifestyle factors
-    if (content.includes('weight') || content.includes('bmi') || content.includes('obesity')) {
-      analysis.lifestyle.needsWeightManagement = true;
-    }
-    
-    if (content.includes('sedentary') || content.includes('exercise') || content.includes('activity')) {
-      analysis.lifestyle.needsExercise = true;
-    }
-    
-    // Check stress indicators
-    if (content.includes('stress') || content.includes('anxiety') || content.includes('depression')) {
-      analysis.stressIndicators = true;
-    }
-    
-    return analysis;
   }
 
   private static extractObjects(description: string): string[] {
@@ -317,7 +264,7 @@ export class AIImageAnalysisService {
       }
     });
 
-    return objects;
+    return objects.length > 0 ? objects : ['document', 'text'];
   }
 
   private static extractMedicalFindings(text: string): string[] {
@@ -351,7 +298,7 @@ export class AIImageAnalysisService {
     return metrics;
   }
 
-  private static generateSummary(type: string, objects: string[], findings: string[], metrics: string[]): string {
+  private static generateSummary(type: string, objects: string[], findings: string[], metrics: string[], content: string): string {
     let summary = `This appears to be a ${type.toLowerCase()}.`;
     
     if (objects.length > 0) {
@@ -364,6 +311,11 @@ export class AIImageAnalysisService {
     
     if (metrics.length > 0) {
       summary += ` Key measurements: ${metrics.slice(0, 3).join(', ')}.`;
+    }
+    
+    // Add content quality assessment
+    if (content.length < 50) {
+      summary += ' Limited content was extracted - consider uploading a clearer image for more detailed analysis.';
     }
 
     return summary;
