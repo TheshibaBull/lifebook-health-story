@@ -27,10 +27,12 @@ const UploadRecord = () => {
   const [description, setDescription] = useState('');
   const [dragActive, setDragActive] = useState(false);
   const [showProcessor, setShowProcessor] = useState(false);
+  const [showResults, setShowResults] = useState(false);
+  const [processingResult, setProcessingResult] = useState<any>(null);
   
   const { toast } = useToast();
   const { user } = useAuth();
-  const { uploadFile, uploadProgress, isUploading, resetProgress } = useEnhancedUpload();
+  const { uploadFile, uploadDocument, uploadProgress, isUploading, resetProgress } = useEnhancedUpload();
 
   const handleFileSelect = (file: File) => {
     setSelectedFile(file);
@@ -102,18 +104,47 @@ const UploadRecord = () => {
     await handleFileUpload(selectedFile);
   };
 
-  const handleProcessingComplete = (result: any) => {
+  const handleProcessingComplete = async (result: any) => {
     console.log('Processing complete:', result);
+    setProcessingResult(result);
     setShowProcessor(false);
-    toast({
-      title: "Processing Complete",
-      description: "Document has been analyzed successfully.",
-    });
+    setShowResults(true);
+    
+    // Upload the document with AI results
+    if (selectedFile) {
+      try {
+        await uploadDocument(selectedFile, result);
+        toast({
+          title: "Document Processed & Saved",
+          description: "Your document has been analyzed and saved to your health records.",
+        });
+      } catch (error) {
+        console.error('Upload error after processing:', error);
+      }
+    }
   };
 
   const handleProcessingError = (error: string) => {
     console.error('Processing error:', error);
     setShowProcessor(false);
+    toast({
+      title: "Processing Failed",
+      description: error,
+      variant: "destructive"
+    });
+  };
+
+  const startAIProcessing = () => {
+    if (!selectedFile) {
+      toast({
+        title: "No file selected",
+        description: "Please select a file first.",
+        variant: "destructive"
+      });
+      return;
+    }
+    setShowProcessor(true);
+    setShowResults(false);
   };
 
   return (
@@ -179,7 +210,7 @@ const UploadRecord = () => {
                           <Button
                             type="button"
                             variant="outline"
-                            onClick={() => setShowProcessor(true)}
+                            onClick={startAIProcessing}
                           >
                             <Scan className="w-4 h-4 mr-2" />
                             Process with AI
@@ -270,7 +301,7 @@ const UploadRecord = () => {
               </CardContent>
             </Card>
 
-            {/* Enhanced Document Processing */}
+            {/* AI Processing & Results */}
             <div className="space-y-6">
               {showProcessor && selectedFile ? (
                 <EnhancedDocumentProcessor 
@@ -278,63 +309,134 @@ const UploadRecord = () => {
                   onProcessingComplete={handleProcessingComplete}
                   onError={handleProcessingError}
                 />
-              ) : (
+              ) : showResults && processingResult ? (
                 <Card className="border-0 shadow-lg">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                      <Scan className="w-5 h-5 text-green-500" />
-                      AI Processing
+                      <FileText className="w-5 h-5 text-green-500" />
+                      AI Analysis Complete
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-gray-600 mb-4">
-                      Our AI will automatically extract and organize key information from your documents.
-                    </p>
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                        <span>OCR Text Extraction</span>
+                    <div className="space-y-4">
+                      <div className="bg-green-50 p-4 rounded-lg">
+                        <h3 className="font-semibold text-green-800 mb-2">Document Summary</h3>
+                        <p className="text-green-700 text-sm">
+                          This {processingResult.category.toLowerCase()} document was processed with {Math.round(processingResult.confidence * 100)}% confidence.
+                          {processingResult.entities.medications.length > 0 && ` Found ${processingResult.entities.medications.length} medication(s).`}
+                          {processingResult.entities.conditions.length > 0 && ` Found ${processingResult.entities.conditions.length} condition(s).`}
+                        </p>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                        <span>Medical Entity Recognition</span>
+                      
+                      {processingResult.entities.medications.length > 0 && (
+                        <div>
+                          <h4 className="font-medium mb-2">Medications Found:</h4>
+                          <div className="flex flex-wrap gap-1">
+                            {processingResult.entities.medications.map((med: string, index: number) => (
+                              <span key={index} className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">
+                                {med}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {processingResult.entities.conditions.length > 0 && (
+                        <div>
+                          <h4 className="font-medium mb-2">Conditions Found:</h4>
+                          <div className="flex flex-wrap gap-1">
+                            {processingResult.entities.conditions.map((condition: string, index: number) => (
+                              <span key={index} className="bg-red-100 text-red-800 px-2 py-1 rounded text-xs">
+                                {condition}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="bg-blue-50 p-4 rounded-lg">
+                        <h4 className="font-semibold text-blue-800 mb-2">AI Suggestions:</h4>
+                        <ul className="text-blue-700 text-sm space-y-1">
+                          <li>• Document has been categorized as: {processingResult.category}</li>
+                          <li>• Consider sharing this with your healthcare provider</li>
+                          <li>• Keep track of any follow-up appointments mentioned</li>
+                          {processingResult.entities.medications.length > 0 && <li>• Add medications to your medication tracker</li>}
+                        </ul>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                        <span>Auto-Categorization</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                        <span>Tag Generation</span>
-                      </div>
+
+                      <Button 
+                        onClick={() => {
+                          setShowResults(false);
+                          setSelectedFile(null);
+                          setTitle('');
+                          setDescription('');
+                        }}
+                        className="w-full"
+                      >
+                        Upload Another Document
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>
-              )}
+              ) : (
+                <>
+                  <Card className="border-0 shadow-lg">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Scan className="w-5 h-5 text-green-500" />
+                        AI Processing
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-gray-600 mb-4">
+                        Our AI will automatically extract and organize key information from your documents.
+                      </p>
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                          <span>OCR Text Extraction</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                          <span>Medical Entity Recognition</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                          <span>Auto-Categorization</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                          <span>Tag Generation</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
 
-              {/* Quick Actions */}
-              <Card className="border-0 shadow-lg">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Plus className="w-5 h-5 text-blue-500" />
-                    Quick Actions
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <Button variant="outline" className="w-full justify-start">
-                    <Camera className="w-4 h-4 mr-2" />
-                    Take Photo
-                  </Button>
-                  <Button variant="outline" className="w-full justify-start">
-                    <Scan className="w-4 h-4 mr-2" />
-                    Scan Document
-                  </Button>
-                  <Button variant="outline" className="w-full justify-start">
-                    <FileText className="w-4 h-4 mr-2" />
-                    View All Records
-                  </Button>
-                </CardContent>
-              </Card>
+                  {/* Quick Actions */}
+                  <Card className="border-0 shadow-lg">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Plus className="w-5 h-5 text-blue-500" />
+                        Quick Actions
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <Button variant="outline" className="w-full justify-start">
+                        <Camera className="w-4 h-4 mr-2" />
+                        Take Photo
+                      </Button>
+                      <Button variant="outline" className="w-full justify-start">
+                        <Scan className="w-4 h-4 mr-2" />
+                        Scan Document
+                      </Button>
+                      <Button variant="outline" className="w-full justify-start">
+                        <FileText className="w-4 h-4 mr-2" />
+                        View All Records
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </>
+              )}
             </div>
           </div>
         </div>

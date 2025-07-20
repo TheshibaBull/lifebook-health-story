@@ -52,7 +52,7 @@ export const useEnhancedUpload = () => {
 
       setUploadProgress({ percentage: 60, stage: 'Creating health record...', isComplete: false });
 
-      // Create health record
+      // Create health record with proper field mapping
       const recordData = {
         user_id: user.id,
         title: metadata.title || file.name,
@@ -63,7 +63,8 @@ export const useEnhancedUpload = () => {
         file_size: file.size,
         file_type: file.type,
         description: metadata.description || '',
-        date_of_record: new Date().toISOString().split('T')[0]
+        date_of_record: metadata.date_of_record || new Date().toISOString().split('T')[0],
+        provider_name: metadata.provider_name || null
       };
 
       if (navigator.onLine) {
@@ -133,7 +134,7 @@ export const useEnhancedUpload = () => {
 
       setUploadProgress({ percentage: 60, stage: 'Creating health record...', isComplete: false });
 
-      // Create health record
+      // Create health record with AI processing results
       const recordData = {
         user_id: user.id,
         title: file.name,
@@ -150,7 +151,9 @@ export const useEnhancedUpload = () => {
           category: processingResult.category,
           tags: processingResult.tags
         },
-        date_of_record: new Date().toISOString().split('T')[0]
+        date_of_record: new Date().toISOString().split('T')[0],
+        provider_name: null,
+        description: `AI-processed document with ${Math.round(processingResult.confidence * 100)}% confidence`
       };
 
       if (navigator.onLine) {

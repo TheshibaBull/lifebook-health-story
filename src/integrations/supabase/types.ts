@@ -231,6 +231,7 @@ export type Database = {
           category: string
           created_at: string
           date_of_record: string | null
+          description: string | null
           extracted_text: string | null
           file_name: string | null
           file_path: string | null
@@ -249,6 +250,7 @@ export type Database = {
           category: string
           created_at?: string
           date_of_record?: string | null
+          description?: string | null
           extracted_text?: string | null
           file_name?: string | null
           file_path?: string | null
@@ -267,6 +269,7 @@ export type Database = {
           category?: string
           created_at?: string
           date_of_record?: string | null
+          description?: string | null
           extracted_text?: string | null
           file_name?: string | null
           file_path?: string | null
@@ -436,11 +439,13 @@ export type Database = {
         Returns: number
       }
       track_failed_login: {
-        Args: { p_email: string; p_ip_address?: unknown }
+        Args: { p_email: string } | { p_email: string; p_ip_address?: unknown }
         Returns: undefined
       }
       track_user_login: {
-        Args: { p_user_id: string; p_email: string; p_ip_address?: unknown }
+        Args:
+          | { p_user_id: string; p_email: string }
+          | { p_user_id: string; p_email: string; p_ip_address?: unknown }
         Returns: undefined
       }
     }
