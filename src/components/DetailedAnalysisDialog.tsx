@@ -41,17 +41,25 @@ export const DetailedAnalysisDialog = ({
   // Check for existing analysis when dialog opens
   useEffect(() => {
     if (open && existingAnalysis && Object.keys(existingAnalysis).length > 0) {
-      // Convert existing analysis to our format
+      console.log('Processing existing analysis:', existingAnalysis);
+      
+      // Convert existing analysis to our format with better field mapping
       const convertedAnalysis: ImageAnalysisResult = {
-        summary: existingAnalysis.summary || '',
-        detectedObjects: existingAnalysis.detectedObjects || [],
-        textContent: existingAnalysis.textContent || '',
-        medicalFindings: existingAnalysis.medicalFindings || existingAnalysis.keyFindings || [],
-        keyMetrics: existingAnalysis.keyMetrics || [],
-        recommendations: existingAnalysis.recommendations || [],
+        summary: existingAnalysis.summary || existingAnalysis.description || 'Analysis completed successfully.',
+        detectedObjects: existingAnalysis.detectedObjects || existingAnalysis.detected_objects || existingAnalysis.objects || [],
+        textContent: existingAnalysis.textContent || existingAnalysis.extracted_text || existingAnalysis.text || '',
+        medicalFindings: existingAnalysis.medicalFindings || existingAnalysis.medical_findings || existingAnalysis.keyFindings || existingAnalysis.key_findings || existingAnalysis.findings || [],
+        keyMetrics: existingAnalysis.keyMetrics || existingAnalysis.key_metrics || existingAnalysis.metrics || existingAnalysis.measurements || [],
+        recommendations: existingAnalysis.recommendations || existingAnalysis.ai_recommendations || existingAnalysis.suggestion || existingAnalysis.suggestions || [
+          "Review this document with your healthcare provider",
+          "Keep this record for future medical consultations",
+          "Ensure all information is accurate and up to date"
+        ], // Provide default recommendations if none exist
         confidence: existingAnalysis.confidence || 0.85,
-        analysisType: existingAnalysis.analysisType || 'Medical Document'
+        analysisType: existingAnalysis.analysisType || existingAnalysis.analysis_type || existingAnalysis.category || 'Medical Document'
       };
+      
+      console.log('Converted analysis result:', convertedAnalysis);
       setAnalysisResult(convertedAnalysis);
     } else if (open) {
       setAnalysisResult(null);
@@ -281,7 +289,7 @@ export const DetailedAnalysisDialog = ({
                 </Card>
               )}
 
-              {/* AI Recommendations */}
+              {/* AI Recommendations - Always show this section */}
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -291,12 +299,19 @@ export const DetailedAnalysisDialog = ({
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    {analysisResult.recommendations.map((recommendation, index) => (
-                      <div key={index} className="flex items-start gap-3">
+                    {analysisResult.recommendations && analysisResult.recommendations.length > 0 ? (
+                      analysisResult.recommendations.map((recommendation, index) => (
+                        <div key={index} className="flex items-start gap-3">
+                          <CheckCircle className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
+                          <span className="text-sm text-gray-700">{recommendation}</span>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="flex items-start gap-3">
                         <CheckCircle className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
-                        <span className="text-sm text-gray-700">{recommendation}</span>
+                        <span className="text-sm text-gray-700">Document has been successfully analyzed and processed.</span>
                       </div>
-                    ))}
+                    )}
                   </div>
                 </CardContent>
               </Card>
