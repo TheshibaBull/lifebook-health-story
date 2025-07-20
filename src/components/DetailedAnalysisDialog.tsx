@@ -90,7 +90,9 @@ export const DetailedAnalysisDialog = ({
     startChatGPTAnalysis();
   };
 
-  const getAnalysisIcon = (type: string) => {
+  const getAnalysisIcon = (type?: string) => {
+    if (!type) return <FileText className="w-5 h-5 text-gray-500" />;
+    
     if (type.includes('Medical') || type.includes('Lab')) return <Activity className="w-5 h-5 text-red-500" />;
     if (type.includes('Data')) return <Target className="w-5 h-5 text-blue-500" />;
     return <FileText className="w-5 h-5 text-gray-500" />;
@@ -188,7 +190,7 @@ export const DetailedAnalysisDialog = ({
                     <div className="space-y-4">
                       <div className="flex items-center justify-between">
                         <span className="text-sm text-gray-600">Analysis Type:</span>
-                        <Badge variant="outline">{analysisResult.analysisType}</Badge>
+                        <Badge variant="outline">{analysisResult.analysisType || 'Medical Analysis'}</Badge>
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-sm text-gray-600">Confidence:</span>
@@ -203,7 +205,7 @@ export const DetailedAnalysisDialog = ({
                         </div>
                       </div>
                       <Separator />
-                      <p className="text-gray-700">{analysisResult.summary}</p>
+                      <p className="text-gray-700">{analysisResult.summary || 'Analysis completed successfully.'}</p>
                     </div>
                   </CardContent>
                 </Card>
