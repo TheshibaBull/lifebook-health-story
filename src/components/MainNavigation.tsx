@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -29,10 +30,10 @@ import {
 
 const navigationItems = [
   { name: 'Home', path: '/', icon: Home },
-  { name: 'Dashboard', path: '/dashboard', icon: Heart },
   { name: 'Family', path: '/family', icon: Users },
   { name: 'Health Score', path: '/health-score', icon: BarChart3 },
   { name: 'Upload Record', path: '/upload-record', icon: Upload },
+  { name: 'Records', path: '/records', icon: FileText },
   { name: 'Search', path: '/search', icon: Search },
   { name: 'Settings', path: '/settings', icon: Settings },
   { name: 'Notifications', path: '/notifications', icon: Bell },
@@ -60,7 +61,7 @@ export const MainNavigation = () => {
         title: "Signed out successfully",
         description: "You have been logged out of your account.",
       });
-      navigate('/');
+      navigate('/auth');
     } catch (error: any) {
       toast({
         title: "Logout Error",

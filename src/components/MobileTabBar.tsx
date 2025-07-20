@@ -1,3 +1,4 @@
+
 import { Heart, FileText, Users, Settings, Search } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -13,7 +14,7 @@ const MobileTabBar = ({ activeTab, onTabChange, className }: MobileTabBarProps) 
   const location = useLocation();
 
   const tabs = [
-    { icon: Heart, label: 'Health', path: '/dashboard' },
+    { icon: Heart, label: 'Home', path: '/' },
     { icon: FileText, label: 'Records', path: '/records' },
     { icon: Search, label: 'Search', path: '/search' },
     { icon: Users, label: 'Family', path: '/family' },
@@ -23,7 +24,7 @@ const MobileTabBar = ({ activeTab, onTabChange, className }: MobileTabBarProps) 
   const isActive = (path: string) => {
     if (activeTab) {
       // If activeTab is provided, use it for internal tab switching
-      return activeTab === path.replace('/', '');
+      return activeTab === path.replace('/', '') || (path === '/' && activeTab === 'home');
     }
     return location.pathname === path;
   };
@@ -31,7 +32,8 @@ const MobileTabBar = ({ activeTab, onTabChange, className }: MobileTabBarProps) 
   const handleTabClick = (tab: any) => {
     if (onTabChange && activeTab) {
       // If onTabChange is provided, use it for internal tab switching
-      onTabChange(tab.path.replace('/', ''));
+      const tabName = tab.path === '/' ? 'home' : tab.path.replace('/', '');
+      onTabChange(tabName);
     } else {
       // Otherwise, navigate normally
       navigate(tab.path);

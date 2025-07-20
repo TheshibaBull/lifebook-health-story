@@ -17,7 +17,7 @@ import {
   Save
 } from 'lucide-react';
 import { AppLayout } from '@/components/AppLayout';
-import { BackToDashboard } from '@/components/BackToDashboard';
+import { BackToHome } from '@/components/BackToHome';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 
@@ -63,7 +63,7 @@ const Settings = () => {
     <AppLayout title="Settings">
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30">
         <div className="max-w-4xl mx-auto px-6 py-12">
-          <BackToDashboard />
+          <BackToHome />
           
           <div className="text-center mb-12">
             <h1 className="text-4xl font-bold text-gray-900 mb-4">Settings</h1>

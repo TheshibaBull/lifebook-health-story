@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { AppLayout } from '@/components/AppLayout';
-import { BackToDashboard } from '@/components/BackToDashboard';
+import { BackToHome } from '@/components/BackToHome';
 import { useAuth } from '@/hooks/useAuth';
 import { useEnhancedUpload } from '@/hooks/useEnhancedUpload';
 import { EnhancedDocumentProcessor } from '@/components/EnhancedDocumentProcessor';
@@ -151,7 +151,7 @@ const UploadRecord = () => {
     <AppLayout title="Upload Health Record">
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30">
         <div className="max-w-4xl mx-auto px-6 py-12">
-          <BackToDashboard />
+          <BackToHome />
           <OfflineStatusIndicator />
           
           <div className="text-center mb-12">
@@ -323,12 +323,12 @@ const UploadRecord = () => {
                         <h3 className="font-semibold text-green-800 mb-2">Document Summary</h3>
                         <p className="text-green-700 text-sm">
                           This {processingResult.category.toLowerCase()} document was processed with {Math.round(processingResult.confidence * 100)}% confidence.
-                          {processingResult.entities.medications.length > 0 && ` Found ${processingResult.entities.medications.length} medication(s).`}
-                          {processingResult.entities.conditions.length > 0 && ` Found ${processingResult.entities.conditions.length} condition(s).`}
+                          {processingResult.entities && processingResult.entities.medications && processingResult.entities.medications.length > 0 && ` Found ${processingResult.entities.medications.length} medication(s).`}
+                          {processingResult.entities && processingResult.entities.conditions && processingResult.entities.conditions.length > 0 && ` Found ${processingResult.entities.conditions.length} condition(s).`}
                         </p>
                       </div>
                       
-                      {processingResult.entities.medications.length > 0 && (
+                      {processingResult.entities && processingResult.entities.medications && processingResult.entities.medications.length > 0 && (
                         <div>
                           <h4 className="font-medium mb-2">Medications Found:</h4>
                           <div className="flex flex-wrap gap-1">
@@ -341,7 +341,7 @@ const UploadRecord = () => {
                         </div>
                       )}
 
-                      {processingResult.entities.conditions.length > 0 && (
+                      {processingResult.entities && processingResult.entities.conditions && processingResult.entities.conditions.length > 0 && (
                         <div>
                           <h4 className="font-medium mb-2">Conditions Found:</h4>
                           <div className="flex flex-wrap gap-1">
@@ -360,7 +360,7 @@ const UploadRecord = () => {
                           <li>• Document has been categorized as: {processingResult.category}</li>
                           <li>• Consider sharing this with your healthcare provider</li>
                           <li>• Keep track of any follow-up appointments mentioned</li>
-                          {processingResult.entities.medications.length > 0 && <li>• Add medications to your medication tracker</li>}
+                          {processingResult.entities && processingResult.entities.medications && processingResult.entities.medications.length > 0 && <li>• Add medications to your medication tracker</li>}
                         </ul>
                       </div>
 

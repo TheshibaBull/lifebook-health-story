@@ -1,3 +1,4 @@
+
 import { useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -11,7 +12,6 @@ import { EnhancedPushNotificationService } from '@/services/enhancedPushNotifica
 import { OfflineDataSyncService } from '@/services/offlineDataSyncService';
 
 import Index from "./pages/Index";
-import Dashboard from "./pages/Dashboard";
 import UploadRecord from "./pages/UploadRecord";
 import Search from "./pages/Search";
 import Family from "./pages/Family";
@@ -69,8 +69,8 @@ const PublicRoute = ({ children }: { children: React.ReactNode }) => {
   }
   
   if (user) {
-    // If user is authenticated, redirect to dashboard
-    return <Navigate to="/dashboard" replace />;
+    // If user is authenticated, redirect to home
+    return <Navigate to="/" replace />;
   }
   
   return (
@@ -113,11 +113,6 @@ function App() {
         <BrowserRouter>
           <Routes>
             {/* Public Routes - Accessible only when not authenticated */}
-            <Route path="/" element={
-              <PublicRoute>
-                <Index />
-              </PublicRoute>
-            } />
             <Route path="/onboarding" element={
               <PublicRoute>
                 <Welcome />
@@ -140,9 +135,9 @@ function App() {
             } />
             
             {/* Protected Routes - Require authentication */}
-            <Route path="/dashboard" element={
+            <Route path="/" element={
               <ProtectedRoute>
-                <Dashboard />
+                <Index />
               </ProtectedRoute>
             } />
             <Route path="/health-score" element={
@@ -203,6 +198,6 @@ function App() {
       </QueryClientProvider>
     </ErrorBoundary>
   );
-};
+}
 
 export default App;

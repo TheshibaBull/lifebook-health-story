@@ -1,7 +1,7 @@
 
 import { MobileAppLayout } from '@/components/MobileAppLayout';
 import { FamilyVault } from '@/components/FamilyVault';
-import { BackToDashboard } from '@/components/BackToDashboard';
+import { BackToHome } from '@/components/BackToHome';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 const FamilyPage = () => {
@@ -21,7 +21,7 @@ const FamilyPage = () => {
   return (
     <div className="min-h-screen bg-gray-50 p-4">
       <div className="max-w-4xl mx-auto">
-        <BackToDashboard />
+        <BackToHome />
         <FamilyVault />
       </div>
     </div>
