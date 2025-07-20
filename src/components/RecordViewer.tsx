@@ -50,6 +50,7 @@ export const RecordViewer = ({ recordId, open, onOpenChange, onDelete }: RecordV
     try {
       const data = await HealthRecordsService.getRecordWithUrl(id);
       setRecord(data);
+      console.log('Record loaded:', data);
     } catch (error) {
       console.error('Error loading record:', error);
       toast({
@@ -123,7 +124,10 @@ export const RecordViewer = ({ recordId, open, onOpenChange, onDelete }: RecordV
   };
 
   const isImageFile = (fileType?: string) => {
-    return fileType?.includes('image');
+    console.log('Checking file type:', fileType);
+    const result = fileType?.toLowerCase().includes('image');
+    console.log('Is image file:', result);
+    return result;
   };
 
   return (
@@ -144,40 +148,54 @@ export const RecordViewer = ({ recordId, open, onOpenChange, onDelete }: RecordV
               </DialogHeader>
               
               <div className="space-y-6 py-4">
-                {/* AI Analysis Section - Always visible and prominent for images */}
-                {isImageFile(record.file_type) && (
-                  <div className="bg-gradient-to-br from-purple-100 via-blue-100 to-indigo-100 p-8 rounded-2xl border-2 border-purple-300 shadow-lg">
+                {/* File Preview */}
+                {record.fileUrl && record.file_type?.includes('image') && (
+                  <div>
+                    <p className="font-medium text-gray-700 mb-2">Preview</p>
+                    <div className="border rounded-lg overflow-hidden">
+                      <img 
+                        src={record.fileUrl} 
+                        alt={record.title} 
+                        className="max-w-full h-auto max-h-[400px] mx-auto"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* AI Analysis Section - Show ONLY for images */}
+                {record.fileUrl && isImageFile(record.file_type) && (
+                  <div className="bg-gradient-to-br from-purple-50 to-blue-50 border-2 border-purple-200 rounded-xl p-6">
                     <div className="text-center mb-6">
                       <div className="flex justify-center mb-4">
                         <div className="flex items-center justify-center w-16 h-16 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full shadow-lg">
                           <Brain className="w-8 h-8 text-white" />
                         </div>
                       </div>
-                      <h2 className="text-2xl font-bold text-purple-900 mb-2 flex items-center justify-center gap-2">
-                        <Sparkles className="w-6 h-6 text-yellow-500" />
-                        AI-Powered Medical Analysis
-                      </h2>
-                      <p className="text-purple-700 text-lg max-w-2xl mx-auto">
-                        Get comprehensive AI insights including medical findings, text extraction, object detection, and personalized health recommendations.
+                      <h3 className="text-xl font-bold text-purple-900 mb-2 flex items-center justify-center gap-2">
+                        <Sparkles className="w-5 h-5 text-yellow-500" />
+                        AI Medical Image Analysis
+                      </h3>
+                      <p className="text-purple-700 mb-6">
+                        Get comprehensive AI insights including medical findings, text extraction, object detection, and personalized recommendations.
                       </p>
                     </div>
                     
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-                      <div className="bg-white/70 backdrop-blur-sm p-4 rounded-xl text-center border border-purple-200">
-                        <Eye className="w-8 h-8 text-purple-600 mx-auto mb-2" />
-                        <span className="text-sm font-semibold text-purple-800">Object Detection</span>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+                      <div className="bg-white/80 p-3 rounded-lg text-center border border-purple-100">
+                        <Eye className="w-6 h-6 text-purple-600 mx-auto mb-1" />
+                        <span className="text-xs font-medium text-purple-800">Object Detection</span>
                       </div>
-                      <div className="bg-white/70 backdrop-blur-sm p-4 rounded-xl text-center border border-purple-200">
-                        <FileText className="w-8 h-8 text-blue-600 mx-auto mb-2" />
-                        <span className="text-sm font-semibold text-purple-800">Text Extraction</span>
+                      <div className="bg-white/80 p-3 rounded-lg text-center border border-purple-100">
+                        <FileText className="w-6 h-6 text-blue-600 mx-auto mb-1" />
+                        <span className="text-xs font-medium text-purple-800">Text Extraction</span>
                       </div>
-                      <div className="bg-white/70 backdrop-blur-sm p-4 rounded-xl text-center border border-purple-200">
-                        <Activity className="w-8 h-8 text-green-600 mx-auto mb-2" />
-                        <span className="text-sm font-semibold text-purple-800">Medical Analysis</span>
+                      <div className="bg-white/80 p-3 rounded-lg text-center border border-purple-100">
+                        <Activity className="w-6 h-6 text-green-600 mx-auto mb-1" />
+                        <span className="text-xs font-medium text-purple-800">Medical Analysis</span>
                       </div>
-                      <div className="bg-white/70 backdrop-blur-sm p-4 rounded-xl text-center border border-purple-200">
-                        <Sparkles className="w-8 h-8 text-yellow-500 mx-auto mb-2" />
-                        <span className="text-sm font-semibold text-purple-800">Smart Insights</span>
+                      <div className="bg-white/80 p-3 rounded-lg text-center border border-purple-100">
+                        <Sparkles className="w-6 h-6 text-yellow-500 mx-auto mb-1" />
+                        <span className="text-xs font-medium text-purple-800">Smart Insights</span>
                       </div>
                     </div>
                     
@@ -188,7 +206,7 @@ export const RecordViewer = ({ recordId, open, onOpenChange, onDelete }: RecordV
                         size="lg"
                       >
                         <Brain className="w-6 h-6 mr-3" />
-                        Start Detailed AI Analysis
+                        Start AI Analysis
                         <Sparkles className="w-5 h-5 ml-2" />
                       </Button>
                     </div>
@@ -249,20 +267,6 @@ export const RecordViewer = ({ recordId, open, onOpenChange, onDelete }: RecordV
                           </Badge>
                         ))}
                       </div>
-                    </div>
-                  </div>
-                )}
-                
-                {/* File Preview */}
-                {record.fileUrl && record.file_type?.includes('image') && (
-                  <div>
-                    <p className="font-medium text-gray-700 mb-2">Preview</p>
-                    <div className="border rounded-lg overflow-hidden">
-                      <img 
-                        src={record.fileUrl} 
-                        alt={record.title} 
-                        className="max-w-full h-auto max-h-[400px] mx-auto"
-                      />
                     </div>
                   </div>
                 )}
