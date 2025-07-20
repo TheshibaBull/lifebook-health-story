@@ -26,10 +26,11 @@ const UploadRecord = () => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [dragActive, setDragActive] = useState(false);
+  const [showProcessor, setShowProcessor] = useState(false);
   
   const { toast } = useToast();
   const { user } = useAuth();
-  const { uploadFile, uploadProgress, isUploading } = useEnhancedUpload();
+  const { uploadFile, uploadProgress, isUploading, resetProgress } = useEnhancedUpload();
 
   const handleFileSelect = (file: File) => {
     setSelectedFile(file);
@@ -56,22 +57,14 @@ const UploadRecord = () => {
       });
 
       if (result.success) {
-        toast({
-          title: "Upload successful",
-          description: "Your health record has been uploaded and processed.",
-        });
-        
         // Reset form
         setSelectedFile(null);
         setTitle('');
         setDescription('');
+        resetProgress();
       }
     } catch (error) {
-      toast({
-        title: "Upload failed",
-        description: "Failed to upload file. Please try again.",
-        variant: "destructive"
-      });
+      console.error('Upload error:', error);
     }
   };
 
@@ -107,6 +100,20 @@ const UploadRecord = () => {
     }
     
     await handleFileUpload(selectedFile);
+  };
+
+  const handleProcessingComplete = (result: any) => {
+    console.log('Processing complete:', result);
+    setShowProcessor(false);
+    toast({
+      title: "Processing Complete",
+      description: "Document has been analyzed successfully.",
+    });
+  };
+
+  const handleProcessingError = (error: string) => {
+    console.error('Processing error:', error);
+    setShowProcessor(false);
   };
 
   return (
@@ -161,13 +168,23 @@ const UploadRecord = () => {
                             {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
                           </p>
                         </div>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={() => setSelectedFile(null)}
-                        >
-                          Remove File
-                        </Button>
+                        <div className="flex gap-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => setSelectedFile(null)}
+                          >
+                            Remove File
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => setShowProcessor(true)}
+                          >
+                            <Scan className="w-4 h-4 mr-2" />
+                            Process with AI
+                          </Button>
+                        </div>
                       </div>
                     ) : (
                       <div className="space-y-4">
@@ -229,13 +246,13 @@ const UploadRecord = () => {
                   {isUploading && (
                     <div className="space-y-2">
                       <div className="flex justify-between text-sm">
-                        <span>Uploading...</span>
-                        <span>{uploadProgress}%</span>
+                        <span>{uploadProgress.stage}</span>
+                        <span>{uploadProgress.percentage}%</span>
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2">
                         <div
                           className="bg-blue-600 h-2 rounded-full transition-all"
-                          style={{ width: `${uploadProgress}%` }}
+                          style={{ width: `${uploadProgress.percentage}%` }}
                         ></div>
                       </div>
                     </div>
@@ -255,20 +272,45 @@ const UploadRecord = () => {
 
             {/* Enhanced Document Processing */}
             <div className="space-y-6">
-              <Card className="border-0 shadow-lg">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Scan className="w-5 h-5 text-green-500" />
-                    AI Processing
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-gray-600 mb-4">
-                    Our AI will automatically extract and organize key information from your documents.
-                  </p>
-                  <EnhancedDocumentProcessor />
-                </CardContent>
-              </Card>
+              {showProcessor && selectedFile ? (
+                <EnhancedDocumentProcessor 
+                  file={selectedFile}
+                  onProcessingComplete={handleProcessingComplete}
+                  onError={handleProcessingError}
+                />
+              ) : (
+                <Card className="border-0 shadow-lg">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Scan className="w-5 h-5 text-green-500" />
+                      AI Processing
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-gray-600 mb-4">
+                      Our AI will automatically extract and organize key information from your documents.
+                    </p>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                        <span>OCR Text Extraction</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                        <span>Medical Entity Recognition</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                        <span>Auto-Categorization</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                        <span>Tag Generation</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
 
               {/* Quick Actions */}
               <Card className="border-0 shadow-lg">

@@ -20,8 +20,91 @@ export const useEnhancedUpload = () => {
     stage: 'idle',
     isComplete: false
   });
+  const [isUploading, setIsUploading] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
+
+  const uploadFile = useCallback(async (file: File, metadata: any = {}) => {
+    if (!user) {
+      throw new Error('User not authenticated');
+    }
+
+    setIsUploading(true);
+    try {
+      setUploadProgress({ percentage: 10, stage: 'Uploading file...', isComplete: false });
+      
+      // Upload file to storage
+      const uploadResult = await FileUploadService.uploadFile(
+        file,
+        user.id,
+        (progress) => {
+          setUploadProgress({
+            percentage: 10 + (progress.percentage * 0.4),
+            stage: 'Uploading file...',
+            isComplete: false
+          });
+        }
+      );
+
+      if (!uploadResult.success) {
+        throw new Error(uploadResult.error || 'Upload failed');
+      }
+
+      setUploadProgress({ percentage: 60, stage: 'Creating health record...', isComplete: false });
+
+      // Create health record
+      const recordData = {
+        user_id: user.id,
+        title: metadata.title || file.name,
+        category: metadata.category || 'General',
+        tags: metadata.tags || [],
+        file_name: file.name,
+        file_path: uploadResult.data?.path,
+        file_size: file.size,
+        file_type: file.type,
+        description: metadata.description || '',
+        date_of_record: new Date().toISOString().split('T')[0]
+      };
+
+      if (navigator.onLine) {
+        await HealthRecordsService.createRecord(recordData);
+      } else {
+        await OfflineDataSyncService.storeOfflineData({
+          type: 'health_record',
+          data: recordData,
+          operation: 'CREATE'
+        });
+      }
+
+      setUploadProgress({ percentage: 100, stage: 'Complete!', isComplete: true });
+
+      toast({
+        title: "Upload Successful",
+        description: `${file.name} has been saved to your health records`,
+      });
+
+      return { success: true };
+
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Upload failed';
+      setUploadProgress({
+        percentage: 0,
+        stage: 'error',
+        isComplete: false,
+        error: errorMessage
+      });
+
+      toast({
+        title: "Upload Failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
+
+      throw error;
+    } finally {
+      setIsUploading(false);
+    }
+  }, [user, toast]);
 
   const uploadDocument = useCallback(async (file: File, processingResult: any) => {
     if (!user) {
@@ -71,10 +154,8 @@ export const useEnhancedUpload = () => {
       };
 
       if (navigator.onLine) {
-        // Online - save directly
         await HealthRecordsService.createRecord(recordData);
       } else {
-        // Offline - store for later sync
         await OfflineDataSyncService.storeOfflineData({
           type: 'health_record',
           data: recordData,
@@ -84,7 +165,6 @@ export const useEnhancedUpload = () => {
 
       setUploadProgress({ percentage: 90, stage: 'Finalizing...', isComplete: false });
 
-      // Send notification
       await EnhancedPushNotificationService.notifyDocumentProcessed(file.name, processingResult.category);
 
       setUploadProgress({ percentage: 100, stage: 'Complete!', isComplete: true });
@@ -119,11 +199,14 @@ export const useEnhancedUpload = () => {
       stage: 'idle',
       isComplete: false
     });
+    setIsUploading(false);
   }, []);
 
   return {
     uploadProgress,
     uploadDocument,
+    uploadFile,
+    isUploading,
     resetProgress
   };
 };
