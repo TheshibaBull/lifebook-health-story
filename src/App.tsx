@@ -7,6 +7,8 @@ import { useAuth } from "./hooks/useAuth";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { LoadingSpinner } from "./components/LoadingSpinner";
 import { PWAService } from '@/services/pwaService';
+import { EnhancedPushNotificationService } from '@/services/enhancedPushNotificationService';
+import { OfflineDataSyncService } from '@/services/offlineDataSyncService';
 
 import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
@@ -80,8 +82,27 @@ const PublicRoute = ({ children }: { children: React.ReactNode }) => {
 
 function App() {
   useEffect(() => {
-    // Initialize PWA features
-    PWAService.initialize();
+    // Initialize all services
+    const initializeServices = async () => {
+      try {
+        console.log('Initializing enhanced services...');
+        
+        // Initialize PWA features
+        await PWAService.initialize();
+        
+        // Initialize push notifications
+        await EnhancedPushNotificationService.initialize();
+        
+        // Initialize offline sync
+        OfflineDataSyncService.initialize();
+        
+        console.log('All services initialized successfully');
+      } catch (error) {
+        console.error('Failed to initialize services:', error);
+      }
+    };
+
+    initializeServices();
   }, []);
 
   return (
