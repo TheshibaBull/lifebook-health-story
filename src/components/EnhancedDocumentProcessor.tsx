@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -137,8 +136,62 @@ export const EnhancedDocumentProcessor = ({
     const text = content.toLowerCase();
     if (text.includes('urgent') || text.includes('emergency')) tags.add('Urgent');
     if (text.includes('routine') || text.includes('annual')) tags.add('Routine');
+    if (text.includes('normal') || text.includes('within range')) tags.add('Normal');
+    if (text.includes('abnormal') || text.includes('elevated') || text.includes('low')) tags.add('Attention Needed');
     
     return Array.from(tags);
+  };
+
+  const generatePersonalizedRecommendations = (content: string, entities: any, category: string): string[] => {
+    const recommendations = [];
+    const lowerText = content.toLowerCase();
+    
+    // Base recommendations
+    recommendations.push('Document has been securely stored in your health records');
+    recommendations.push('Share this with your healthcare provider during your next visit');
+    
+    // Category-specific recommendations
+    if (category === 'Lab Results') {
+      recommendations.push('Track these values over time to monitor health trends');
+      
+      if (entities.measurements.length > 0) {
+        recommendations.push('Compare with previous results to identify any changes');
+      }
+      
+      if (lowerText.includes('glucose') || lowerText.includes('blood sugar')) {
+        recommendations.push('Monitor blood sugar levels if you have diabetes');
+        recommendations.push('Maintain a balanced diet to support healthy glucose levels');
+      }
+      
+      if (lowerText.includes('cholesterol')) {
+        recommendations.push('Follow heart-healthy lifestyle choices');
+        recommendations.push('Regular exercise can help improve cholesterol levels');
+      }
+      
+    } else if (category === 'Prescriptions') {
+      recommendations.push('Set up medication reminders for consistent dosing');
+      recommendations.push('Review potential side effects with your pharmacist');
+      recommendations.push('Check for interactions with other medications you take');
+      
+    } else if (category === 'Imaging') {
+      recommendations.push('Keep for comparison with future imaging studies');
+      recommendations.push('Follow up on any findings with your doctor');
+      
+    } else {
+      recommendations.push('Review for any follow-up actions needed');
+      recommendations.push('Note any appointments or procedures mentioned');
+    }
+    
+    // Health maintenance
+    if (lowerText.includes('annual') || lowerText.includes('routine')) {
+      recommendations.push('Schedule your next routine health check-up');
+    }
+    
+    if (lowerText.includes('follow up') || lowerText.includes('urgent')) {
+      recommendations.push('⚠️ Take note of any urgent follow-up items mentioned');
+    }
+    
+    return recommendations.slice(0, 6); // Limit to 6 most relevant
   };
 
   if (processingResult) {

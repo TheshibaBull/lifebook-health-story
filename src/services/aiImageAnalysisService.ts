@@ -98,7 +98,7 @@ export class AIImageAnalysisService {
     const combinedContent = (description + ' ' + textContent).toLowerCase();
     
     // Determine analysis type
-    let analysisType = 'General Image';
+    let analysisType = 'General Document';
     if (combinedContent.includes('blood') || combinedContent.includes('lab') || combinedContent.includes('test')) {
       analysisType = 'Medical Lab Report';
     } else if (combinedContent.includes('x-ray') || combinedContent.includes('scan') || combinedContent.includes('mri')) {
@@ -121,8 +121,8 @@ export class AIImageAnalysisService {
     // Generate summary
     const summary = this.generateSummary(analysisType, detectedObjects, medicalFindings, keyMetrics);
     
-    // Generate recommendations
-    const recommendations = this.generateRecommendations(analysisType, medicalFindings);
+    // Generate personalized recommendations
+    const recommendations = this.generatePersonalizedRecommendations(analysisType, medicalFindings, keyMetrics, textContent);
 
     return {
       analysisType,
@@ -132,6 +132,83 @@ export class AIImageAnalysisService {
       summary,
       recommendations
     };
+  }
+
+  private static generatePersonalizedRecommendations(type: string, findings: string[], metrics: string[], textContent: string): string[] {
+    const recommendations = [];
+    const lowerText = textContent.toLowerCase();
+    
+    // Base recommendations for all documents
+    recommendations.push('Save this document securely in your health records');
+    recommendations.push('Share with your healthcare provider during your next visit');
+    
+    // Type-specific recommendations
+    if (type === 'Medical Lab Report') {
+      recommendations.push('Track these values over time to monitor trends');
+      
+      // Check for specific conditions based on findings
+      if (findings.some(f => f.includes('glucose') || f.includes('blood sugar'))) {
+        recommendations.push('Monitor your blood sugar levels regularly if diabetic');
+        recommendations.push('Consider dietary adjustments to maintain healthy glucose levels');
+      }
+      
+      if (findings.some(f => f.includes('cholesterol'))) {
+        recommendations.push('Follow a heart-healthy diet to manage cholesterol levels');
+        recommendations.push('Regular exercise can help improve cholesterol profile');
+      }
+      
+      if (findings.some(f => f.includes('blood pressure') || f.includes('hypertension'))) {
+        recommendations.push('Monitor blood pressure regularly at home');
+        recommendations.push('Reduce sodium intake and maintain a healthy weight');
+      }
+      
+      // Check for abnormal values in metrics
+      if (metrics.length > 0) {
+        recommendations.push('Discuss any values outside normal range with your doctor');
+        recommendations.push('Ask about lifestyle changes that could improve these results');
+      }
+      
+    } else if (type === 'Prescription Document') {
+      recommendations.push('Set medication reminders to ensure consistent dosing');
+      recommendations.push('Check for potential drug interactions with other medications');
+      recommendations.push('Understand side effects and when to contact your doctor');
+      recommendations.push('Store medications properly according to instructions');
+      
+    } else if (type === 'Medical Imaging') {
+      recommendations.push('Keep for comparison with future imaging studies');
+      recommendations.push('Discuss findings with your radiologist or referring physician');
+      recommendations.push('Follow up on any recommended additional tests');
+      
+    } else {
+      // General document recommendations
+      recommendations.push('Review the content for any action items or follow-up needed');
+      recommendations.push('Note any appointments or procedures mentioned');
+    }
+    
+    // Health maintenance recommendations
+    if (lowerText.includes('annual') || lowerText.includes('routine')) {
+      recommendations.push('Schedule your next routine check-up as recommended');
+      recommendations.push('Stay up to date with preventive care screenings');
+    }
+    
+    // Emergency or urgent care recommendations
+    if (lowerText.includes('urgent') || lowerText.includes('emergency') || lowerText.includes('follow up')) {
+      recommendations.push('⚠️ Follow up on any urgent items mentioned in this document');
+      recommendations.push('Contact your healthcare provider if you have questions about urgent findings');
+    }
+    
+    // Lifestyle recommendations based on content
+    if (lowerText.includes('weight') || lowerText.includes('bmi')) {
+      recommendations.push('Maintain a healthy weight through balanced diet and exercise');
+    }
+    
+    if (lowerText.includes('smoking') || lowerText.includes('tobacco')) {
+      recommendations.push('Consider smoking cessation resources if applicable');
+    }
+    
+    // Remove duplicates and limit to most relevant recommendations
+    const uniqueRecommendations = [...new Set(recommendations)];
+    return uniqueRecommendations.slice(0, 8); // Limit to 8 most relevant recommendations
   }
 
   private static extractObjects(description: string): string[] {
@@ -194,29 +271,5 @@ export class AIImageAnalysisService {
     }
 
     return summary;
-  }
-
-  private static generateRecommendations(type: string, findings: string[]): string[] {
-    const recommendations = [];
-    
-    if (type === 'Medical Lab Report') {
-      recommendations.push('Review results with your healthcare provider');
-      recommendations.push('Track values over time for trends');
-      recommendations.push('Store securely in your health records');
-    } else if (type === 'Prescription Document') {
-      recommendations.push('Verify medication details with pharmacist');
-      recommendations.push('Set medication reminders');
-      recommendations.push('Check for drug interactions');
-    } else if (type === 'Medical Imaging') {
-      recommendations.push('Discuss findings with radiologist or doctor');
-      recommendations.push('Keep for future medical reference');
-      recommendations.push('Share with specialists if needed');
-    } else {
-      recommendations.push('Save to appropriate category');
-      recommendations.push('Add relevant tags for easy searching');
-      recommendations.push('Share with healthcare team if relevant');
-    }
-
-    return recommendations;
   }
 }
