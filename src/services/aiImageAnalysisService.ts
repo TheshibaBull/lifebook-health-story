@@ -1,4 +1,3 @@
-
 import { pipeline, env } from '@huggingface/transformers';
 
 // Configure transformers.js
@@ -38,20 +37,43 @@ export class AIImageAnalysisService {
   }
 
   static async analyzeImage(imageUrl: string): Promise<ImageAnalysisResult> {
-    console.log('Starting AI image analysis...');
+    console.log('Starting AI image analysis for URL:', imageUrl);
     
     if (!this.visionPipeline || !this.ocrPipeline) {
       await this.initialize();
     }
 
     try {
+      // Convert the image URL to a format the AI can process
+      let processableImageUrl = imageUrl;
+      
+      // Handle Supabase storage URLs and convert to blob
+      if (imageUrl.includes('supabase')) {
+        try {
+          const response = await fetch(imageUrl);
+          if (!response.ok) {
+            throw new Error(`Failed to fetch image: ${response.status} ${response.statusText}`);
+          }
+          const blob = await response.blob();
+          processableImageUrl = URL.createObjectURL(blob);
+        } catch (fetchError) {
+          console.error('Error fetching image from Supabase:', fetchError);
+          throw new Error(`Unable to access image: ${fetchError.message}`);
+        }
+      }
+
       // Extract visual description
-      const visionResult = await this.visionPipeline(imageUrl);
+      const visionResult = await this.visionPipeline(processableImageUrl);
       const description = visionResult[0]?.generated_text || '';
       
       // Extract text content
-      const ocrResult = await this.ocrPipeline(imageUrl);
+      const ocrResult = await this.ocrPipeline(processableImageUrl);
       const textContent = ocrResult[0]?.generated_text || '';
+      
+      // Clean up blob URL if we created one
+      if (processableImageUrl !== imageUrl && processableImageUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(processableImageUrl);
+      }
       
       // Analyze the content
       const analysis = this.generateAnalysis(description, textContent);

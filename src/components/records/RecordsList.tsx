@@ -13,7 +13,8 @@ import {
   FileImage,
   Calendar as CalendarIcon,
   Brain,
-  Sparkles
+  Sparkles,
+  CheckCircle2
 } from 'lucide-react';
 import { format } from 'date-fns';
 import type { Tables } from '@/integrations/supabase/types';
@@ -76,6 +77,10 @@ const RecordsList = ({
     return fileType?.toLowerCase().includes('image');
   };
 
+  const hasExistingAnalysis = (record: HealthRecord) => {
+    return record.ai_analysis && typeof record.ai_analysis === 'object' && Object.keys(record.ai_analysis).length > 0;
+  };
+
   if (isMobile) {
     return (
       <div className="space-y-3">
@@ -112,6 +117,13 @@ const RecordsList = ({
                     )}
                   </div>
                 )}
+                {/* Show existing analysis indicator */}
+                {hasExistingAnalysis(record) && (
+                  <div className="flex items-center gap-1 mt-2">
+                    <CheckCircle2 className="w-3 h-3 text-green-500" />
+                    <span className="text-xs text-green-600">AI Analyzed</span>
+                  </div>
+                )}
               </div>
               <div className="flex flex-col gap-2">
                 <Button 
@@ -126,11 +138,18 @@ const RecordsList = ({
                   <Button 
                     variant="ghost" 
                     size="sm" 
-                    className="h-8 w-8 p-0 bg-gradient-to-r from-purple-50 to-blue-50 hover:from-purple-100 hover:to-blue-100" 
+                    className={`h-8 w-8 p-0 ${hasExistingAnalysis(record) 
+                      ? 'bg-gradient-to-r from-green-50 to-emerald-50 hover:from-green-100 hover:to-emerald-100' 
+                      : 'bg-gradient-to-r from-purple-50 to-blue-50 hover:from-purple-100 hover:to-blue-100'
+                    }`}
                     onClick={() => onAIAnalysis(record)}
-                    title="AI Analysis"
+                    title={hasExistingAnalysis(record) ? "View AI Analysis" : "New AI Analysis"}
                   >
-                    <Brain className="h-4 w-4 text-purple-600" />
+                    {hasExistingAnalysis(record) ? (
+                      <Sparkles className="h-4 w-4 text-green-600" />
+                    ) : (
+                      <Brain className="h-4 w-4 text-purple-600" />
+                    )}
                   </Button>
                 )}
                 {record.file_path && (
@@ -168,7 +187,15 @@ const RecordsList = ({
               {getRecordIcon(record.category)}
             </div>
             <div className="flex-1 min-w-0">
-              <h3 className="text-lg font-medium text-gray-900 mb-1">{record.title}</h3>
+              <div className="flex items-start justify-between mb-2">
+                <h3 className="text-lg font-medium text-gray-900">{record.title}</h3>
+                {hasExistingAnalysis(record) && (
+                  <div className="flex items-center gap-1 ml-4">
+                    <CheckCircle2 className="w-4 h-4 text-green-500" />
+                    <span className="text-sm text-green-600 font-medium">AI Analyzed</span>
+                  </div>
+                )}
+              </div>
               <div className="flex flex-wrap items-center gap-2 text-sm text-gray-500 mb-3">
                 <Badge variant="outline">
                   {record.category}
@@ -218,11 +245,23 @@ const RecordsList = ({
                 <Button 
                   variant="outline" 
                   size="sm"
-                  className="bg-gradient-to-r from-purple-50 to-blue-50 hover:from-purple-100 hover:to-blue-100 border-purple-200"
+                  className={hasExistingAnalysis(record) 
+                    ? "bg-gradient-to-r from-green-50 to-emerald-50 hover:from-green-100 hover:to-emerald-100 border-green-200" 
+                    : "bg-gradient-to-r from-purple-50 to-blue-50 hover:from-purple-100 hover:to-blue-100 border-purple-200"
+                  }
                   onClick={() => onAIAnalysis(record)}
                 >
-                  <Brain className="mr-2 h-4 w-4 text-purple-600" />
-                  AI Analysis
+                  {hasExistingAnalysis(record) ? (
+                    <>
+                      <Sparkles className="mr-2 h-4 w-4 text-green-600" />
+                      View Analysis
+                    </>
+                  ) : (
+                    <>
+                      <Brain className="mr-2 h-4 w-4 text-purple-600" />
+                      AI Analysis
+                    </>
+                  )}
                 </Button>
               )}
               {record.file_path && (
