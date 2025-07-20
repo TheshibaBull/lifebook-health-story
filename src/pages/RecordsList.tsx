@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
@@ -169,10 +168,15 @@ const RecordsList = () => {
     setSelectedAnalysisRecord(record);
     setShowAnalysisDialog(true);
     
-    toast({
-      title: "Starting AI Analysis",
-      description: `Analyzing ${record.title}...`,
-    });
+    // Only show the "Starting AI Analysis" toast if there's no existing analysis
+    const hasExistingAnalysis = record.ai_analysis && typeof record.ai_analysis === 'object' && Object.keys(record.ai_analysis).length > 0;
+    
+    if (!hasExistingAnalysis) {
+      toast({
+        title: "Starting AI Analysis",
+        description: `Analyzing ${record.title}...`,
+      });
+    }
   };
 
   const handleDownloadRecord = async (record: HealthRecord) => {
@@ -384,13 +388,14 @@ const RecordsList = () => {
           }}
         />
 
-        {/* AI Analysis Dialog */}
+        {/* AI Analysis Dialog - Pass existing analysis */}
         {selectedAnalysisRecord && (
           <DetailedAnalysisDialog
             open={showAnalysisDialog}
             onOpenChange={setShowAnalysisDialog}
             imageUrl={selectedAnalysisRecord.fileUrl}
             fileName={selectedAnalysisRecord.file_name || selectedAnalysisRecord.title}
+            existingAnalysis={selectedAnalysisRecord.ai_analysis}
           />
         )}
       </div>

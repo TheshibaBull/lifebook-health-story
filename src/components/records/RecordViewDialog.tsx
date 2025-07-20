@@ -45,6 +45,7 @@ const RecordViewDialog = ({ record, open, onOpenChange, onDownload, onDelete }: 
   // Safely parse the ai_analysis JSON field
   const aiAnalysis = record.ai_analysis as AIAnalysis | null;
   const isImageFile = record.file_type?.toLowerCase().includes('image');
+  const hasExistingAnalysis = aiAnalysis && typeof aiAnalysis === 'object' && Object.keys(aiAnalysis).length > 0;
 
   const getRecordIcon = (category: string) => {
     switch (category) {
@@ -140,7 +141,7 @@ const RecordViewDialog = ({ record, open, onOpenChange, onDownload, onDelete }: 
                     onClick={() => setShowAnalysisDialog(true)}
                   >
                     <Brain className="mr-2 h-4 w-4 text-purple-600" />
-                    AI Analysis
+                    {hasExistingAnalysis ? 'New Analysis' : 'AI Analysis'}
                   </Button>
                 </div>
                 <div className="border rounded-lg overflow-hidden">
@@ -197,11 +198,14 @@ const RecordViewDialog = ({ record, open, onOpenChange, onDownload, onDelete }: 
               </div>
             )}
             
-            {/* Existing AI Analysis Results */}
-            {aiAnalysis && (
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <p className="font-medium text-gray-700">Previous AI Analysis</p>
+            {/* Existing AI Analysis Results - Show this FIRST if it exists */}
+            {hasExistingAnalysis && (
+              <div className="bg-gradient-to-br from-purple-50 to-blue-50 border-2 border-purple-200 rounded-xl p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-xl font-bold text-purple-900 flex items-center gap-2">
+                    <Brain className="w-6 h-6 text-purple-600" />
+                    AI Analysis Results
+                  </h3>
                   {isImageFile && (
                     <Button 
                       variant="outline" 
@@ -214,39 +218,44 @@ const RecordViewDialog = ({ record, open, onOpenChange, onDownload, onDelete }: 
                     </Button>
                   )}
                 </div>
-                <div className="bg-purple-50 p-4 rounded-lg text-sm border border-purple-200">
+                
+                <div className="space-y-4">
                   {aiAnalysis.summary && (
-                    <div className="mb-3">
-                      <p className="font-medium text-purple-900 mb-1">Summary:</p>
-                      <p className="text-purple-800">{aiAnalysis.summary}</p>
+                    <div>
+                      <p className="font-semibold text-purple-900 mb-2">Summary:</p>
+                      <p className="text-purple-800 bg-white/60 p-3 rounded-lg">{aiAnalysis.summary}</p>
                     </div>
                   )}
                   
                   {aiAnalysis.keyFindings && aiAnalysis.keyFindings.length > 0 && (
-                    <div className="mb-3">
-                      <p className="font-medium text-purple-900 mb-1">Key Findings:</p>
-                      <ul className="list-disc pl-5 text-purple-800 space-y-1">
-                        {aiAnalysis.keyFindings.map((finding: string, index: number) => (
-                          <li key={index}>{finding}</li>
-                        ))}
-                      </ul>
+                    <div>
+                      <p className="font-semibold text-purple-900 mb-2">Key Findings:</p>
+                      <div className="bg-white/60 p-3 rounded-lg">
+                        <ul className="list-disc pl-5 text-purple-800 space-y-1">
+                          {aiAnalysis.keyFindings.map((finding: string, index: number) => (
+                            <li key={index}>{finding}</li>
+                          ))}
+                        </ul>
+                      </div>
                     </div>
                   )}
                   
                   {aiAnalysis.recommendations && aiAnalysis.recommendations.length > 0 && (
-                    <div className="mb-3">
-                      <p className="font-medium text-purple-900 mb-1">Recommendations:</p>
-                      <ul className="list-disc pl-5 text-purple-800 space-y-1">
-                        {aiAnalysis.recommendations.map((rec: string, index: number) => (
-                          <li key={index}>{rec}</li>
-                        ))}
-                      </ul>
+                    <div>
+                      <p className="font-semibold text-purple-900 mb-2">Recommendations:</p>
+                      <div className="bg-white/60 p-3 rounded-lg">
+                        <ul className="list-disc pl-5 text-purple-800 space-y-1">
+                          {aiAnalysis.recommendations.map((rec: string, index: number) => (
+                            <li key={index}>{rec}</li>
+                          ))}
+                        </ul>
+                      </div>
                     </div>
                   )}
 
                   {aiAnalysis.confidence && (
-                    <div className="mt-3 pt-3 border-t border-purple-200">
-                      <p className="text-xs text-purple-700">
+                    <div className="pt-3 border-t border-purple-200">
+                      <p className="text-sm text-purple-700">
                         Analysis Confidence: {Math.round(aiAnalysis.confidence * 100)}%
                       </p>
                     </div>
@@ -288,7 +297,7 @@ const RecordViewDialog = ({ record, open, onOpenChange, onDownload, onDelete }: 
         </DialogContent>
       </Dialog>
 
-      {/* AI Analysis Dialog */}
+      {/* AI Analysis Dialog - Only show for new analysis */}
       {isImageFile && record.fileUrl && (
         <DetailedAnalysisDialog
           open={showAnalysisDialog}

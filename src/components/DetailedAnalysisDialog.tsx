@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -24,17 +24,39 @@ interface DetailedAnalysisDialogProps {
   onOpenChange: (open: boolean) => void;
   imageUrl: string;
   fileName: string;
+  existingAnalysis?: any; // Pass existing analysis if available
 }
 
 export const DetailedAnalysisDialog = ({ 
   open, 
   onOpenChange, 
   imageUrl, 
-  fileName 
+  fileName,
+  existingAnalysis 
 }: DetailedAnalysisDialogProps) => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<ImageAnalysisResult | null>(null);
   const { toast } = useToast();
+
+  // Check for existing analysis when dialog opens
+  useEffect(() => {
+    if (open && existingAnalysis && Object.keys(existingAnalysis).length > 0) {
+      // Convert existing analysis to our format
+      const convertedAnalysis: ImageAnalysisResult = {
+        summary: existingAnalysis.summary || '',
+        detectedObjects: existingAnalysis.detectedObjects || [],
+        textContent: existingAnalysis.textContent || '',
+        medicalFindings: existingAnalysis.medicalFindings || existingAnalysis.keyFindings || [],
+        keyMetrics: existingAnalysis.keyMetrics || [],
+        recommendations: existingAnalysis.recommendations || [],
+        confidence: existingAnalysis.confidence || 0.85,
+        analysisType: existingAnalysis.analysisType || 'Medical Document'
+      };
+      setAnalysisResult(convertedAnalysis);
+    } else if (open) {
+      setAnalysisResult(null);
+    }
+  }, [open, existingAnalysis]);
 
   const startAnalysis = async () => {
     setIsAnalyzing(true);
@@ -90,6 +112,7 @@ export const DetailedAnalysisDialog = ({
             </CardContent>
           </Card>
 
+          {/* Show existing analysis if available, otherwise show ready state */}
           {!analysisResult && !isAnalyzing && (
             <Card>
               <CardHeader>
