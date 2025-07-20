@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -13,7 +14,9 @@ import {
   FileImage,
   Building,
   Tag,
-  Brain
+  Brain,
+  Sparkles,
+  Eye
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
@@ -136,6 +139,54 @@ export const RecordViewer = ({ recordId, open, onOpenChange, onDelete }: RecordV
               </DialogHeader>
               
               <div className="space-y-6 py-4">
+                {/* AI Analysis Section - Prominent placement for images */}
+                {isImageFile(record.file_type) && (
+                  <div className="bg-gradient-to-r from-purple-50 via-blue-50 to-indigo-50 p-6 rounded-xl border-2 border-purple-200 shadow-sm">
+                    <div className="flex items-center gap-4 mb-4">
+                      <div className="flex items-center justify-center w-12 h-12 bg-purple-100 rounded-full">
+                        <Brain className="w-6 h-6 text-purple-600" />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="text-lg font-semibold text-purple-900 flex items-center gap-2">
+                          <Sparkles className="w-5 h-5" />
+                          AI Detailed Analysis Available
+                        </h3>
+                        <p className="text-sm text-purple-700 mt-1">
+                          Get comprehensive AI insights including object detection, text extraction, medical findings, and personalized recommendations.
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                      <div className="flex items-center gap-2 text-sm text-purple-700">
+                        <Eye className="w-4 h-4" />
+                        <span>Object Detection</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-purple-700">
+                        <FileText className="w-4 h-4" />
+                        <span>Text Extraction</span>  
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-purple-700">
+                        <Activity className="w-4 h-4" />
+                        <span>Medical Analysis</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-purple-700">
+                        <Sparkles className="w-4 h-4" />
+                        <span>Smart Insights</span>
+                      </div>
+                    </div>
+                    
+                    <Button 
+                      onClick={handleDetailedAnalysis}
+                      className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-medium py-3"
+                      size="lg"
+                    >
+                      <Brain className="w-5 h-5 mr-2" />
+                      Start AI Analysis
+                    </Button>
+                  </div>
+                )}
+
                 {/* Record Details */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                   <div className="flex items-start gap-2">
@@ -204,26 +255,6 @@ export const RecordViewer = ({ recordId, open, onOpenChange, onDelete }: RecordV
                         alt={record.title} 
                         className="max-w-full h-auto max-h-[400px] mx-auto"
                       />
-                    </div>
-                    
-                    {/* AI Analysis Button for Images */}
-                    <div className="mt-4 p-4 bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg border border-purple-200">
-                      <div className="flex items-center gap-3">
-                        <Brain className="w-8 h-8 text-purple-600" />
-                        <div className="flex-1">
-                          <h3 className="font-semibold text-purple-900">AI Detailed Analysis Available</h3>
-                          <p className="text-sm text-purple-700">
-                            Get comprehensive AI analysis including object detection, text extraction, medical findings, and smart recommendations.
-                          </p>
-                        </div>
-                        <Button 
-                          onClick={handleDetailedAnalysis}
-                          className="bg-purple-600 hover:bg-purple-700"
-                        >
-                          <Brain className="w-4 h-4 mr-2" />
-                          Analyze with AI
-                        </Button>
-                      </div>
                     </div>
                   </div>
                 )}
