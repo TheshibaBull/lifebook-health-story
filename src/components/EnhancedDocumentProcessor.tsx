@@ -8,6 +8,7 @@ import { RealTimeOCRService } from '@/services/realTimeOCRService';
 import { EnhancedPushNotificationService } from '@/services/enhancedPushNotificationService';
 import { OfflineDataSyncService } from '@/services/offlineDataSyncService';
 import { useToast } from '@/hooks/use-toast';
+import { DocumentAnalysisResults } from './DocumentAnalysisResults';
 
 interface ProcessingResult {
   text: string;
@@ -31,11 +32,13 @@ export const EnhancedDocumentProcessor = ({
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
   const [currentStage, setCurrentStage] = useState<string>('');
+  const [processingResult, setProcessingResult] = useState<ProcessingResult | null>(null);
   const { toast } = useToast();
 
   const processDocument = useCallback(async () => {
     setIsProcessing(true);
     setProgress(0);
+    setProcessingResult(null);
     
     try {
       // Stage 1: Initialize OCR
@@ -68,6 +71,7 @@ export const EnhancedDocumentProcessor = ({
       
       setProgress(100);
       setCurrentStage('Complete!');
+      setProcessingResult(result);
       
       // Send notification
       await EnhancedPushNotificationService.notifyDocumentProcessed(file.name, category);
@@ -136,6 +140,38 @@ export const EnhancedDocumentProcessor = ({
     
     return Array.from(tags);
   };
+
+  if (processingResult) {
+    return (
+      <div className="space-y-6">
+        <Card className="border-green-200 bg-green-50">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-2 text-green-700">
+              <CheckCircle className="w-5 h-5" />
+              <span className="font-medium">Processing Complete!</span>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <DocumentAnalysisResults 
+          result={processingResult} 
+          fileName={file.name}
+        />
+        
+        <Button 
+          onClick={() => {
+            setProcessingResult(null);
+            setProgress(0);
+            setCurrentStage('');
+          }}
+          variant="outline"
+          className="w-full"
+        >
+          Process Another Document
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <Card className="w-full max-w-2xl">

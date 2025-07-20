@@ -47,11 +47,11 @@ export class RealTimeOCRService {
     }
 
     try {
-      // Convert file to image element
-      const imageElement = await this.fileToImage(file);
+      // Convert file to base64 URL for the pipeline
+      const imageUrl = await this.fileToBase64(file);
       
       // Extract text using OCR
-      const ocrResult = await this.ocrPipeline(imageElement);
+      const ocrResult = await this.ocrPipeline(imageUrl);
       const extractedText = ocrResult[0]?.generated_text || '';
       
       // Extract medical entities
@@ -124,12 +124,12 @@ export class RealTimeOCRService {
     return text.match(providerRegex) || [];
   }
 
-  private static fileToImage(file: File): Promise<HTMLImageElement> {
+  private static fileToBase64(file: File): Promise<string> {
     return new Promise((resolve, reject) => {
-      const img = new Image();
-      img.onload = () => resolve(img);
-      img.onerror = reject;
-      img.src = URL.createObjectURL(file);
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
     });
   }
 }
