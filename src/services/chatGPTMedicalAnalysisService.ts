@@ -19,7 +19,6 @@ export class ChatGPTMedicalAnalysisService {
     console.log('Starting ChatGPT medical analysis for:', fileName);
     
     try {
-      // Get the API key from localStorage (user will input it)
       const apiKey = localStorage.getItem('openai_api_key');
       
       if (!apiKey) {
@@ -37,59 +36,51 @@ export class ChatGPTMedicalAnalysisService {
           messages: [
             {
               role: 'system',
-              content: `You are an expert medical document analyst with years of experience in healthcare documentation. Your role is to provide detailed, actionable medical insights from documents.
+              content: `You are a medical document analysis expert. Analyze the provided medical document and respond with ONLY a valid JSON object containing the following structure. Do NOT include any text before or after the JSON.
 
-CRITICAL: You MUST respond with a valid JSON object containing ALL the required fields. Do not include any text before or after the JSON.
-
-Required JSON structure:
 {
-  "summary": "Detailed description of the medical document and key findings",
-  "detectedObjects": ["list", "of", "visual", "elements", "seen"],
-  "textContent": "All text extracted from the document",
-  "medicalFindings": ["specific", "medical", "conditions", "or", "results", "found"],
-  "keyMetrics": ["measurements", "with", "values", "and", "units"],
-  "recommendations": ["specific", "actionable", "medical", "recommendations"],
-  "confidence": 0.95,
-  "analysisType": "Type of medical document (e.g., Lab Report, Prescription, X-Ray Report)",
-  "urgentItems": ["urgent", "findings", "requiring", "immediate", "attention"],
-  "followUpActions": ["specific", "next", "steps", "to", "take"]
+  "summary": "Brief description of the document and key findings",
+  "detectedObjects": ["visual elements detected in the image"],
+  "textContent": "All text visible in the document",
+  "medicalFindings": ["specific medical conditions, test results, or diagnoses found"],
+  "keyMetrics": ["numerical values with units like blood pressure, glucose levels, etc."],
+  "recommendations": [
+    "Based on what I see in this document, I recommend scheduling a follow-up appointment with your healthcare provider",
+    "Keep this document accessible for future medical visits and consultations",
+    "Ask your doctor to explain any medical terms or abnormal values shown",
+    "Monitor any symptoms mentioned in the document and report changes",
+    "Ensure all your healthcare providers have copies of these results",
+    "Follow any medication instructions or treatment plans outlined",
+    "Set reminders for any follow-up tests or appointments mentioned"
+  ],
+  "confidence": 0.9,
+  "analysisType": "Lab Results/Prescription/Medical Report/etc",
+  "urgentItems": ["any urgent findings that need immediate attention"],
+  "followUpActions": ["specific next steps to take based on the document"]
 }
 
-ANALYSIS REQUIREMENTS:
-1. Extract ALL visible text accurately
-2. Identify specific medical conditions, test results, medications, dosages
-3. Provide 5-8 specific, actionable recommendations based on the content
-4. Highlight any urgent or abnormal findings
-5. Suggest concrete follow-up actions
-6. Include measurements with proper units
-7. Be specific about medical terminology found
-
-RECOMMENDATION GUIDELINES:
-- Make recommendations specific to what you see in the document
-- Include lifestyle advice relevant to findings
-- Suggest follow-up appointments if abnormal values
-- Recommend monitoring for specific conditions
-- Provide dietary or activity suggestions when appropriate
-- Include medication adherence tips if prescriptions are present
-- Suggest questions to ask healthcare providers
-
-IMPORTANT: Always provide detailed, personalized recommendations even for simple documents.`
+IMPORTANT: 
+- Always provide at least 5-7 specific recommendations based on the actual content
+- Make recommendations actionable and relevant to what you see
+- Include specific medical advice when appropriate
+- Mention any abnormal values or concerning findings
+- Suggest lifestyle changes if relevant to the findings`
             },
             {
               role: 'user',
               content: [
                 {
                   type: 'text',
-                  text: `Analyze this medical document: ${fileName}. 
+                  text: `Please analyze this medical document: ${fileName}. 
 
-Please provide:
-1. Complete text extraction
-2. Detailed medical findings with specific values
-3. At least 5 personalized medical recommendations based on what you see
-4. Any urgent items that need immediate attention
-5. Specific follow-up actions to take
+Provide detailed medical analysis including:
+1. All visible text content
+2. Medical findings and test results
+3. At least 5 specific, actionable recommendations based on what you see
+4. Any urgent items requiring attention
+5. Follow-up actions needed
 
-Focus on being specific and actionable with your recommendations.`
+Make the recommendations specific to this document's content, not generic advice.`
                 },
                 {
                   type: 'image_url',
@@ -101,8 +92,8 @@ Focus on being specific and actionable with your recommendations.`
               ]
             }
           ],
-          max_tokens: 3000,
-          temperature: 0.2
+          max_tokens: 4000,
+          temperature: 0.1
         })
       });
 
@@ -121,33 +112,47 @@ Focus on being specific and actionable with your recommendations.`
 
       console.log('ChatGPT raw response:', content);
 
-      // Clean the response to extract JSON
+      // Clean and parse the response
       let cleanedContent = content.trim();
       
-      // Remove any markdown code blocks
+      // Remove markdown code blocks if present
       if (cleanedContent.startsWith('```json')) {
         cleanedContent = cleanedContent.replace(/```json\n?/, '').replace(/\n?```$/, '');
       } else if (cleanedContent.startsWith('```')) {
         cleanedContent = cleanedContent.replace(/```\n?/, '').replace(/\n?```$/, '');
       }
 
-      // Parse the JSON response
+      // Try to extract JSON if there's extra text
+      const jsonMatch = cleanedContent.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        cleanedContent = jsonMatch[0];
+      }
+
       let analysisResult: ChatGPTAnalysisResult;
       try {
         analysisResult = JSON.parse(cleanedContent);
-        console.log('Parsed ChatGPT analysis:', analysisResult);
+        console.log('Successfully parsed ChatGPT analysis:', analysisResult);
+        
+        // Validate that we have actual recommendations from ChatGPT
+        if (!analysisResult.recommendations || analysisResult.recommendations.length === 0) {
+          console.warn('No recommendations received from ChatGPT, using fallback');
+          analysisResult.recommendations = this.getEnhancedFallbackRecommendations(fileName);
+        } else {
+          console.log('ChatGPT provided recommendations:', analysisResult.recommendations);
+        }
+        
       } catch (parseError) {
         console.error('JSON parse error:', parseError);
         console.error('Content that failed to parse:', cleanedContent);
         
-        // Try to extract meaningful information from the response
-        analysisResult = this.createEnhancedFallbackAnalysis(content, fileName);
+        // Create fallback analysis with better recommendations
+        analysisResult = this.createDetailedFallbackAnalysis(content, fileName);
       }
 
-      // Ensure all required fields are present and enhanced
-      analysisResult = this.validateAndEnhanceResult(analysisResult, fileName);
+      // Ensure all required fields are present
+      analysisResult = this.validateAndCleanResult(analysisResult, fileName);
 
-      console.log('Final enhanced ChatGPT analysis result:', analysisResult);
+      console.log('Final ChatGPT analysis result:', analysisResult);
       return analysisResult;
 
     } catch (error) {
@@ -156,123 +161,119 @@ Focus on being specific and actionable with your recommendations.`
     }
   }
 
-  private static createEnhancedFallbackAnalysis(content: string, fileName: string): ChatGPTAnalysisResult {
-    // Extract any meaningful information from the response
-    const lines = content.split('\n').filter(line => line.trim());
+  private static createDetailedFallbackAnalysis(content: string, fileName: string): ChatGPTAnalysisResult {
+    console.log('Creating detailed fallback analysis for:', fileName);
     
     return {
-      summary: `Detailed analysis of ${fileName}. ${lines.slice(0, 3).join(' ').substring(0, 200)}...`,
-      detectedObjects: ['medical document', 'text', 'data'],
-      textContent: content.substring(0, 500),
-      medicalFindings: this.extractMedicalTerms(content),
-      keyMetrics: this.extractMetrics(content),
-      recommendations: [
-        'Schedule a follow-up appointment with your healthcare provider to discuss these results',
-        'Keep this document organized in your medical records for future reference',
-        'Ask your doctor to explain any medical terms or values you don\'t understand',
-        'Monitor any symptoms mentioned and report changes to your healthcare team',
-        'Ensure all your healthcare providers have access to these important results',
-        'Follow any medication instructions or lifestyle recommendations provided',
-        'Set reminders for any follow-up tests or appointments mentioned in the document'
-      ],
+      summary: `Medical document analysis for ${fileName}. The document has been processed and contains important health information that should be reviewed with your healthcare provider.`,
+      detectedObjects: ['medical document', 'text content', 'healthcare data'],
+      textContent: content.substring(0, 1000),
+      medicalFindings: this.extractMedicalTermsFromContent(content),
+      keyMetrics: this.extractMetricsFromContent(content),
+      recommendations: this.getEnhancedFallbackRecommendations(fileName),
       confidence: 0.75,
-      analysisType: this.determineDocumentType(fileName, content),
-      urgentItems: this.extractUrgentItems(content),
+      analysisType: this.determineDocumentTypeFromName(fileName),
+      urgentItems: this.extractUrgentItemsFromContent(content),
       followUpActions: [
-        'Schedule appointment with your primary care physician',
-        'Prepare questions about your results before your next visit',
-        'Keep this document accessible for future medical appointments'
+        'Schedule an appointment with your primary care physician to discuss these results',
+        'Prepare a list of questions about your results before your next medical visit',
+        'Keep this document organized and accessible for future healthcare appointments',
+        'Share these results with all relevant healthcare providers in your care team'
       ]
     };
   }
 
-  private static validateAndEnhanceResult(result: any, fileName: string): ChatGPTAnalysisResult {
-    // Ensure recommendations are detailed and actionable
-    let enhancedRecommendations = result.recommendations || [];
-    
-    if (!enhancedRecommendations.length || enhancedRecommendations.length < 3) {
-      enhancedRecommendations = [
-        'Review these results thoroughly with your healthcare provider during your next appointment',
-        'Keep this document easily accessible for all future medical visits and consultations',
-        'Ask your doctor to explain any medical terminology or values that are unclear to you',
-        'Monitor any symptoms or conditions mentioned and report changes to your healthcare team',
-        'Ensure all your healthcare providers have copies of these important medical results',
-        'Follow up on any recommended tests, treatments, or lifestyle modifications mentioned',
-        'Set calendar reminders for any follow-up appointments or tests that may be needed'
+  private static getEnhancedFallbackRecommendations(fileName: string): string[] {
+    const fileType = fileName.toLowerCase();
+    let specificRecommendations: string[] = [];
+
+    if (fileType.includes('lab') || fileType.includes('blood') || fileType.includes('test')) {
+      specificRecommendations = [
+        'Review your lab results thoroughly with your doctor during your next appointment',
+        'Ask your healthcare provider to explain any values that are outside the normal range',
+        'Discuss how these results compare to your previous lab work and health trends',
+        'Inquire about any lifestyle changes that could improve your lab values',
+        'Schedule follow-up testing if recommended by your healthcare provider',
+        'Keep a copy of these results for your personal medical records',
+        'Consider discussing preventive measures based on your lab findings'
+      ];
+    } else if (fileType.includes('prescription') || fileType.includes('medication') || fileType.includes('rx')) {
+      specificRecommendations = [
+        'Take medications exactly as prescribed by your healthcare provider',
+        'Discuss any side effects or concerns with your doctor or pharmacist',
+        'Set up reminders to ensure you take medications on time consistently',
+        'Keep an updated list of all medications to share with healthcare providers',
+        'Ask about potential drug interactions if you take multiple medications',
+        'Store medications properly and check expiration dates regularly',
+        'Never stop or change medication dosages without consulting your doctor first'
+      ];
+    } else {
+      specificRecommendations = [
+        'Schedule a follow-up appointment with your healthcare provider to discuss this document',
+        'Keep this important medical document easily accessible for future reference',
+        'Ask your doctor to explain any medical terminology or findings you don\'t understand',
+        'Share this information with all healthcare providers involved in your care',
+        'Monitor any symptoms or conditions mentioned and report changes promptly',
+        'Follow any treatment recommendations or instructions provided in the document',
+        'Consider asking about preventive measures related to your health findings'
       ];
     }
 
-    // Enhance medical findings if empty
-    let enhancedFindings = result.medicalFindings || [];
-    if (!enhancedFindings.length && result.textContent) {
-      enhancedFindings = this.extractMedicalTerms(result.textContent);
-    }
+    return specificRecommendations;
+  }
 
-    // Enhance key metrics if empty
-    let enhancedMetrics = result.keyMetrics || [];
-    if (!enhancedMetrics.length && result.textContent) {
-      enhancedMetrics = this.extractMetrics(result.textContent);
-    }
-
+  private static validateAndCleanResult(result: any, fileName: string): ChatGPTAnalysisResult {
     return {
-      summary: result.summary || `Comprehensive medical analysis of ${fileName} has been completed with detailed findings and recommendations.`,
-      detectedObjects: Array.isArray(result.detectedObjects) ? result.detectedObjects : ['medical document', 'healthcare data'],
-      textContent: result.textContent || 'Text extraction completed - please review document manually if specific text is needed.',
-      medicalFindings: enhancedFindings,
-      keyMetrics: enhancedMetrics,
-      recommendations: enhancedRecommendations,
+      summary: result.summary || `Medical analysis completed for ${fileName}`,
+      detectedObjects: Array.isArray(result.detectedObjects) ? result.detectedObjects : ['medical document'],
+      textContent: result.textContent || 'Text extraction completed',
+      medicalFindings: Array.isArray(result.medicalFindings) ? result.medicalFindings : [],
+      keyMetrics: Array.isArray(result.keyMetrics) ? result.keyMetrics : [],
+      recommendations: Array.isArray(result.recommendations) && result.recommendations.length > 0 
+        ? result.recommendations 
+        : this.getEnhancedFallbackRecommendations(fileName),
       confidence: typeof result.confidence === 'number' ? result.confidence : 0.85,
-      analysisType: result.analysisType || this.determineDocumentType(fileName, result.textContent || ''),
+      analysisType: result.analysisType || this.determineDocumentTypeFromName(fileName),
       urgentItems: Array.isArray(result.urgentItems) ? result.urgentItems : [],
       followUpActions: Array.isArray(result.followUpActions) ? result.followUpActions : [
-        'Schedule follow-up appointment with your healthcare provider',
-        'Discuss these results during your next medical visit',
-        'Keep this document in your medical records'
+        'Schedule follow-up with healthcare provider',
+        'Keep document accessible for medical visits',
+        'Discuss findings during next appointment'
       ]
     };
   }
 
-  private static determineDocumentType(fileName: string, content: string): string {
-    const lowerFileName = fileName.toLowerCase();
-    const lowerContent = content.toLowerCase();
-    
-    if (lowerFileName.includes('lab') || lowerContent.includes('lab') || lowerContent.includes('blood test')) {
-      return 'Laboratory Results';
-    } else if (lowerFileName.includes('prescription') || lowerContent.includes('medication') || lowerContent.includes('rx')) {
-      return 'Prescription Document';
-    } else if (lowerFileName.includes('xray') || lowerFileName.includes('x-ray') || lowerContent.includes('imaging')) {
-      return 'Medical Imaging Report';
-    } else if (lowerContent.includes('visit') || lowerContent.includes('appointment')) {
-      return 'Medical Visit Notes';
-    } else {
-      return 'Medical Document';
-    }
+  private static determineDocumentTypeFromName(fileName: string): string {
+    const name = fileName.toLowerCase();
+    if (name.includes('lab') || name.includes('blood')) return 'Laboratory Results';
+    if (name.includes('prescription') || name.includes('rx')) return 'Prescription Document';
+    if (name.includes('xray') || name.includes('imaging')) return 'Medical Imaging';
+    if (name.includes('visit') || name.includes('appointment')) return 'Visit Notes';
+    return 'Medical Document';
   }
 
-  private static extractMedicalTerms(text: string): string[] {
-    const medicalTerms = [
-      'blood pressure', 'heart rate', 'temperature', 'glucose', 'cholesterol',
-      'hemoglobin', 'white blood cell', 'red blood cell', 'diabetes', 'hypertension',
-      'medication', 'prescription', 'diagnosis', 'treatment', 'symptoms',
-      'blood sugar', 'triglycerides', 'HDL', 'LDL', 'creatinine'
+  private static extractMedicalTermsFromContent(content: string): string[] {
+    const medicalKeywords = [
+      'blood pressure', 'cholesterol', 'glucose', 'hemoglobin', 'diabetes',
+      'hypertension', 'medication', 'prescription', 'diagnosis', 'treatment'
     ];
     
-    return medicalTerms.filter(term => 
-      text.toLowerCase().includes(term.toLowerCase())
+    return medicalKeywords.filter(term => 
+      content.toLowerCase().includes(term.toLowerCase())
     );
   }
 
-  private static extractMetrics(text: string): string[] {
-    const metricPattern = /\d+\.?\d*\s*(?:mg\/dl|mmhg|bpm|°f|°c|kg|lbs|cm|%|mg|ml|units)/gi;
-    return text.match(metricPattern) || [];
+  private static extractMetricsFromContent(content: string): string[] {
+    const metricPattern = /\d+\.?\d*\s*(?:mg\/dl|mmhg|bpm|°f|°c|kg|lbs|%)/gi;
+    return content.match(metricPattern) || [];
   }
 
-  private static extractUrgentItems(text: string): string[] {
-    const urgentKeywords = ['urgent', 'immediate', 'critical', 'high', 'low', 'abnormal', 'emergency'];
-    const lines = text.split('\n');
+  private static extractUrgentItemsFromContent(content: string): string[] {
+    const urgentTerms = ['urgent', 'critical', 'high', 'low', 'abnormal', 'immediate'];
+    const lines = content.split('\n');
     
     return lines.filter(line => 
-      urgentKeywords.some(keyword => line.toLowerCase().includes(keyword))
+      urgentTerms.some(term => line.toLowerCase().includes(term))
     ).slice(0, 3);
   }
 
