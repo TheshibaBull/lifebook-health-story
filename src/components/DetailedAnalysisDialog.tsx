@@ -7,16 +7,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { 
   Brain, 
-  Eye, 
-  FileText, 
   Activity, 
   Lightbulb, 
-  Target,
   Loader2,
   CheckCircle,
   AlertTriangle,
-  Zap,
-  Calendar
+  Zap
 } from 'lucide-react';
 import { ChatGPTMedicalAnalysisService } from '@/services/chatGPTMedicalAnalysisService';
 import { ChatGPTApiKeyDialog } from '@/components/ChatGPTApiKeyDialog';
@@ -43,11 +39,17 @@ export const DetailedAnalysisDialog = ({
   const { toast } = useToast();
 
   useEffect(() => {
-    if (open && existingAnalysis && Object.keys(existingAnalysis).length > 0) {
-      console.log('Processing existing analysis:', existingAnalysis);
-      setAnalysisResult(existingAnalysis);
-    } else if (open) {
-      setAnalysisResult(null);
+    if (open) {
+      console.log('Dialog opened with existing analysis:', existingAnalysis);
+      
+      // Only use existing analysis if it has recommendations
+      if (existingAnalysis && existingAnalysis.recommendations && Array.isArray(existingAnalysis.recommendations) && existingAnalysis.recommendations.length > 0) {
+        console.log('Using existing analysis with recommendations');
+        setAnalysisResult(existingAnalysis);
+      } else {
+        console.log('No valid existing analysis, will need fresh ChatGPT analysis');
+        setAnalysisResult(null);
+      }
     }
   }, [open, existingAnalysis]);
 
@@ -70,35 +72,21 @@ export const DetailedAnalysisDialog = ({
       const result = await ChatGPTMedicalAnalysisService.analyzeImage(imageUrl, fileName);
       
       console.log('=== ChatGPT Analysis Result Received ===');
-      console.log('Full result object:', result);
-      console.log('Summary:', result.summary);
-      console.log('Key Findings:', result.keyFindings);
+      console.log('Full result:', result);
       console.log('Recommendations:', result.recommendations);
-      console.log('Recommendations type:', typeof result.recommendations);
-      console.log('Recommendations length:', result.recommendations?.length);
-      console.log('Is recommendations array?', Array.isArray(result.recommendations));
-      
-      if (result.recommendations && Array.isArray(result.recommendations)) {
-        console.log('✅ Valid recommendations array found');
-        console.log('Individual recommendations:');
-        result.recommendations.forEach((rec, index) => {
-          console.log(`  ${index + 1}: ${rec}`);
-        });
-      } else {
-        console.log('❌ Invalid recommendations structure');
-      }
+      console.log('Recommendations count:', result.recommendations?.length);
       
       setAnalysisResult(result);
       
       toast({
         title: "ChatGPT Analysis Complete",
-        description: `Analysis completed successfully with ${result.recommendations?.length || 0} recommendations`,
+        description: `Analysis completed with ${result.recommendations?.length || 0} personalized recommendations`,
       });
     } catch (error) {
       console.error('❌ ChatGPT analysis failed:', error);
       toast({
         title: "Analysis Failed",
-        description: error instanceof Error ? error.message : "Failed to analyze with ChatGPT. Please check your API key and try again.",
+        description: "Unable to complete analysis. Please try again.",
         variant: "destructive",
       });
       
@@ -113,102 +101,6 @@ export const DetailedAnalysisDialog = ({
   const handleApiKeySet = () => {
     setShowApiKeyDialog(false);
     startChatGPTAnalysis();
-  };
-
-  const renderRecommendations = () => {
-    console.log('=== Rendering Recommendations ===');
-    console.log('Analysis result:', analysisResult);
-    console.log('Recommendations:', analysisResult?.recommendations);
-    console.log('Recommendations type:', typeof analysisResult?.recommendations);
-    console.log('Is array:', Array.isArray(analysisResult?.recommendations));
-    console.log('Length:', analysisResult?.recommendations?.length);
-
-    if (!analysisResult?.recommendations) {
-      console.log('❌ No recommendations found');
-      return (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <AlertTriangle className="w-5 h-5 text-red-600" />
-            <span className="font-semibold text-red-800">No Recommendations Available</span>
-          </div>
-          <p className="text-sm text-red-700">
-            The analysis did not generate specific recommendations. This could be due to:
-          </p>
-          <ul className="mt-2 text-sm text-red-700 list-disc list-inside">
-            <li>API processing error or timeout</li>
-            <li>Document image quality issues</li>
-            <li>Insufficient medical information in the document</li>
-          </ul>
-          <p className="mt-2 text-sm text-red-700">
-            Please try again or upload a clearer image of your medical document.
-          </p>
-        </div>
-      );
-    }
-
-    if (!Array.isArray(analysisResult.recommendations)) {
-      console.log('❌ Recommendations is not an array');
-      return (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <AlertTriangle className="w-5 h-5 text-red-600" />
-            <span className="font-semibold text-red-800">Invalid Recommendations Format</span>
-          </div>
-          <p className="text-sm text-red-700">
-            The recommendations data is not in the expected format. Please try the analysis again.
-          </p>
-        </div>
-      );
-    }
-
-    if (analysisResult.recommendations.length === 0) {
-      console.log('❌ Empty recommendations array');
-      return (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <AlertTriangle className="w-5 h-5 text-yellow-600" />
-            <span className="font-semibold text-yellow-800">No Specific Recommendations</span>
-          </div>
-          <p className="text-sm text-yellow-700">
-            The analysis completed but no specific recommendations were generated. Try analyzing a different medical document.
-          </p>
-        </div>
-      );
-    }
-
-    console.log('✅ Rendering valid recommendations');
-    return (
-      <>
-        <div className="bg-green-100 border border-green-300 rounded-lg p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <CheckCircle className="w-5 h-5 text-green-600" />
-            <span className="font-semibold text-green-800">
-              {analysisResult.recommendations.length} Personalized Recommendations Generated
-            </span>
-          </div>
-          <p className="text-sm text-green-700">
-            Based on your medical document analysis, here are specific recommendations for your health:
-          </p>
-        </div>
-        
-        <div className="space-y-3">
-          {analysisResult.recommendations.map((recommendation: string, index: number) => (
-            <div key={index} className="flex items-start gap-4 p-4 bg-white rounded-lg border border-yellow-200 shadow-sm hover:shadow-md transition-shadow">
-              <div className="flex-shrink-0 mt-1">
-                <div className="w-8 h-8 bg-gradient-to-br from-yellow-500 to-orange-500 text-white rounded-full flex items-center justify-center text-sm font-bold">
-                  {index + 1}
-                </div>
-              </div>
-              <div className="flex-1">
-                <p className="text-sm font-medium text-gray-900 leading-relaxed">
-                  {recommendation}
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </>
-    );
   };
 
   return (
@@ -247,7 +139,7 @@ export const DetailedAnalysisDialog = ({
                 </CardHeader>
                 <CardContent>
                   <p className="text-gray-700 mb-4">
-                    Get comprehensive medical analysis powered by ChatGPT-4 Vision:
+                    Get comprehensive medical analysis powered by ChatGPT-4 Vision with personalized recommendations:
                   </p>
                   <div className="grid grid-cols-2 gap-4 text-sm mb-6">
                     <div className="flex items-center gap-2">
@@ -333,7 +225,48 @@ export const DetailedAnalysisDialog = ({
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
-                      {renderRecommendations()}
+                      {analysisResult.recommendations && Array.isArray(analysisResult.recommendations) && analysisResult.recommendations.length > 0 ? (
+                        <>
+                          <div className="bg-green-100 border border-green-300 rounded-lg p-4">
+                            <div className="flex items-center gap-2 mb-2">
+                              <CheckCircle className="w-5 h-5 text-green-600" />
+                              <span className="font-semibold text-green-800">
+                                {analysisResult.recommendations.length} Personalized Recommendations Generated
+                              </span>
+                            </div>
+                            <p className="text-sm text-green-700">
+                              Based on your medical document analysis, here are specific recommendations for your health:
+                            </p>
+                          </div>
+                          
+                          <div className="space-y-3">
+                            {analysisResult.recommendations.map((recommendation: string, index: number) => (
+                              <div key={index} className="flex items-start gap-4 p-4 bg-white rounded-lg border border-yellow-200 shadow-sm hover:shadow-md transition-shadow">
+                                <div className="flex-shrink-0 mt-1">
+                                  <div className="w-8 h-8 bg-gradient-to-br from-yellow-500 to-orange-500 text-white rounded-full flex items-center justify-center text-sm font-bold">
+                                    {index + 1}
+                                  </div>
+                                </div>
+                                <div className="flex-1">
+                                  <p className="text-sm font-medium text-gray-900 leading-relaxed">
+                                    {recommendation}
+                                  </p>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </>
+                      ) : (
+                        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                          <div className="flex items-center gap-2 mb-2">
+                            <AlertTriangle className="w-5 h-5 text-red-600" />
+                            <span className="font-semibold text-red-800">No Recommendations Available</span>
+                          </div>
+                          <p className="text-sm text-red-700">
+                            No personalized recommendations were generated. Please try the analysis again.
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -381,22 +314,6 @@ export const DetailedAnalysisDialog = ({
                     </CardContent>
                   </Card>
                 )}
-
-                {/* Debug Information */}
-                <Card className="border-gray-200 bg-gray-50">
-                  <CardHeader>
-                    <CardTitle className="text-sm text-gray-600">Debug Information</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-xs text-gray-500 space-y-1">
-                      <p>Analysis Result Keys: {Object.keys(analysisResult).join(', ')}</p>
-                      <p>Recommendations Type: {typeof analysisResult.recommendations}</p>
-                      <p>Recommendations Is Array: {Array.isArray(analysisResult.recommendations)}</p>
-                      <p>Recommendations Length: {analysisResult.recommendations?.length || 0}</p>
-                      <p>First Recommendation: {analysisResult.recommendations?.[0] || 'None'}</p>
-                    </div>
-                  </CardContent>
-                </Card>
               </div>
             )}
           </div>

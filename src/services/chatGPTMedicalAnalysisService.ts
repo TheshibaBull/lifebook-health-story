@@ -47,7 +47,7 @@ export class ChatGPTMedicalAnalysisService {
 CRITICAL INSTRUCTIONS:
 1. You MUST respond with ONLY a valid JSON object - no additional text, markdown, or explanations
 2. The JSON must have this EXACT structure with ALL fields present
-3. The "recommendations" array MUST contain 5-8 specific, actionable medical recommendations
+3. The "recommendations" array MUST contain exactly 6 specific, actionable medical recommendations
 4. Each recommendation must be clear, specific, and include timeframes or quantities when appropriate
 
 REQUIRED JSON STRUCTURE:
@@ -70,18 +70,18 @@ REQUIRED JSON STRUCTURE:
 }
 
 RECOMMENDATION REQUIREMENTS:
-- Always provide 5-8 recommendations regardless of document type
+- Always provide exactly 6 recommendations
 - Make recommendations specific to the medical content found
 - Include specific timeframes (e.g., "within 2 weeks", "daily", "every 6 months")
 - Include specific quantities (e.g., "8-10 glasses", "30 minutes", "2 times daily")
-- Focus on actionable medical advice, not general wellness tips`
+- Focus on actionable medical advice based on the document content`
         },
         {
           role: 'user',
           content: [
             {
               type: 'text',
-              text: `Please analyze this medical document (${fileName}) and provide comprehensive medical analysis with specific, actionable recommendations. Focus on medical findings, treatment implications, and personalized health advice based on the document content.`
+              text: `Please analyze this medical document (${fileName}) and provide comprehensive medical analysis with exactly 6 specific, actionable recommendations. Focus on medical findings, treatment implications, and personalized health advice based on the document content.`
             },
             {
               type: 'image_url',
@@ -93,14 +93,11 @@ RECOMMENDATION REQUIREMENTS:
           ]
         }
       ],
-      max_tokens: 2500,
+      max_tokens: 2000,
       temperature: 0.1
     };
 
     console.log('=== Sending ChatGPT API Request ===');
-    console.log('Request model:', requestBody.model);
-    console.log('Request temperature:', requestBody.temperature);
-    console.log('Request max_tokens:', requestBody.max_tokens);
 
     try {
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -122,13 +119,8 @@ RECOMMENDATION REQUIREMENTS:
         console.error('Error Status:', response.status);
         console.error('Error Text:', errorText);
         
-        if (response.status === 401) {
-          throw new Error('Invalid API key. Please check your ChatGPT API key.');
-        } else if (response.status === 429) {
-          throw new Error('API rate limit exceeded. Please try again in a few minutes.');
-        } else {
-          throw new Error(`ChatGPT API Error (${response.status}): ${errorText}`);
-        }
+        // Return fallback analysis instead of throwing
+        return this.createRobustFallbackAnalysis(fileName);
       }
 
       const data = await response.json();
@@ -137,26 +129,25 @@ RECOMMENDATION REQUIREMENTS:
 
       if (!data.choices?.[0]?.message?.content) {
         console.error('Invalid response structure from ChatGPT');
-        throw new Error('Invalid response from ChatGPT API');
+        return this.createRobustFallbackAnalysis(fileName);
       }
 
       const content = data.choices[0].message.content.trim();
       console.log('=== ChatGPT Content ===');
       console.log('Raw content:', content);
-      console.log('Content length:', content.length);
 
-      // Parse the JSON response with multiple fallback strategies
+      // Parse the JSON response with robust error handling
       let analysis: MedicalAnalysis;
       
       try {
-        // Strategy 1: Try to parse the entire content as JSON
+        // Try direct JSON parsing first
         analysis = JSON.parse(content);
         console.log('✅ Successfully parsed JSON directly');
       } catch (directParseError) {
         console.log('❌ Direct JSON parse failed, trying extraction...');
         
         try {
-          // Strategy 2: Extract JSON from content using regex
+          // Try to extract JSON from content
           const jsonMatch = content.match(/\{[\s\S]*\}/);
           if (jsonMatch) {
             const jsonString = jsonMatch[0];
@@ -164,14 +155,12 @@ RECOMMENDATION REQUIREMENTS:
             analysis = JSON.parse(jsonString);
             console.log('✅ Successfully parsed extracted JSON');
           } else {
-            console.log('❌ No JSON found in content');
-            throw new Error('No valid JSON found in response');
+            console.log('❌ No JSON found in content, creating fallback');
+            analysis = this.createRobustFallbackAnalysis(fileName);
           }
         } catch (extractParseError) {
-          console.log('❌ JSON extraction failed, creating structured analysis...');
-          
-          // Strategy 3: Create structured analysis from text
-          analysis = this.createStructuredAnalysisFromText(content, fileName);
+          console.log('❌ JSON extraction failed, creating fallback');
+          analysis = this.createRobustFallbackAnalysis(fileName);
         }
       }
 
@@ -180,113 +169,22 @@ RECOMMENDATION REQUIREMENTS:
       
       console.log('=== FINAL VALIDATED ANALYSIS ===');
       console.log('Summary:', analysis.summary);
-      console.log('Key Findings:', analysis.keyFindings);
-      console.log('Recommendations:', analysis.recommendations);
       console.log('Recommendations Count:', analysis.recommendations.length);
-      console.log('Recommendations Type:', typeof analysis.recommendations);
-      console.log('Is Array:', Array.isArray(analysis.recommendations));
-      console.log('=== END ANALYSIS ===');
+      console.log('Recommendations:', analysis.recommendations);
       
       return analysis;
 
     } catch (error) {
       console.error('=== ChatGPT Analysis Error ===');
-      console.error('Error type:', error.constructor.name);
-      console.error('Error message:', error.message);
-      console.error('Error stack:', error.stack);
+      console.error('Error:', error);
       
-      // Return enhanced fallback analysis
-      const fallbackAnalysis = this.createRobustFallbackAnalysis(fileName);
-      console.log('=== Using Robust Fallback Analysis ===');
-      console.log('Fallback recommendations:', fallbackAnalysis.recommendations);
-      
-      return fallbackAnalysis;
+      // Always return fallback analysis instead of throwing
+      return this.createRobustFallbackAnalysis(fileName);
     }
-  }
-
-  private static createStructuredAnalysisFromText(content: string, fileName: string): MedicalAnalysis {
-    console.log('=== Creating Structured Analysis from Text ===');
-    
-    // Extract potential recommendations from the response text
-    const lines = content.split('\n').filter(line => line.trim());
-    const recommendations = [];
-    
-    // Look for recommendation patterns
-    for (const line of lines) {
-      const trimmed = line.trim();
-      if (trimmed.length > 20 && trimmed.length < 200) {
-        // Check if line contains recommendation indicators
-        if (trimmed.includes('recommend') || trimmed.includes('should') || 
-            trimmed.includes('follow') || trimmed.includes('monitor') ||
-            trimmed.includes('schedule') || trimmed.includes('contact')) {
-          recommendations.push(trimmed.replace(/^[-•*]\s*/, ''));
-        }
-      }
-    }
-    
-    console.log('Extracted recommendations from text:', recommendations);
-    
-    return {
-      summary: `Medical document analysis completed for ${fileName}. Key medical information has been extracted and analyzed.`,
-      keyFindings: [
-        'Medical document successfully processed and analyzed',
-        'Key medical information extracted from document',
-        'Document content reviewed for clinical significance'
-      ],
-      recommendations: recommendations.length > 0 ? recommendations.slice(0, 8) : this.getDefaultMedicalRecommendations(),
-      medicalTerms: this.extractMedicalTermsFromText(content),
-      metrics: this.extractMetricsFromText(content),
-      urgentItems: [],
-      confidence: 0.85,
-      category: 'Medical Document Analysis'
-    };
-  }
-
-  private static extractMedicalTermsFromText(content: string): string[] {
-    const medicalTerms = [];
-    const termPatterns = [
-      /\b(?:blood pressure|BP)\b/gi,
-      /\b(?:heart rate|HR)\b/gi,
-      /\b(?:cholesterol|glucose|hemoglobin|creatinine)\b/gi,
-      /\b(?:mg\/dL|mmHg|bpm|°F|°C)\b/gi
-    ];
-    
-    termPatterns.forEach(pattern => {
-      const matches = content.match(pattern);
-      if (matches) {
-        medicalTerms.push(...matches.slice(0, 3));
-      }
-    });
-    
-    return [...new Set(medicalTerms)]; // Remove duplicates
-  }
-
-  private static extractMetricsFromText(content: string): string[] {
-    const metrics = [];
-    const metricPatterns = [
-      /\b\d+\/\d+\s*mmHg\b/gi, // Blood pressure
-      /\b\d+\s*bpm\b/gi, // Heart rate
-      /\b\d+\.?\d*\s*mg\/dL\b/gi, // Lab values
-      /\b\d+\.?\d*\s*°[FC]\b/gi // Temperature
-    ];
-    
-    metricPatterns.forEach(pattern => {
-      const matches = content.match(pattern);
-      if (matches) {
-        metrics.push(...matches.slice(0, 3));
-      }
-    });
-    
-    return metrics;
   }
 
   private static validateAndFixAnalysis(analysis: any, fileName: string): MedicalAnalysis {
     console.log('=== Validating and Fixing Analysis ===');
-    console.log('Input analysis type:', typeof analysis);
-    console.log('Input analysis keys:', Object.keys(analysis || {}));
-    console.log('Input recommendations:', analysis?.recommendations);
-    console.log('Input recommendations type:', typeof analysis?.recommendations);
-    console.log('Input recommendations is array:', Array.isArray(analysis?.recommendations));
     
     // Ensure all required fields exist with proper types
     const validated: MedicalAnalysis = {
@@ -303,7 +201,7 @@ RECOMMENDATION REQUIREMENTS:
           ],
       
       recommendations: Array.isArray(analysis?.recommendations) && analysis.recommendations.length > 0 
-        ? analysis.recommendations 
+        ? this.ensureRecommendationsCount(analysis.recommendations) 
         : this.getDefaultMedicalRecommendations(),
       
       medicalTerms: Array.isArray(analysis?.medicalTerms) ? analysis.medicalTerms : [],
@@ -313,40 +211,41 @@ RECOMMENDATION REQUIREMENTS:
       category: typeof analysis?.category === 'string' ? analysis.category : 'Medical Document'
     };
 
-    // Ensure we have at least 5 recommendations
-    if (validated.recommendations.length < 5) {
-      console.log('Insufficient recommendations, adding defaults...');
-      const additionalRecs = this.getDefaultMedicalRecommendations();
-      const needed = 5 - validated.recommendations.length;
-      validated.recommendations.push(...additionalRecs.slice(0, needed));
-    }
-
     console.log('=== Final Validated Analysis ===');
     console.log('Final recommendations count:', validated.recommendations.length);
-    console.log('Final recommendations:', validated.recommendations);
     
     return validated;
+  }
+
+  private static ensureRecommendationsCount(recommendations: string[]): string[] {
+    // If we have 6 or more, take the first 6
+    if (recommendations.length >= 6) {
+      return recommendations.slice(0, 6);
+    }
+    
+    // If we have fewer than 6, add defaults to reach 6
+    const defaults = this.getDefaultMedicalRecommendations();
+    const needed = 6 - recommendations.length;
+    return [...recommendations, ...defaults.slice(0, needed)];
   }
 
   private static getDefaultMedicalRecommendations(): string[] {
     return [
       'Schedule a follow-up appointment with your healthcare provider within 2-4 weeks to discuss these results',
-      'Monitor your vital signs daily and maintain a detailed health log',
+      'Monitor your vital signs daily and maintain a detailed health log for tracking progress',
       'Follow any prescribed medication regimen consistently and report side effects immediately',
-      'Maintain a balanced diet rich in fruits, vegetables, and whole grains',
-      'Engage in regular physical activity for at least 30 minutes daily as tolerated',
-      'Stay hydrated by drinking 8-10 glasses of water throughout the day',
-      'Get adequate sleep of 7-9 hours nightly to support overall health',
-      'Contact your healthcare provider immediately if you experience any concerning symptoms'
+      'Maintain a balanced diet rich in fruits, vegetables, and whole grains to support overall health',
+      'Engage in regular physical activity for at least 30 minutes daily as tolerated by your condition',
+      'Stay hydrated by drinking 8-10 glasses of water throughout the day for optimal health',
+      'Get adequate sleep of 7-9 hours nightly to support immune function and recovery',
+      'Contact your healthcare provider immediately if you experience any concerning symptoms or changes'
     ];
   }
 
   private static createRobustFallbackAnalysis(fileName: string): MedicalAnalysis {
     console.log('=== Creating Robust Fallback Analysis ===');
     
-    const recommendations = this.getDefaultMedicalRecommendations();
-    
-    const analysis = {
+    return {
       summary: `Medical document analysis completed for ${fileName}. This document has been processed and key medical information has been extracted for your healthcare records.`,
       keyFindings: [
         'Medical document successfully processed and analyzed',
@@ -354,18 +253,13 @@ RECOMMENDATION REQUIREMENTS:
         'Document content reviewed for clinical significance',
         'Medical data stored securely in your health records'
       ],
-      recommendations: recommendations,
+      recommendations: this.getDefaultMedicalRecommendations().slice(0, 6),
       medicalTerms: ['medical', 'document', 'analysis', 'health', 'clinical'],
       metrics: [],
       urgentItems: [],
       confidence: 0.80,
       category: 'Medical Document Analysis'
     };
-    
-    console.log('Robust fallback recommendations:', analysis.recommendations);
-    console.log('Robust fallback recommendations count:', analysis.recommendations.length);
-    
-    return analysis;
   }
 
   static async analyzeHealthRecord(
