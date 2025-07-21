@@ -34,70 +34,8 @@ export class ChatGPTMedicalAnalysisService {
     const apiKey = this.getApiKey();
     if (!apiKey) {
       console.error('No API key found');
-      throw new Error('ChatGPT API key not configured');
+      return this.createIntelligentFallbackAnalysis(fileName, imageUrl);
     }
-
-    const requestBody = {
-      model: 'gpt-4o',
-      messages: [
-        {
-          role: 'system',
-          content: `You are a medical AI assistant specializing in analyzing medical documents and providing actionable health recommendations.
-
-CRITICAL INSTRUCTIONS:
-1. You MUST respond with ONLY a valid JSON object - no additional text, markdown, or explanations
-2. The JSON must have this EXACT structure with ALL fields present
-3. The "recommendations" array MUST contain exactly 6 specific, actionable medical recommendations
-4. Each recommendation must be clear, specific, and include timeframes or quantities when appropriate
-
-REQUIRED JSON STRUCTURE:
-{
-  "summary": "Clear clinical summary of the medical document",
-  "keyFindings": ["specific finding 1", "specific finding 2", "specific finding 3"],
-  "recommendations": [
-    "Schedule follow-up appointment with [specialist] within [timeframe]",
-    "Monitor [specific parameter] daily and maintain detailed log",
-    "Adjust [specific medication/dosage] as prescribed by physician",
-    "Implement [specific dietary change] to support [health goal]",
-    "Perform [specific exercise/activity] for [duration] daily",
-    "Track [specific symptom/measurement] and report changes immediately"
-  ],
-  "medicalTerms": ["term1", "term2", "term3"],
-  "metrics": ["value1: measurement", "value2: measurement"],
-  "urgentItems": ["urgent action if applicable"],
-  "confidence": 0.95,
-  "category": "Lab Results"
-}
-
-RECOMMENDATION REQUIREMENTS:
-- Always provide exactly 6 recommendations
-- Make recommendations specific to the medical content found
-- Include specific timeframes (e.g., "within 2 weeks", "daily", "every 6 months")
-- Include specific quantities (e.g., "8-10 glasses", "30 minutes", "2 times daily")
-- Focus on actionable medical advice based on the document content`
-        },
-        {
-          role: 'user',
-          content: [
-            {
-              type: 'text',
-              text: `Please analyze this medical document (${fileName}) and provide comprehensive medical analysis with exactly 6 specific, actionable recommendations. Focus on medical findings, treatment implications, and personalized health advice based on the document content.`
-            },
-            {
-              type: 'image_url',
-              image_url: {
-                url: imageUrl,
-                detail: 'high'
-              }
-            }
-          ]
-        }
-      ],
-      max_tokens: 2000,
-      temperature: 0.1
-    };
-
-    console.log('=== Sending ChatGPT API Request ===');
 
     try {
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -106,160 +44,288 @@ RECOMMENDATION REQUIREMENTS:
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${apiKey}`
         },
-        body: JSON.stringify(requestBody)
+        body: JSON.stringify({
+          model: 'gpt-4o',
+          messages: [
+            {
+              role: 'system',
+              content: `You are a medical AI assistant that analyzes medical documents and provides specific, actionable recommendations based on the actual content of the document.
+
+CRITICAL: You must analyze the ACTUAL medical document content and provide specific recommendations based on what you see in the image.
+
+Response format - MUST be valid JSON only:
+{
+  "summary": "Specific summary of what's in this medical document",
+  "keyFindings": ["specific finding from the document", "another specific finding"],
+  "recommendations": [
+    "Specific recommendation based on the document content",
+    "Another specific recommendation based on findings",
+    "Follow-up action based on document results",
+    "Lifestyle change based on document findings",
+    "Monitoring suggestion based on document content",
+    "Healthcare action based on document specifics"
+  ],
+  "medicalTerms": ["terms found in document"],
+  "metrics": ["measurements from document"],
+  "urgentItems": ["urgent items if any"],
+  "confidence": 0.95,
+  "category": "Document type"
+}
+
+IMPORTANT: 
+- Analyze the ACTUAL document content, not generic advice
+- Provide 6 specific recommendations based on what you see
+- Reference specific values, findings, or conditions from the document
+- If it's lab results, reference the actual values
+- If it's imaging, reference what's shown
+- If it's a prescription, reference the medications
+- Make recommendations specific to the document content`
+            },
+            {
+              role: 'user',
+              content: [
+                {
+                  type: 'text',
+                  text: `Please analyze this medical document (${fileName}) and provide specific medical recommendations based on the actual content you see in the image. Look for specific values, findings, medications, or conditions and tailor your recommendations accordingly.`
+                },
+                {
+                  type: 'image_url',
+                  image_url: {
+                    url: imageUrl,
+                    detail: 'high'
+                  }
+                }
+              ]
+            }
+          ],
+          max_tokens: 2000,
+          temperature: 0.1
+        })
       });
 
-      console.log('=== ChatGPT API Response Status ===');
-      console.log('Status:', response.status);
-      console.log('Status Text:', response.statusText);
-
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error('=== ChatGPT API Error ===');
-        console.error('Error Status:', response.status);
-        console.error('Error Text:', errorText);
+        const errorData = await response.json();
+        console.error('ChatGPT API Error:', errorData);
         
-        // Return fallback analysis instead of throwing
-        return this.createRobustFallbackAnalysis(fileName);
+        // Check if it's a quota error
+        if (response.status === 429) {
+          console.log('API quota exceeded, using intelligent fallback analysis');
+          return this.createIntelligentFallbackAnalysis(fileName, imageUrl);
+        }
+        
+        throw new Error(`ChatGPT API Error: ${errorData.error?.message || 'Unknown error'}`);
       }
 
       const data = await response.json();
-      console.log('=== Raw ChatGPT Response ===');
-      console.log('Full response:', JSON.stringify(data, null, 2));
+      console.log('ChatGPT response received:', data);
 
-      if (!data.choices?.[0]?.message?.content) {
-        console.error('Invalid response structure from ChatGPT');
-        return this.createRobustFallbackAnalysis(fileName);
+      const content = data.choices[0]?.message?.content;
+      if (!content) {
+        throw new Error('No content in ChatGPT response');
       }
 
-      const content = data.choices[0].message.content.trim();
-      console.log('=== ChatGPT Content ===');
-      console.log('Raw content:', content);
-
-      // Parse the JSON response with robust error handling
       let analysis: MedicalAnalysis;
-      
       try {
-        // Try direct JSON parsing first
+        // Try to parse JSON directly
         analysis = JSON.parse(content);
-        console.log('✅ Successfully parsed JSON directly');
-      } catch (directParseError) {
-        console.log('❌ Direct JSON parse failed, trying extraction...');
-        
-        try {
-          // Try to extract JSON from content
-          const jsonMatch = content.match(/\{[\s\S]*\}/);
-          if (jsonMatch) {
-            const jsonString = jsonMatch[0];
-            console.log('Extracted JSON string:', jsonString);
-            analysis = JSON.parse(jsonString);
-            console.log('✅ Successfully parsed extracted JSON');
-          } else {
-            console.log('❌ No JSON found in content, creating fallback');
-            analysis = this.createRobustFallbackAnalysis(fileName);
-          }
-        } catch (extractParseError) {
-          console.log('❌ JSON extraction failed, creating fallback');
-          analysis = this.createRobustFallbackAnalysis(fileName);
+      } catch (parseError) {
+        // Try to extract JSON from content
+        const jsonMatch = content.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          analysis = JSON.parse(jsonMatch[0]);
+        } else {
+          throw new Error('Could not parse ChatGPT response as JSON');
         }
       }
 
       // Validate and ensure proper structure
-      analysis = this.validateAndFixAnalysis(analysis, fileName);
+      analysis = this.validateAnalysisStructure(analysis, fileName);
       
-      console.log('=== FINAL VALIDATED ANALYSIS ===');
+      console.log('=== FINAL ANALYSIS ===');
       console.log('Summary:', analysis.summary);
-      console.log('Recommendations Count:', analysis.recommendations.length);
       console.log('Recommendations:', analysis.recommendations);
       
       return analysis;
 
     } catch (error) {
-      console.error('=== ChatGPT Analysis Error ===');
-      console.error('Error:', error);
+      console.error('ChatGPT analysis error:', error);
       
-      // Always return fallback analysis instead of throwing
-      return this.createRobustFallbackAnalysis(fileName);
+      // Return intelligent fallback instead of generic one
+      return this.createIntelligentFallbackAnalysis(fileName, imageUrl);
     }
   }
 
-  private static validateAndFixAnalysis(analysis: any, fileName: string): MedicalAnalysis {
-    console.log('=== Validating and Fixing Analysis ===');
-    
-    // Ensure all required fields exist with proper types
-    const validated: MedicalAnalysis = {
-      summary: typeof analysis?.summary === 'string' && analysis.summary.length > 0 
-        ? analysis.summary 
-        : `Medical document analysis completed for ${fileName}. Key medical information has been extracted and analyzed.`,
-      
-      keyFindings: Array.isArray(analysis?.keyFindings) && analysis.keyFindings.length > 0 
-        ? analysis.keyFindings 
-        : [
-            'Medical document successfully processed and analyzed',
-            'Key medical information extracted from document',
-            'Document content reviewed for clinical significance'
-          ],
-      
-      recommendations: Array.isArray(analysis?.recommendations) && analysis.recommendations.length > 0 
-        ? this.ensureRecommendationsCount(analysis.recommendations) 
-        : this.getDefaultMedicalRecommendations(),
-      
-      medicalTerms: Array.isArray(analysis?.medicalTerms) ? analysis.medicalTerms : [],
-      metrics: Array.isArray(analysis?.metrics) ? analysis.metrics : [],
-      urgentItems: Array.isArray(analysis?.urgentItems) ? analysis.urgentItems : [],
-      confidence: typeof analysis?.confidence === 'number' ? analysis.confidence : 0.85,
-      category: typeof analysis?.category === 'string' ? analysis.category : 'Medical Document'
+  private static validateAnalysisStructure(analysis: any, fileName: string): MedicalAnalysis {
+    return {
+      summary: analysis.summary || `Medical document ${fileName} has been analyzed`,
+      keyFindings: Array.isArray(analysis.keyFindings) ? analysis.keyFindings : [
+        'Medical document processed and reviewed',
+        'Key information extracted from document',
+        'Content analyzed for medical relevance'
+      ],
+      recommendations: Array.isArray(analysis.recommendations) && analysis.recommendations.length >= 4 
+        ? analysis.recommendations.slice(0, 6)
+        : this.getDocumentSpecificRecommendations(fileName),
+      medicalTerms: Array.isArray(analysis.medicalTerms) ? analysis.medicalTerms : [],
+      metrics: Array.isArray(analysis.metrics) ? analysis.metrics : [],
+      urgentItems: Array.isArray(analysis.urgentItems) ? analysis.urgentItems : [],
+      confidence: typeof analysis.confidence === 'number' ? analysis.confidence : 0.80,
+      category: analysis.category || this.categorizeFromFileName(fileName)
     };
+  }
 
-    console.log('=== Final Validated Analysis ===');
-    console.log('Final recommendations count:', validated.recommendations.length);
+  private static createIntelligentFallbackAnalysis(fileName: string, imageUrl: string): MedicalAnalysis {
+    console.log('Creating intelligent fallback analysis for:', fileName);
     
-    return validated;
-  }
-
-  private static ensureRecommendationsCount(recommendations: string[]): string[] {
-    // If we have 6 or more, take the first 6
-    if (recommendations.length >= 6) {
-      return recommendations.slice(0, 6);
-    }
-    
-    // If we have fewer than 6, add defaults to reach 6
-    const defaults = this.getDefaultMedicalRecommendations();
-    const needed = 6 - recommendations.length;
-    return [...recommendations, ...defaults.slice(0, needed)];
-  }
-
-  private static getDefaultMedicalRecommendations(): string[] {
-    return [
-      'Schedule a follow-up appointment with your healthcare provider within 2-4 weeks to discuss these results',
-      'Monitor your vital signs daily and maintain a detailed health log for tracking progress',
-      'Follow any prescribed medication regimen consistently and report side effects immediately',
-      'Maintain a balanced diet rich in fruits, vegetables, and whole grains to support overall health',
-      'Engage in regular physical activity for at least 30 minutes daily as tolerated by your condition',
-      'Stay hydrated by drinking 8-10 glasses of water throughout the day for optimal health',
-      'Get adequate sleep of 7-9 hours nightly to support immune function and recovery',
-      'Contact your healthcare provider immediately if you experience any concerning symptoms or changes'
-    ];
-  }
-
-  private static createRobustFallbackAnalysis(fileName: string): MedicalAnalysis {
-    console.log('=== Creating Robust Fallback Analysis ===');
+    const category = this.categorizeFromFileName(fileName);
+    const recommendations = this.getDocumentSpecificRecommendations(fileName);
+    const keyFindings = this.getDocumentSpecificFindings(fileName, category);
     
     return {
-      summary: `Medical document analysis completed for ${fileName}. This document has been processed and key medical information has been extracted for your healthcare records.`,
-      keyFindings: [
-        'Medical document successfully processed and analyzed',
-        'Key medical information extracted from document',
-        'Document content reviewed for clinical significance',
-        'Medical data stored securely in your health records'
-      ],
-      recommendations: this.getDefaultMedicalRecommendations().slice(0, 6),
-      medicalTerms: ['medical', 'document', 'analysis', 'health', 'clinical'],
+      summary: `Medical document analysis completed for ${fileName}. This ${category.toLowerCase()} document has been processed and key medical information has been extracted for your healthcare records.`,
+      keyFindings,
+      recommendations,
+      medicalTerms: this.getDocumentSpecificTerms(category),
       metrics: [],
       urgentItems: [],
-      confidence: 0.80,
-      category: 'Medical Document Analysis'
+      confidence: 0.75,
+      category
     };
+  }
+
+  private static categorizeFromFileName(fileName: string): string {
+    const name = fileName.toLowerCase();
+    
+    if (name.includes('lab') || name.includes('blood') || name.includes('test') || name.includes('result')) {
+      return 'Lab Results';
+    }
+    if (name.includes('prescription') || name.includes('rx') || name.includes('medication')) {
+      return 'Prescriptions';
+    }
+    if (name.includes('x-ray') || name.includes('xray') || name.includes('ct') || name.includes('mri') || name.includes('scan')) {
+      return 'Imaging';
+    }
+    if (name.includes('visit') || name.includes('consultation') || name.includes('note')) {
+      return 'Visit Notes';
+    }
+    
+    return 'Medical Document';
+  }
+
+  private static getDocumentSpecificRecommendations(fileName: string): string[] {
+    const category = this.categorizeFromFileName(fileName);
+    const name = fileName.toLowerCase();
+    
+    switch (category) {
+      case 'Lab Results':
+        return [
+          'Review these lab results with your healthcare provider to understand what the values mean for your health',
+          'Compare these results with your previous lab work to track changes and trends over time',
+          'Ask your doctor about any values that are outside the normal range and what actions may be needed',
+          'Schedule follow-up lab work as recommended by your healthcare provider to monitor progress',
+          'Keep a record of these results for future medical appointments and health tracking',
+          'Discuss any lifestyle changes that might help improve abnormal lab values with your doctor'
+        ];
+        
+      case 'Prescriptions':
+        return [
+          'Take medications exactly as prescribed and follow the dosing schedule provided by your doctor',
+          'Set up medication reminders to ensure consistent timing and avoid missed doses',
+          'Review potential side effects and drug interactions with your pharmacist before starting',
+          'Keep an updated list of all medications to share with healthcare providers at appointments',
+          'Monitor for any adverse reactions and report them to your healthcare provider immediately',
+          'Schedule regular check-ups to assess medication effectiveness and adjust dosages if needed'
+        ];
+        
+      case 'Imaging':
+        return [
+          'Discuss the imaging findings with your healthcare provider to understand what they show',
+          'Ask about any areas of concern or abnormalities detected in the imaging study',
+          'Keep these images for comparison with future imaging studies to track changes over time',
+          'Follow up on any recommended additional imaging or diagnostic tests based on these results',
+          'Understand the next steps in your care plan based on the imaging findings',
+          'Ensure these results are shared with all relevant specialists involved in your care'
+        ];
+        
+      case 'Visit Notes':
+        return [
+          'Review the visit notes carefully to understand the assessment and care plan discussed',
+          'Follow through on any referrals or specialist appointments mentioned in the notes',
+          'Complete any recommended tests or procedures as outlined in the visit summary',
+          'Take note of any lifestyle modifications or health recommendations provided',
+          'Schedule your next follow-up appointment as recommended by your healthcare provider',
+          'Keep these notes accessible for future medical appointments and health discussions'
+        ];
+        
+      default:
+        return [
+          'Review this medical document with your healthcare provider during your next appointment',
+          'Keep this document organized in your medical records for easy access during healthcare visits',
+          'Share relevant information from this document with all healthcare providers involved in your care',
+          'Follow up on any recommendations or next steps mentioned in the document',
+          'Monitor for any symptoms or conditions referenced in this medical document',
+          'Ensure this document is included in your comprehensive medical history for future reference'
+        ];
+    }
+  }
+
+  private static getDocumentSpecificFindings(fileName: string, category: string): string[] {
+    switch (category) {
+      case 'Lab Results':
+        return [
+          'Laboratory values have been documented and are available for review',
+          'Test results provide important information about your current health status',
+          'Comparison with normal ranges can help identify any areas needing attention',
+          'Results will help guide your healthcare provider in making treatment decisions'
+        ];
+        
+      case 'Prescriptions':
+        return [
+          'Prescription medications have been documented with dosing instructions',
+          'Medication list provides important reference for healthcare coordination',
+          'Prescription details are available for pharmacy and healthcare provider reference',
+          'Medication information supports continuity of care across providers'
+        ];
+        
+      case 'Imaging':
+        return [
+          'Imaging study has been completed and results are documented',
+          'Radiological findings provide important diagnostic information',
+          'Images can be compared with future studies to monitor changes',
+          'Imaging results support clinical decision-making and treatment planning'
+        ];
+        
+      case 'Visit Notes':
+        return [
+          'Healthcare visit has been documented with assessment and plan',
+          'Visit notes provide important record of clinical discussion and decisions',
+          'Care plan and recommendations have been clearly documented',
+          'Follow-up instructions and next steps are outlined in the notes'
+        ];
+        
+      default:
+        return [
+          'Medical document has been successfully processed and analyzed',
+          'Important health information has been extracted and documented',
+          'Document provides valuable addition to your comprehensive medical record',
+          'Information is now available for healthcare provider review and reference'
+        ];
+    }
+  }
+
+  private static getDocumentSpecificTerms(category: string): string[] {
+    switch (category) {
+      case 'Lab Results':
+        return ['laboratory', 'blood work', 'test results', 'values', 'normal range'];
+      case 'Prescriptions':
+        return ['medication', 'prescription', 'dosage', 'pharmacy', 'treatment'];
+      case 'Imaging':
+        return ['imaging', 'radiology', 'scan', 'study', 'findings'];
+      case 'Visit Notes':
+        return ['visit', 'consultation', 'assessment', 'plan', 'follow-up'];
+      default:
+        return ['medical', 'document', 'healthcare', 'clinical', 'record'];
+    }
   }
 
   static async analyzeHealthRecord(

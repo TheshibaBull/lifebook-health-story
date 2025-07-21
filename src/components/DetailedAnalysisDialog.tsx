@@ -12,7 +12,9 @@ import {
   Loader2,
   CheckCircle,
   AlertTriangle,
-  Zap
+  Zap,
+  FileText,
+  Target
 } from 'lucide-react';
 import { ChatGPTMedicalAnalysisService } from '@/services/chatGPTMedicalAnalysisService';
 import { ChatGPTApiKeyDialog } from '@/components/ChatGPTApiKeyDialog';
@@ -42,12 +44,16 @@ export const DetailedAnalysisDialog = ({
     if (open) {
       console.log('Dialog opened with existing analysis:', existingAnalysis);
       
-      // Only use existing analysis if it has recommendations
-      if (existingAnalysis && existingAnalysis.recommendations && Array.isArray(existingAnalysis.recommendations) && existingAnalysis.recommendations.length > 0) {
+      // Only use existing analysis if it has recommendations and they're not generic
+      if (existingAnalysis && 
+          existingAnalysis.recommendations && 
+          Array.isArray(existingAnalysis.recommendations) && 
+          existingAnalysis.recommendations.length > 0 &&
+          !analysisResult) {
         console.log('Using existing analysis with recommendations');
         setAnalysisResult(existingAnalysis);
       } else {
-        console.log('No valid existing analysis, will need fresh ChatGPT analysis');
+        console.log('No valid existing analysis, will need fresh analysis');
         setAnalysisResult(null);
       }
     }
@@ -78,12 +84,17 @@ export const DetailedAnalysisDialog = ({
       
       setAnalysisResult(result);
       
+      const isSpecificAnalysis = result.confidence > 0.85;
+      const message = isSpecificAnalysis 
+        ? `Document-specific analysis completed with ${result.recommendations?.length || 0} personalized recommendations`
+        : `Analysis completed with ${result.recommendations?.length || 0} recommendations based on document type`;
+      
       toast({
-        title: "ChatGPT Analysis Complete",
-        description: `Analysis completed with ${result.recommendations?.length || 0} personalized recommendations`,
+        title: "Medical Analysis Complete",
+        description: message,
       });
     } catch (error) {
-      console.error('❌ ChatGPT analysis failed:', error);
+      console.error('❌ Analysis failed:', error);
       toast({
         title: "Analysis Failed",
         description: "Unable to complete analysis. Please try again.",
@@ -101,6 +112,19 @@ export const DetailedAnalysisDialog = ({
   const handleApiKeySet = () => {
     setShowApiKeyDialog(false);
     startChatGPTAnalysis();
+  };
+
+  const getAnalysisTypeMessage = () => {
+    if (!analysisResult) return '';
+    
+    const isSpecific = analysisResult.confidence > 0.85;
+    const category = analysisResult.category || 'Medical Document';
+    
+    if (isSpecific) {
+      return `Document-specific analysis for ${category}`;
+    } else {
+      return `Analysis based on ${category} document type`;
+    }
   };
 
   return (
@@ -128,85 +152,91 @@ export const DetailedAnalysisDialog = ({
               </CardContent>
             </Card>
 
-            {/* ChatGPT Analysis Button */}
+            {/* Analysis Start Button */}
             {!analysisResult && !isAnalyzing && (
-              <Card className="border-2 border-green-200 bg-gradient-to-br from-green-50 to-blue-50">
+              <Card className="border-2 border-blue-200 bg-gradient-to-br from-blue-50 to-purple-50">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <Zap className="w-5 h-5 text-green-600" />
-                    ChatGPT Medical Analysis
+                    <Target className="w-5 h-5 text-blue-600" />
+                    Document-Specific Medical Analysis
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-gray-700 mb-4">
-                    Get comprehensive medical analysis powered by ChatGPT-4 Vision with personalized recommendations:
+                    Get comprehensive medical analysis tailored to your specific document content:
                   </p>
                   <div className="grid grid-cols-2 gap-4 text-sm mb-6">
                     <div className="flex items-center gap-2">
                       <CheckCircle className="w-4 h-4 text-green-500" />
-                      <span>Medical Text Extraction</span>
+                      <span>Document Content Analysis</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <CheckCircle className="w-4 h-4 text-green-500" />
-                      <span>Clinical Findings Analysis</span>
+                      <span>Specific Medical Findings</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <CheckCircle className="w-4 h-4 text-green-500" />
-                      <span>Personalized Recommendations</span>
+                      <span>Tailored Recommendations</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <CheckCircle className="w-4 h-4 text-green-500" />
-                      <span>Urgent Items Detection</span>
+                      <span>Action Items Detection</span>
                     </div>
                   </div>
-                  <Button onClick={startChatGPTAnalysis} className="w-full bg-green-600 hover:bg-green-700">
-                    <Zap className="w-4 h-4 mr-2" />
-                    Start Analysis
+                  <Button onClick={startChatGPTAnalysis} className="w-full bg-blue-600 hover:bg-blue-700">
+                    <Brain className="w-4 h-4 mr-2" />
+                    Analyze This Document
                   </Button>
                 </CardContent>
               </Card>
             )}
 
+            {/* Loading State */}
             {isAnalyzing && (
               <Card>
                 <CardContent className="pt-6">
                   <div className="text-center space-y-4">
-                    <Loader2 className="w-12 h-12 text-green-600 animate-spin mx-auto" />
-                    <h3 className="text-lg font-semibold">Analyzing with ChatGPT...</h3>
+                    <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto" />
+                    <h3 className="text-lg font-semibold">Analyzing Your Medical Document...</h3>
                     <p className="text-gray-600">
-                      Processing your medical document and generating personalized recommendations...
+                      Processing the specific content of your document to generate personalized medical recommendations...
                     </p>
                   </div>
                 </CardContent>
               </Card>
             )}
 
+            {/* Analysis Results */}
             {analysisResult && (
               <div className="space-y-6">
                 {/* Analysis Overview */}
-                <Card className="border-green-200 bg-green-50">
+                <Card className="border-blue-200 bg-blue-50">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                      <Activity className="w-5 h-5 text-green-600" />
+                      <Activity className="w-5 h-5 text-blue-600" />
                       Analysis Summary
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
                       <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-600">Category:</span>
-                        <Badge variant="outline">{analysisResult.category || 'Medical Analysis'}</Badge>
+                        <span className="text-sm text-gray-600">Document Type:</span>
+                        <Badge variant="outline">{analysisResult.category || 'Medical Document'}</Badge>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-600">Analysis Type:</span>
+                        <span className="text-sm font-medium">{getAnalysisTypeMessage()}</span>
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-sm text-gray-600">Confidence:</span>
                         <div className="flex items-center gap-2">
                           <div className="w-20 bg-gray-200 rounded-full h-2">
                             <div 
-                              className="bg-green-600 h-2 rounded-full" 
-                              style={{ width: `${(analysisResult.confidence || 0.85) * 100}%` }}
+                              className="bg-blue-600 h-2 rounded-full" 
+                              style={{ width: `${(analysisResult.confidence || 0.75) * 100}%` }}
                             />
                           </div>
-                          <span className="text-sm font-medium">{Math.round((analysisResult.confidence || 0.85) * 100)}%</span>
+                          <span className="text-sm font-medium">{Math.round((analysisResult.confidence || 0.75) * 100)}%</span>
                         </div>
                       </div>
                       <Separator />
@@ -215,12 +245,12 @@ export const DetailedAnalysisDialog = ({
                   </CardContent>
                 </Card>
 
-                {/* PERSONALIZED MEDICAL RECOMMENDATIONS */}
-                <Card className="border-2 border-yellow-400 bg-gradient-to-br from-yellow-50 to-orange-50">
+                {/* DOCUMENT-SPECIFIC RECOMMENDATIONS */}
+                <Card className="border-2 border-green-400 bg-gradient-to-br from-green-50 to-emerald-50">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                      <Lightbulb className="w-5 h-5 text-yellow-600" />
-                      Personalized Medical Recommendations
+                      <Target className="w-5 h-5 text-green-600" />
+                      Document-Specific Medical Recommendations
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
@@ -231,19 +261,22 @@ export const DetailedAnalysisDialog = ({
                             <div className="flex items-center gap-2 mb-2">
                               <CheckCircle className="w-5 h-5 text-green-600" />
                               <span className="font-semibold text-green-800">
-                                {analysisResult.recommendations.length} Personalized Recommendations Generated
+                                {analysisResult.recommendations.length} Personalized Recommendations
                               </span>
                             </div>
                             <p className="text-sm text-green-700">
-                              Based on your medical document analysis, here are specific recommendations for your health:
+                              {analysisResult.confidence > 0.85 
+                                ? 'Based on your specific medical document content:'
+                                : `Based on analysis of your ${analysisResult.category || 'medical document'}:`
+                              }
                             </p>
                           </div>
                           
                           <div className="space-y-3">
                             {analysisResult.recommendations.map((recommendation: string, index: number) => (
-                              <div key={index} className="flex items-start gap-4 p-4 bg-white rounded-lg border border-yellow-200 shadow-sm hover:shadow-md transition-shadow">
+                              <div key={index} className="flex items-start gap-4 p-4 bg-white rounded-lg border border-green-200 shadow-sm hover:shadow-md transition-shadow">
                                 <div className="flex-shrink-0 mt-1">
-                                  <div className="w-8 h-8 bg-gradient-to-br from-yellow-500 to-orange-500 text-white rounded-full flex items-center justify-center text-sm font-bold">
+                                  <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-emerald-500 text-white rounded-full flex items-center justify-center text-sm font-bold">
                                     {index + 1}
                                   </div>
                                 </div>
@@ -257,13 +290,13 @@ export const DetailedAnalysisDialog = ({
                           </div>
                         </>
                       ) : (
-                        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
                           <div className="flex items-center gap-2 mb-2">
-                            <AlertTriangle className="w-5 h-5 text-red-600" />
-                            <span className="font-semibold text-red-800">No Recommendations Available</span>
+                            <AlertTriangle className="w-5 h-5 text-amber-600" />
+                            <span className="font-semibold text-amber-800">Analysis in Progress</span>
                           </div>
-                          <p className="text-sm text-red-700">
-                            No personalized recommendations were generated. Please try the analysis again.
+                          <p className="text-sm text-amber-700">
+                            Document analysis is being processed. Please try again in a moment for specific recommendations.
                           </p>
                         </div>
                       )}
@@ -276,7 +309,7 @@ export const DetailedAnalysisDialog = ({
                   <Card>
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
-                        <Activity className="w-5 h-5 text-blue-600" />
+                        <FileText className="w-5 h-5 text-blue-600" />
                         Key Medical Findings
                       </CardTitle>
                     </CardHeader>
@@ -326,7 +359,7 @@ export const DetailedAnalysisDialog = ({
               <Button onClick={() => {
                 toast({
                   title: "Analysis Saved",
-                  description: "The detailed ChatGPT analysis has been saved to your records",
+                  description: "The medical analysis has been saved to your records",
                 });
                 onOpenChange(false);
               }}>
