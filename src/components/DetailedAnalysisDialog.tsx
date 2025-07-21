@@ -64,6 +64,7 @@ export const DetailedAnalysisDialog = ({
 
     try {
       const result = await ChatGPTMedicalAnalysisService.analyzeImage(imageUrl, fileName);
+      console.log('ChatGPT analysis result:', result);
       setAnalysisResult(result);
       
       toast({
@@ -182,7 +183,7 @@ export const DetailedAnalysisDialog = ({
                 <Card className="border-green-200 bg-green-50">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                      {getAnalysisIcon(analysisResult.analysisType)}
+                      {getAnalysisIcon(analysisResult.category)}
                       Analysis Summary
                     </CardTitle>
                   </CardHeader>
@@ -190,7 +191,7 @@ export const DetailedAnalysisDialog = ({
                     <div className="space-y-4">
                       <div className="flex items-center justify-between">
                         <span className="text-sm text-gray-600">Analysis Type:</span>
-                        <Badge variant="outline">{analysisResult.analysisType || 'Medical Analysis'}</Badge>
+                        <Badge variant="outline">{analysisResult.category || 'Medical Analysis'}</Badge>
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-sm text-gray-600">Confidence:</span>
@@ -232,40 +233,21 @@ export const DetailedAnalysisDialog = ({
                   </Card>
                 )}
 
-                {/* Extracted Text */}
-                {analysisResult.textContent && (
+                {/* Key Findings */}
+                {analysisResult.keyFindings && analysisResult.keyFindings.length > 0 && (
                   <Card>
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
-                        <FileText className="w-5 h-5 text-green-600" />
-                        Extracted Text Content
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="bg-gray-50 p-4 rounded-lg max-h-40 overflow-y-auto">
-                        <p className="text-sm text-gray-700 whitespace-pre-wrap">
-                          {analysisResult.textContent}
-                        </p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-
-                {/* Medical Findings */}
-                {analysisResult.medicalFindings && analysisResult.medicalFindings.length > 0 && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <Activity className="w-5 h-5 text-red-600" />
-                        Medical Findings
+                        <Activity className="w-5 h-5 text-blue-600" />
+                        Key Medical Findings
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-2">
-                        {analysisResult.medicalFindings.map((finding: string, index: number) => (
-                          <div key={index} className="flex items-center gap-2">
-                            <CheckCircle className="w-4 h-4 text-blue-500" />
-                            <span className="text-sm">{finding}</span>
+                        {analysisResult.keyFindings.map((finding: string, index: number) => (
+                          <div key={index} className="flex items-start gap-2 p-2 bg-blue-50 rounded">
+                            <CheckCircle className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
+                            <span className="text-sm text-blue-800">{finding}</span>
                           </div>
                         ))}
                       </div>
@@ -273,20 +255,20 @@ export const DetailedAnalysisDialog = ({
                   </Card>
                 )}
 
-                {/* Key Metrics */}
-                {analysisResult.keyMetrics && analysisResult.keyMetrics.length > 0 && (
+                {/* Medical Terms */}
+                {analysisResult.medicalTerms && analysisResult.medicalTerms.length > 0 && (
                   <Card>
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
                         <Target className="w-5 h-5 text-purple-600" />
-                        Key Measurements & Values
+                        Medical Terms & Measurements
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
                       <div className="flex flex-wrap gap-2">
-                        {analysisResult.keyMetrics.map((metric: string, index: number) => (
+                        {analysisResult.medicalTerms.map((term: string, index: number) => (
                           <Badge key={index} variant="outline" className="font-mono">
-                            {metric}
+                            {term}
                           </Badge>
                         ))}
                       </div>
@@ -294,8 +276,8 @@ export const DetailedAnalysisDialog = ({
                   </Card>
                 )}
 
-                {/* Recommendations */}
-                <Card>
+                {/* Personalized Medical Recommendations - THIS IS THE KEY SECTION */}
+                <Card className="border-2 border-yellow-200 bg-gradient-to-br from-yellow-50 to-orange-50">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Lightbulb className="w-5 h-5 text-yellow-600" />
@@ -306,36 +288,37 @@ export const DetailedAnalysisDialog = ({
                     <div className="space-y-3">
                       {analysisResult.recommendations && analysisResult.recommendations.length > 0 ? (
                         analysisResult.recommendations.map((recommendation: string, index: number) => (
-                          <div key={index} className="flex items-start gap-3 p-3 bg-yellow-50 rounded-lg">
-                            <CheckCircle className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
-                            <span className="text-sm text-gray-700">{recommendation}</span>
+                          <div key={index} className="flex items-start gap-3 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+                            <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
+                            <div className="flex-1">
+                              <span className="text-sm font-medium text-gray-900">{recommendation}</span>
+                            </div>
                           </div>
                         ))
                       ) : (
-                        <div className="flex items-start gap-3">
-                          <CheckCircle className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
-                          <span className="text-sm text-gray-700">Document analysis completed successfully.</span>
+                        <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+                          <CheckCircle className="w-5 h-5 text-gray-600 mt-0.5 flex-shrink-0" />
+                          <span className="text-sm text-gray-700">No specific recommendations available. Please consult with your healthcare provider.</span>
                         </div>
                       )}
                     </div>
                   </CardContent>
                 </Card>
 
-                {/* Follow-up Actions */}
-                {analysisResult.followUpActions && analysisResult.followUpActions.length > 0 && (
+                {/* Medical Metrics */}
+                {analysisResult.metrics && analysisResult.metrics.length > 0 && (
                   <Card>
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
-                        <Calendar className="w-5 h-5 text-blue-600" />
-                        Recommended Follow-up Actions
+                        <Target className="w-5 h-5 text-indigo-600" />
+                        Key Metrics & Values
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <div className="space-y-2">
-                        {analysisResult.followUpActions.map((action: string, index: number) => (
-                          <div key={index} className="flex items-start gap-2 p-2 bg-blue-50 rounded">
-                            <Calendar className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
-                            <span className="text-sm text-blue-800">{action}</span>
+                      <div className="grid grid-cols-2 gap-4">
+                        {analysisResult.metrics.map((metric: string, index: number) => (
+                          <div key={index} className="p-3 bg-indigo-50 rounded-lg">
+                            <span className="text-sm font-mono text-indigo-800">{metric}</span>
                           </div>
                         ))}
                       </div>
@@ -354,8 +337,9 @@ export const DetailedAnalysisDialog = ({
               <Button onClick={() => {
                 toast({
                   title: "Analysis Saved",
-                  description: "The detailed ChatGPT analysis has been noted for your records",
+                  description: "The detailed ChatGPT analysis has been saved to your records",
                 });
+                onOpenChange(false);
               }}>
                 Save Analysis
               </Button>
