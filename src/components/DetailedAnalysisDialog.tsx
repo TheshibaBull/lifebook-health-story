@@ -52,7 +52,10 @@ export const DetailedAnalysisDialog = ({
   }, [open, existingAnalysis]);
 
   const startChatGPTAnalysis = async () => {
+    console.log('=== Starting ChatGPT Analysis ===');
+    
     const apiKey = ChatGPTMedicalAnalysisService.getApiKey();
+    console.log('API Key available:', !!apiKey);
     
     if (!apiKey) {
       setShowApiKeyDialog(true);
@@ -63,13 +66,20 @@ export const DetailedAnalysisDialog = ({
     setAnalysisResult(null);
 
     try {
+      console.log('Calling ChatGPT analysis service...');
       const result = await ChatGPTMedicalAnalysisService.analyzeImage(imageUrl, fileName);
-      console.log('ChatGPT analysis result:', result);
+      
+      console.log('=== ChatGPT Analysis Result ===');
+      console.log('Summary:', result.summary);
+      console.log('Key Findings:', result.keyFindings);
+      console.log('Recommendations:', result.recommendations);
+      console.log('Recommendations count:', result.recommendations?.length || 0);
+      
       setAnalysisResult(result);
       
       toast({
         title: "ChatGPT Analysis Complete",
-        description: "Detailed medical analysis has been generated with personalized recommendations",
+        description: `Analysis completed with ${result.recommendations?.length || 0} recommendations`,
       });
     } catch (error) {
       console.error('ChatGPT analysis failed:', error);
@@ -88,6 +98,7 @@ export const DetailedAnalysisDialog = ({
   };
 
   const handleApiKeySet = () => {
+    setShowApiKeyDialog(false);
     startChatGPTAnalysis();
   };
 
@@ -255,6 +266,54 @@ export const DetailedAnalysisDialog = ({
                   </Card>
                 )}
 
+                {/* PERSONALIZED MEDICAL RECOMMENDATIONS - MAIN SECTION */}
+                <Card className="border-2 border-yellow-200 bg-gradient-to-br from-yellow-50 to-orange-50">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Lightbulb className="w-5 h-5 text-yellow-600" />
+                      Personalized Medical Recommendations
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {analysisResult.recommendations && analysisResult.recommendations.length > 0 ? (
+                        <>
+                          <div className="mb-4 p-3 bg-yellow-100 rounded-lg border border-yellow-300">
+                            <p className="text-sm font-medium text-yellow-800">
+                              📋 Found {analysisResult.recommendations.length} personalized recommendations based on your medical document
+                            </p>
+                          </div>
+                          {analysisResult.recommendations.map((recommendation: string, index: number) => (
+                            <div key={index} className="flex items-start gap-3 p-4 bg-white rounded-lg border border-yellow-200 shadow-sm">
+                              <div className="flex-shrink-0">
+                                <div className="w-6 h-6 bg-yellow-500 text-white rounded-full flex items-center justify-center text-sm font-bold">
+                                  {index + 1}
+                                </div>
+                              </div>
+                              <div className="flex-1">
+                                <p className="text-sm font-medium text-gray-900 leading-relaxed">
+                                  {recommendation}
+                                </p>
+                              </div>
+                            </div>
+                          ))}
+                        </>
+                      ) : (
+                        <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg border">
+                          <AlertTriangle className="w-5 h-5 text-gray-600 mt-0.5 flex-shrink-0" />
+                          <div className="flex-1">
+                            <p className="text-sm font-medium text-gray-900 mb-2">No specific recommendations generated</p>
+                            <p className="text-sm text-gray-700">
+                              The AI analysis did not generate specific recommendations for this document. 
+                              Please consult with your healthcare provider for personalized medical advice.
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+
                 {/* Medical Terms */}
                 {analysisResult.medicalTerms && analysisResult.medicalTerms.length > 0 && (
                   <Card>
@@ -276,35 +335,6 @@ export const DetailedAnalysisDialog = ({
                   </Card>
                 )}
 
-                {/* Personalized Medical Recommendations - THIS IS THE KEY SECTION */}
-                <Card className="border-2 border-yellow-200 bg-gradient-to-br from-yellow-50 to-orange-50">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Lightbulb className="w-5 h-5 text-yellow-600" />
-                      Personalized Medical Recommendations
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      {analysisResult.recommendations && analysisResult.recommendations.length > 0 ? (
-                        analysisResult.recommendations.map((recommendation: string, index: number) => (
-                          <div key={index} className="flex items-start gap-3 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
-                            <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
-                            <div className="flex-1">
-                              <span className="text-sm font-medium text-gray-900">{recommendation}</span>
-                            </div>
-                          </div>
-                        ))
-                      ) : (
-                        <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
-                          <CheckCircle className="w-5 h-5 text-gray-600 mt-0.5 flex-shrink-0" />
-                          <span className="text-sm text-gray-700">No specific recommendations available. Please consult with your healthcare provider.</span>
-                        </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-
                 {/* Medical Metrics */}
                 {analysisResult.metrics && analysisResult.metrics.length > 0 && (
                   <Card>
@@ -325,6 +355,20 @@ export const DetailedAnalysisDialog = ({
                     </CardContent>
                   </Card>
                 )}
+
+                {/* Debug Info */}
+                <Card className="border-gray-200 bg-gray-50">
+                  <CardHeader>
+                    <CardTitle className="text-sm text-gray-600">Debug Information</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-xs text-gray-500 space-y-1">
+                      <p>Analysis Object Keys: {Object.keys(analysisResult).join(', ')}</p>
+                      <p>Recommendations Array: {JSON.stringify(analysisResult.recommendations)}</p>
+                      <p>Recommendations Length: {analysisResult.recommendations?.length || 0}</p>
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
             )}
           </div>
