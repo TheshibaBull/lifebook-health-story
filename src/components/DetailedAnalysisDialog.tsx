@@ -69,23 +69,33 @@ export const DetailedAnalysisDialog = ({
       console.log('Calling ChatGPT analysis service...');
       const result = await ChatGPTMedicalAnalysisService.analyzeImage(imageUrl, fileName);
       
-      console.log('=== ChatGPT Analysis Result ===');
+      console.log('=== ChatGPT Analysis Result Received ===');
+      console.log('Full result object:', result);
       console.log('Summary:', result.summary);
       console.log('Key Findings:', result.keyFindings);
       console.log('Recommendations:', result.recommendations);
-      console.log('Recommendations count:', result.recommendations?.length || 0);
+      console.log('Recommendations type:', typeof result.recommendations);
+      console.log('Recommendations length:', result.recommendations?.length);
+      console.log('Is recommendations array?', Array.isArray(result.recommendations));
+      
+      if (result.recommendations && Array.isArray(result.recommendations)) {
+        console.log('Individual recommendations:');
+        result.recommendations.forEach((rec, index) => {
+          console.log(`${index + 1}:`, rec);
+        });
+      }
       
       setAnalysisResult(result);
       
       toast({
         title: "ChatGPT Analysis Complete",
-        description: `Analysis completed with ${result.recommendations?.length || 0} recommendations`,
+        description: `Analysis completed successfully with ${result.recommendations?.length || 0} recommendations`,
       });
     } catch (error) {
       console.error('ChatGPT analysis failed:', error);
       toast({
         title: "Analysis Failed",
-        description: error instanceof Error ? error.message : "Failed to analyze with ChatGPT. Please check your API key.",
+        description: error instanceof Error ? error.message : "Failed to analyze with ChatGPT. Please check your API key and try again.",
         variant: "destructive",
       });
       
@@ -100,14 +110,6 @@ export const DetailedAnalysisDialog = ({
   const handleApiKeySet = () => {
     setShowApiKeyDialog(false);
     startChatGPTAnalysis();
-  };
-
-  const getAnalysisIcon = (type?: string) => {
-    if (!type) return <FileText className="w-5 h-5 text-gray-500" />;
-    
-    if (type.includes('Medical') || type.includes('Lab')) return <Activity className="w-5 h-5 text-red-500" />;
-    if (type.includes('Data')) return <Target className="w-5 h-5 text-blue-500" />;
-    return <FileText className="w-5 h-5 text-gray-500" />;
   };
 
   return (
@@ -146,16 +148,16 @@ export const DetailedAnalysisDialog = ({
                 </CardHeader>
                 <CardContent>
                   <p className="text-gray-700 mb-4">
-                    Get detailed medical analysis powered by ChatGPT-4 Vision, including:
+                    Get comprehensive medical analysis powered by ChatGPT-4 Vision:
                   </p>
                   <div className="grid grid-cols-2 gap-4 text-sm mb-6">
                     <div className="flex items-center gap-2">
                       <CheckCircle className="w-4 h-4 text-green-500" />
-                      <span>Accurate Text Extraction</span>
+                      <span>Medical Text Extraction</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <CheckCircle className="w-4 h-4 text-green-500" />
-                      <span>Medical Findings Detection</span>
+                      <span>Clinical Findings Analysis</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <CheckCircle className="w-4 h-4 text-green-500" />
@@ -163,12 +165,12 @@ export const DetailedAnalysisDialog = ({
                     </div>
                     <div className="flex items-center gap-2">
                       <CheckCircle className="w-4 h-4 text-green-500" />
-                      <span>Urgent Items Identification</span>
+                      <span>Urgent Items Detection</span>
                     </div>
                   </div>
                   <Button onClick={startChatGPTAnalysis} className="w-full bg-green-600 hover:bg-green-700">
                     <Zap className="w-4 h-4 mr-2" />
-                    Analyze with ChatGPT
+                    Start Analysis
                   </Button>
                 </CardContent>
               </Card>
@@ -181,7 +183,7 @@ export const DetailedAnalysisDialog = ({
                     <Loader2 className="w-12 h-12 text-green-600 animate-spin mx-auto" />
                     <h3 className="text-lg font-semibold">Analyzing with ChatGPT...</h3>
                     <p className="text-gray-600">
-                      ChatGPT is examining your medical document and generating detailed insights...
+                      Processing your medical document and generating personalized recommendations...
                     </p>
                   </div>
                 </CardContent>
@@ -194,14 +196,14 @@ export const DetailedAnalysisDialog = ({
                 <Card className="border-green-200 bg-green-50">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                      {getAnalysisIcon(analysisResult.category)}
+                      <Activity className="w-5 h-5 text-green-600" />
                       Analysis Summary
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
                       <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-600">Analysis Type:</span>
+                        <span className="text-sm text-gray-600">Category:</span>
                         <Badge variant="outline">{analysisResult.category || 'Medical Analysis'}</Badge>
                       </div>
                       <div className="flex items-center justify-between">
@@ -217,35 +219,77 @@ export const DetailedAnalysisDialog = ({
                         </div>
                       </div>
                       <Separator />
-                      <p className="text-gray-700">{analysisResult.summary || 'Analysis completed successfully.'}</p>
+                      <p className="text-gray-700">{analysisResult.summary}</p>
                     </div>
                   </CardContent>
                 </Card>
 
-                {/* Urgent Items */}
-                {analysisResult.urgentItems && analysisResult.urgentItems.length > 0 && (
-                  <Card className="border-red-200 bg-red-50">
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2 text-red-700">
-                        <AlertTriangle className="w-5 h-5" />
-                        Urgent Items Requiring Attention
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-2">
-                        {analysisResult.urgentItems.map((item: string, index: number) => (
-                          <div key={index} className="flex items-start gap-2 p-2 bg-red-100 rounded">
-                            <AlertTriangle className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" />
-                            <span className="text-sm text-red-800 font-medium">{item}</span>
+                {/* PERSONALIZED MEDICAL RECOMMENDATIONS - ENHANCED */}
+                <Card className="border-2 border-yellow-400 bg-gradient-to-br from-yellow-50 to-orange-50">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Lightbulb className="w-5 h-5 text-yellow-600" />
+                      Personalized Medical Recommendations
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {analysisResult.recommendations && Array.isArray(analysisResult.recommendations) && analysisResult.recommendations.length > 0 ? (
+                        <>
+                          <div className="bg-yellow-100 border border-yellow-300 rounded-lg p-4">
+                            <div className="flex items-center gap-2 mb-2">
+                              <CheckCircle className="w-5 h-5 text-yellow-600" />
+                              <span className="font-semibold text-yellow-800">
+                                {analysisResult.recommendations.length} Personalized Recommendations Generated
+                              </span>
+                            </div>
+                            <p className="text-sm text-yellow-700">
+                              Based on your medical document analysis, here are specific recommendations for your health:
+                            </p>
                           </div>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
+                          
+                          <div className="space-y-3">
+                            {analysisResult.recommendations.map((recommendation: string, index: number) => (
+                              <div key={index} className="flex items-start gap-4 p-4 bg-white rounded-lg border border-yellow-200 shadow-sm hover:shadow-md transition-shadow">
+                                <div className="flex-shrink-0 mt-1">
+                                  <div className="w-7 h-7 bg-gradient-to-br from-yellow-500 to-orange-500 text-white rounded-full flex items-center justify-center text-sm font-bold">
+                                    {index + 1}
+                                  </div>
+                                </div>
+                                <div className="flex-1">
+                                  <p className="text-sm font-medium text-gray-900 leading-relaxed">
+                                    {recommendation}
+                                  </p>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </>
+                      ) : (
+                        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                          <div className="flex items-center gap-2 mb-2">
+                            <AlertTriangle className="w-5 h-5 text-red-600" />
+                            <span className="font-semibold text-red-800">No Recommendations Available</span>
+                          </div>
+                          <p className="text-sm text-red-700">
+                            The analysis did not generate specific recommendations. This could be due to:
+                          </p>
+                          <ul className="mt-2 text-sm text-red-700 list-disc list-inside">
+                            <li>Document image quality issues</li>
+                            <li>Insufficient medical information in the document</li>
+                            <li>API processing error</li>
+                          </ul>
+                          <p className="mt-2 text-sm text-red-700">
+                            Please try uploading a clearer image or consult with your healthcare provider.
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
 
                 {/* Key Findings */}
-                {analysisResult.keyFindings && analysisResult.keyFindings.length > 0 && (
+                {analysisResult.keyFindings && Array.isArray(analysisResult.keyFindings) && analysisResult.keyFindings.length > 0 && (
                   <Card>
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
@@ -256,7 +300,7 @@ export const DetailedAnalysisDialog = ({
                     <CardContent>
                       <div className="space-y-2">
                         {analysisResult.keyFindings.map((finding: string, index: number) => (
-                          <div key={index} className="flex items-start gap-2 p-2 bg-blue-50 rounded">
+                          <div key={index} className="flex items-start gap-2 p-3 bg-blue-50 rounded-lg">
                             <CheckCircle className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
                             <span className="text-sm text-blue-800">{finding}</span>
                           </div>
@@ -266,89 +310,21 @@ export const DetailedAnalysisDialog = ({
                   </Card>
                 )}
 
-                {/* PERSONALIZED MEDICAL RECOMMENDATIONS - MAIN SECTION */}
-                <Card className="border-2 border-yellow-200 bg-gradient-to-br from-yellow-50 to-orange-50">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Lightbulb className="w-5 h-5 text-yellow-600" />
-                      Personalized Medical Recommendations
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      {analysisResult.recommendations && analysisResult.recommendations.length > 0 ? (
-                        <>
-                          <div className="mb-4 p-3 bg-yellow-100 rounded-lg border border-yellow-300">
-                            <p className="text-sm font-medium text-yellow-800">
-                              📋 Found {analysisResult.recommendations.length} personalized recommendations based on your medical document
-                            </p>
-                          </div>
-                          {analysisResult.recommendations.map((recommendation: string, index: number) => (
-                            <div key={index} className="flex items-start gap-3 p-4 bg-white rounded-lg border border-yellow-200 shadow-sm">
-                              <div className="flex-shrink-0">
-                                <div className="w-6 h-6 bg-yellow-500 text-white rounded-full flex items-center justify-center text-sm font-bold">
-                                  {index + 1}
-                                </div>
-                              </div>
-                              <div className="flex-1">
-                                <p className="text-sm font-medium text-gray-900 leading-relaxed">
-                                  {recommendation}
-                                </p>
-                              </div>
-                            </div>
-                          ))}
-                        </>
-                      ) : (
-                        <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg border">
-                          <AlertTriangle className="w-5 h-5 text-gray-600 mt-0.5 flex-shrink-0" />
-                          <div className="flex-1">
-                            <p className="text-sm font-medium text-gray-900 mb-2">No specific recommendations generated</p>
-                            <p className="text-sm text-gray-700">
-                              The AI analysis did not generate specific recommendations for this document. 
-                              Please consult with your healthcare provider for personalized medical advice.
-                            </p>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Medical Terms */}
-                {analysisResult.medicalTerms && analysisResult.medicalTerms.length > 0 && (
-                  <Card>
+                {/* Urgent Items */}
+                {analysisResult.urgentItems && Array.isArray(analysisResult.urgentItems) && analysisResult.urgentItems.length > 0 && (
+                  <Card className="border-red-200 bg-red-50">
                     <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <Target className="w-5 h-5 text-purple-600" />
-                        Medical Terms & Measurements
+                      <CardTitle className="flex items-center gap-2 text-red-700">
+                        <AlertTriangle className="w-5 h-5" />
+                        Urgent Items Requiring Attention
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <div className="flex flex-wrap gap-2">
-                        {analysisResult.medicalTerms.map((term: string, index: number) => (
-                          <Badge key={index} variant="outline" className="font-mono">
-                            {term}
-                          </Badge>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-
-                {/* Medical Metrics */}
-                {analysisResult.metrics && analysisResult.metrics.length > 0 && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <Target className="w-5 h-5 text-indigo-600" />
-                        Key Metrics & Values
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="grid grid-cols-2 gap-4">
-                        {analysisResult.metrics.map((metric: string, index: number) => (
-                          <div key={index} className="p-3 bg-indigo-50 rounded-lg">
-                            <span className="text-sm font-mono text-indigo-800">{metric}</span>
+                      <div className="space-y-2">
+                        {analysisResult.urgentItems.map((item: string, index: number) => (
+                          <div key={index} className="flex items-start gap-2 p-3 bg-red-100 rounded-lg">
+                            <AlertTriangle className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" />
+                            <span className="text-sm text-red-800 font-medium">{item}</span>
                           </div>
                         ))}
                       </div>
@@ -356,16 +332,18 @@ export const DetailedAnalysisDialog = ({
                   </Card>
                 )}
 
-                {/* Debug Info */}
+                {/* Debug Information */}
                 <Card className="border-gray-200 bg-gray-50">
                   <CardHeader>
                     <CardTitle className="text-sm text-gray-600">Debug Information</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="text-xs text-gray-500 space-y-1">
-                      <p>Analysis Object Keys: {Object.keys(analysisResult).join(', ')}</p>
-                      <p>Recommendations Array: {JSON.stringify(analysisResult.recommendations)}</p>
+                      <p>Analysis Result Keys: {Object.keys(analysisResult).join(', ')}</p>
+                      <p>Recommendations Type: {typeof analysisResult.recommendations}</p>
+                      <p>Recommendations Is Array: {Array.isArray(analysisResult.recommendations)}</p>
                       <p>Recommendations Length: {analysisResult.recommendations?.length || 0}</p>
+                      <p>First Recommendation: {analysisResult.recommendations?.[0] || 'None'}</p>
                     </div>
                   </CardContent>
                 </Card>

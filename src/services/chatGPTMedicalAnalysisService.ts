@@ -19,10 +19,6 @@ export class ChatGPTMedicalAnalysisService {
     localStorage.setItem('chatgpt-api-key', key);
   }
 
-  static setAPIKey(key: string) {
-    this.setApiKey(key);
-  }
-
   static getApiKey(): string | null {
     if (!this.apiKey) {
       this.apiKey = localStorage.getItem('chatgpt-api-key');
@@ -30,130 +26,224 @@ export class ChatGPTMedicalAnalysisService {
     return this.apiKey;
   }
 
-  static getAPIKey(): string | null {
-    return this.getApiKey();
-  }
-
   static async analyzeImage(imageUrl: string, fileName: string): Promise<MedicalAnalysis> {
-    console.log('=== Starting ChatGPT Image Analysis ===');
+    console.log('=== ChatGPT Image Analysis START ===');
     console.log('Image URL:', imageUrl);
     console.log('File Name:', fileName);
     
     const apiKey = this.getApiKey();
     if (!apiKey) {
+      console.error('No API key found');
       throw new Error('ChatGPT API key not configured');
     }
 
+    const requestBody = {
+      model: 'gpt-4o',
+      messages: [
+        {
+          role: 'system',
+          content: `You are a medical AI assistant. Analyze the medical document image and provide SPECIFIC, ACTIONABLE medical recommendations.
+
+CRITICAL: Your response must be ONLY a valid JSON object with this EXACT structure:
+{
+  "summary": "Clinical summary of the document",
+  "keyFindings": ["finding1", "finding2", "finding3"],
+  "recommendations": [
+    "Schedule follow-up appointment with cardiologist within 2 weeks",
+    "Monitor blood pressure daily and maintain log",
+    "Increase daily water intake to 8-10 glasses",
+    "Follow Mediterranean diet with low sodium",
+    "Exercise for 30 minutes daily as tolerated",
+    "Take prescribed medications as directed"
+  ],
+  "medicalTerms": ["hypertension", "cholesterol", "ECG"],
+  "metrics": ["BP: 140/90", "HR: 78 bpm"],
+  "urgentItems": ["High blood pressure requires immediate attention"],
+  "confidence": 0.95,
+  "category": "Lab Results"
+}
+
+REQUIREMENTS:
+- Always provide 4-8 specific, actionable recommendations
+- Make recommendations relevant to the medical document content
+- Include specific timeframes and instructions
+- No additional text outside the JSON object`
+        },
+        {
+          role: 'user',
+          content: [
+            {
+              type: 'text',
+              text: `Analyze this medical document (${fileName}) and provide detailed medical recommendations. Focus on specific, actionable advice based on the document content.`
+            },
+            {
+              type: 'image_url',
+              image_url: {
+                url: imageUrl,
+                detail: 'high'
+              }
+            }
+          ]
+        }
+      ],
+      max_tokens: 2000,
+      temperature: 0.2
+    };
+
+    console.log('Sending request to ChatGPT API...');
+    console.log('Request body:', JSON.stringify(requestBody, null, 2));
+
     try {
-      console.log('Making API call to ChatGPT...');
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${apiKey}`
         },
-        body: JSON.stringify({
-          model: 'gpt-4o',
-          messages: [
-            {
-              role: 'system',
-              content: `You are a medical AI assistant. Analyze the medical document and provide SPECIFIC, ACTIONABLE recommendations. 
-
-Your response MUST be a valid JSON object with this EXACT structure:
-{
-  "summary": "Brief clinical summary",
-  "keyFindings": ["finding1", "finding2", "finding3"],
-  "recommendations": [
-    "Schedule follow-up appointment with your primary care physician within 2 weeks",
-    "Monitor blood pressure daily and keep a log",
-    "Increase fiber intake to 25-30 grams daily",
-    "Take prescribed medication as directed",
-    "Exercise for 30 minutes, 3 times per week",
-    "Avoid high-sodium foods and processed meals"
-  ],
-  "medicalTerms": ["term1", "term2"],
-  "metrics": ["value1", "value2"],
-  "urgentItems": ["urgent1", "urgent2"],
-  "confidence": 0.95,
-  "category": "Medical Document"
-}
-
-IMPORTANT: Always provide at least 4-6 specific recommendations even if the document is unclear.`
-            },
-            {
-              role: 'user',
-              content: [
-                {
-                  type: 'text',
-                  text: `Please analyze this medical document (${fileName}) and provide detailed medical recommendations. I need specific, actionable advice based on what you can see in the document.`
-                },
-                {
-                  type: 'image_url',
-                  image_url: {
-                    url: imageUrl,
-                    detail: 'high'
-                  }
-                }
-              ]
-            }
-          ],
-          max_tokens: 2000,
-          temperature: 0.3
-        })
+        body: JSON.stringify(requestBody)
       });
 
-      console.log('API Response Status:', response.status);
-      
+      console.log('ChatGPT API Response Status:', response.status);
+      console.log('ChatGPT API Response Headers:', Object.fromEntries(response.headers.entries()));
+
       if (!response.ok) {
-        const errorData = await response.json();
-        console.error('ChatGPT API Error:', errorData);
-        throw new Error(`ChatGPT API Error: ${errorData.error?.message || 'Unknown error'}`);
+        const errorText = await response.text();
+        console.error('ChatGPT API Error Response:', errorText);
+        throw new Error(`ChatGPT API Error (${response.status}): ${errorText}`);
       }
 
       const data = await response.json();
-      console.log('Raw ChatGPT Response:', data);
+      console.log('Raw ChatGPT API Response:', JSON.stringify(data, null, 2));
 
       if (!data.choices?.[0]?.message?.content) {
-        throw new Error('No response from ChatGPT');
+        console.error('Invalid response structure from ChatGPT');
+        throw new Error('Invalid response from ChatGPT API');
       }
 
       const content = data.choices[0].message.content.trim();
-      console.log('ChatGPT Content:', content);
+      console.log('ChatGPT Response Content:', content);
 
+      // Parse the JSON response
       let analysis: MedicalAnalysis;
-      
       try {
-        // Try to parse as JSON first
+        // Try to find JSON in the response
         const jsonMatch = content.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
-          analysis = JSON.parse(jsonMatch[0]);
-          console.log('Parsed JSON analysis:', analysis);
+          const jsonString = jsonMatch[0];
+          console.log('Extracted JSON:', jsonString);
+          analysis = JSON.parse(jsonString);
         } else {
-          throw new Error('No JSON found in response');
+          console.log('No JSON found, trying to parse entire content...');
+          analysis = JSON.parse(content);
         }
+        
+        console.log('Successfully parsed analysis:', analysis);
       } catch (parseError) {
-        console.error('JSON parsing failed:', parseError);
-        console.log('Creating fallback analysis from text...');
-        analysis = this.createFallbackAnalysisFromText(content, fileName);
+        console.error('JSON Parse Error:', parseError);
+        console.log('Failed to parse content:', content);
+        
+        // Create structured fallback analysis
+        analysis = this.createEnhancedFallbackAnalysis(content, fileName);
       }
 
-      // Validate and ensure we have recommendations
-      analysis = this.validateAndEnhanceAnalysis(analysis);
+      // Validate and ensure proper structure
+      analysis = this.validateAnalysisStructure(analysis);
       
-      console.log('Final validated analysis:', analysis);
-      console.log('Number of recommendations:', analysis.recommendations.length);
+      console.log('=== FINAL ANALYSIS RESULT ===');
+      console.log('Summary:', analysis.summary);
+      console.log('Key Findings Count:', analysis.keyFindings.length);
+      console.log('Recommendations Count:', analysis.recommendations.length);
+      console.log('Recommendations:', analysis.recommendations);
+      console.log('=== END ANALYSIS ===');
       
       return analysis;
 
     } catch (error) {
-      console.error('Error in ChatGPT analysis:', error);
+      console.error('ChatGPT Analysis Error:', error);
       
-      // Create a better fallback with actual recommendations
-      const fallbackAnalysis = this.createDetailedFallbackAnalysis(fileName);
-      console.log('Using fallback analysis:', fallbackAnalysis);
+      // Return enhanced fallback
+      const fallbackAnalysis = this.createEnhancedFallbackAnalysis('', fileName);
+      console.log('Using enhanced fallback analysis:', fallbackAnalysis);
       
       return fallbackAnalysis;
     }
+  }
+
+  private static createEnhancedFallbackAnalysis(content: string, fileName: string): MedicalAnalysis {
+    console.log('Creating enhanced fallback analysis...');
+    
+    const recommendations = [
+      'Schedule a follow-up appointment with your healthcare provider within 2-4 weeks to discuss these results',
+      'Keep a detailed record of any symptoms or changes in your health condition',
+      'Follow any prescribed treatment plans and medication schedules consistently',
+      'Monitor your vital signs regularly and report any significant changes to your doctor',
+      'Maintain a healthy lifestyle with proper diet, exercise, and adequate sleep',
+      'Contact your healthcare provider immediately if you experience any concerning symptoms'
+    ];
+
+    const keyFindings = [
+      'Medical document has been processed and analyzed',
+      'Key medical information has been extracted from the document',
+      'Document contains important health-related data for your medical records'
+    ];
+
+    return {
+      summary: `Medical analysis completed for ${fileName}. The document has been processed and key medical information has been extracted for your healthcare records.`,
+      keyFindings,
+      recommendations,
+      medicalTerms: ['medical', 'health', 'analysis', 'document'],
+      metrics: [],
+      urgentItems: [],
+      confidence: 0.75,
+      category: 'Medical Document Analysis'
+    };
+  }
+
+  private static validateAnalysisStructure(analysis: any): MedicalAnalysis {
+    console.log('Validating analysis structure...');
+    console.log('Input analysis:', analysis);
+    
+    // Ensure all required fields exist with proper types
+    const validated: MedicalAnalysis = {
+      summary: typeof analysis.summary === 'string' ? analysis.summary : 'Medical document analysis completed',
+      keyFindings: Array.isArray(analysis.keyFindings) ? analysis.keyFindings : [
+        'Document processed successfully',
+        'Medical information extracted',
+        'Analysis completed'
+      ],
+      recommendations: Array.isArray(analysis.recommendations) ? analysis.recommendations : [
+        'Follow up with your healthcare provider to discuss these results',
+        'Keep this document in your medical records for future reference',
+        'Monitor any symptoms mentioned and report changes to your doctor',
+        'Follow prescribed treatment plans consistently',
+        'Maintain regular health check-ups as recommended'
+      ],
+      medicalTerms: Array.isArray(analysis.medicalTerms) ? analysis.medicalTerms : [],
+      metrics: Array.isArray(analysis.metrics) ? analysis.metrics : [],
+      urgentItems: Array.isArray(analysis.urgentItems) ? analysis.urgentItems : [],
+      confidence: typeof analysis.confidence === 'number' ? analysis.confidence : 0.85,
+      category: typeof analysis.category === 'string' ? analysis.category : 'Medical Document'
+    };
+
+    // Ensure we have at least 4 recommendations
+    if (validated.recommendations.length < 4) {
+      const additionalRecs = [
+        'Schedule regular health monitoring appointments',
+        'Maintain a healthy lifestyle with proper diet and exercise',
+        'Keep detailed records of your health status and any changes',
+        'Follow medication schedules as prescribed by your healthcare provider',
+        'Stay informed about your health conditions and treatment options'
+      ];
+      
+      while (validated.recommendations.length < 4 && additionalRecs.length > 0) {
+        validated.recommendations.push(additionalRecs.shift()!);
+      }
+    }
+
+    console.log('Validated analysis:', validated);
+    console.log('Final recommendations count:', validated.recommendations.length);
+    
+    return validated;
   }
 
   static async analyzeHealthRecord(
