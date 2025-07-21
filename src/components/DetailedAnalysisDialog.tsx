@@ -52,7 +52,7 @@ export const DetailedAnalysisDialog = ({
   }, [open, existingAnalysis]);
 
   const startChatGPTAnalysis = async () => {
-    const apiKey = ChatGPTMedicalAnalysisService.getAPIKey();
+    const apiKey = ChatGPTMedicalAnalysisService.getApiKey();
     
     if (!apiKey) {
       setShowApiKeyDialog(true);

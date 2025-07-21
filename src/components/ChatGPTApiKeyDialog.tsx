@@ -38,7 +38,7 @@ export const ChatGPTApiKeyDialog = ({ open, onOpenChange, onKeySet }: ChatGPTApi
       return;
     }
 
-    ChatGPTMedicalAnalysisService.setAPIKey(apiKey);
+    ChatGPTMedicalAnalysisService.setApiKey(apiKey);
     toast({
       title: "API Key Saved",
       description: "Your OpenAI API key has been saved securely in your browser",

@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export interface MedicalAnalysis {
@@ -20,11 +19,127 @@ export class ChatGPTMedicalAnalysisService {
     localStorage.setItem('chatgpt-api-key', key);
   }
 
+  static setAPIKey(key: string) {
+    this.setApiKey(key);
+  }
+
   static getApiKey(): string | null {
     if (!this.apiKey) {
       this.apiKey = localStorage.getItem('chatgpt-api-key');
     }
     return this.apiKey;
+  }
+
+  static getAPIKey(): string | null {
+    return this.getApiKey();
+  }
+
+  static async analyzeImage(imageUrl: string, fileName: string): Promise<MedicalAnalysis> {
+    console.log('Starting image analysis for:', fileName);
+    
+    const apiKey = this.getApiKey();
+    if (!apiKey) {
+      throw new Error('ChatGPT API key not configured');
+    }
+
+    try {
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o',
+          messages: [
+            {
+              role: 'system',
+              content: `You are a medical AI assistant analyzing health documents. Provide detailed, personalized medical recommendations based on the document content. 
+
+IMPORTANT: Your response MUST be a valid JSON object with exactly this structure:
+{
+  "summary": "Detailed clinical summary of the document",
+  "keyFindings": ["finding1", "finding2", "finding3"],
+  "recommendations": ["recommendation1", "recommendation2", "recommendation3", "recommendation4", "recommendation5"],
+  "medicalTerms": ["term1", "term2", "term3"],
+  "metrics": ["metric1", "metric2"],
+  "urgentItems": ["urgent1", "urgent2"],
+  "confidence": 0.95,
+  "category": "Lab Results"
+}
+
+Provide 5-7 specific, actionable recommendations. Focus on:
+- Lifestyle modifications
+- Follow-up care suggestions
+- Dietary recommendations
+- Exercise guidelines
+- Medication adherence
+- Monitoring suggestions
+- Preventive measures
+
+Make recommendations personalized to the specific findings in the document.`
+            },
+            {
+              role: 'user',
+              content: [
+                {
+                  type: 'text',
+                  text: `Analyze this medical document (${fileName}) and provide detailed medical recommendations and key findings. Focus on actionable advice and important medical insights.`
+                },
+                {
+                  type: 'image_url',
+                  image_url: {
+                    url: imageUrl
+                  }
+                }
+              ]
+            }
+          ],
+          max_tokens: 2000,
+          temperature: 0.3
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('ChatGPT API Error:', errorData);
+        throw new Error(`ChatGPT API Error: ${errorData.error?.message || 'Unknown error'}`);
+      }
+
+      const data = await response.json();
+      console.log('Raw ChatGPT response:', data);
+
+      if (!data.choices?.[0]?.message?.content) {
+        throw new Error('No response from ChatGPT');
+      }
+
+      const content = data.choices[0].message.content;
+      console.log('ChatGPT content:', content);
+
+      // Parse the JSON response
+      let analysis: MedicalAnalysis;
+      try {
+        const jsonMatch = content.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          analysis = JSON.parse(jsonMatch[0]);
+        } else {
+          analysis = JSON.parse(content);
+        }
+      } catch (parseError) {
+        console.error('JSON parsing error:', parseError);
+        console.log('Raw content that failed to parse:', content);
+        
+        analysis = this.parseTextToAnalysis(content);
+      }
+
+      analysis = this.validateAndEnhanceAnalysis(analysis);
+      console.log('Final analysis:', analysis);
+      return analysis;
+
+    } catch (error) {
+      console.error('Error in ChatGPT analysis:', error);
+      return this.createFallbackAnalysis(fileName);
+    }
   }
 
   static async analyzeHealthRecord(
@@ -285,10 +400,22 @@ Make recommendations personalized to the specific findings in the document.`
     console.log('Analysis to save:', analysis);
     
     try {
+      // Convert the analysis to a plain object to ensure JSON compatibility
+      const analysisData = {
+        summary: analysis.summary,
+        keyFindings: analysis.keyFindings,
+        recommendations: analysis.recommendations,
+        medicalTerms: analysis.medicalTerms,
+        metrics: analysis.metrics,
+        urgentItems: analysis.urgentItems,
+        confidence: analysis.confidence,
+        category: analysis.category
+      };
+
       const { data, error } = await supabase
         .from('health_records')
         .update({
-          ai_analysis: analysis,
+          ai_analysis: analysisData as any,
           updated_at: new Date().toISOString()
         })
         .eq('id', recordId)
