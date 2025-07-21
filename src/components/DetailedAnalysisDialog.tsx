@@ -79,10 +79,13 @@ export const DetailedAnalysisDialog = ({
       console.log('Is recommendations array?', Array.isArray(result.recommendations));
       
       if (result.recommendations && Array.isArray(result.recommendations)) {
+        console.log('✅ Valid recommendations array found');
         console.log('Individual recommendations:');
         result.recommendations.forEach((rec, index) => {
-          console.log(`${index + 1}:`, rec);
+          console.log(`  ${index + 1}: ${rec}`);
         });
+      } else {
+        console.log('❌ Invalid recommendations structure');
       }
       
       setAnalysisResult(result);
@@ -92,7 +95,7 @@ export const DetailedAnalysisDialog = ({
         description: `Analysis completed successfully with ${result.recommendations?.length || 0} recommendations`,
       });
     } catch (error) {
-      console.error('ChatGPT analysis failed:', error);
+      console.error('❌ ChatGPT analysis failed:', error);
       toast({
         title: "Analysis Failed",
         description: error instanceof Error ? error.message : "Failed to analyze with ChatGPT. Please check your API key and try again.",
@@ -110,6 +113,102 @@ export const DetailedAnalysisDialog = ({
   const handleApiKeySet = () => {
     setShowApiKeyDialog(false);
     startChatGPTAnalysis();
+  };
+
+  const renderRecommendations = () => {
+    console.log('=== Rendering Recommendations ===');
+    console.log('Analysis result:', analysisResult);
+    console.log('Recommendations:', analysisResult?.recommendations);
+    console.log('Recommendations type:', typeof analysisResult?.recommendations);
+    console.log('Is array:', Array.isArray(analysisResult?.recommendations));
+    console.log('Length:', analysisResult?.recommendations?.length);
+
+    if (!analysisResult?.recommendations) {
+      console.log('❌ No recommendations found');
+      return (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <AlertTriangle className="w-5 h-5 text-red-600" />
+            <span className="font-semibold text-red-800">No Recommendations Available</span>
+          </div>
+          <p className="text-sm text-red-700">
+            The analysis did not generate specific recommendations. This could be due to:
+          </p>
+          <ul className="mt-2 text-sm text-red-700 list-disc list-inside">
+            <li>API processing error or timeout</li>
+            <li>Document image quality issues</li>
+            <li>Insufficient medical information in the document</li>
+          </ul>
+          <p className="mt-2 text-sm text-red-700">
+            Please try again or upload a clearer image of your medical document.
+          </p>
+        </div>
+      );
+    }
+
+    if (!Array.isArray(analysisResult.recommendations)) {
+      console.log('❌ Recommendations is not an array');
+      return (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <AlertTriangle className="w-5 h-5 text-red-600" />
+            <span className="font-semibold text-red-800">Invalid Recommendations Format</span>
+          </div>
+          <p className="text-sm text-red-700">
+            The recommendations data is not in the expected format. Please try the analysis again.
+          </p>
+        </div>
+      );
+    }
+
+    if (analysisResult.recommendations.length === 0) {
+      console.log('❌ Empty recommendations array');
+      return (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <AlertTriangle className="w-5 h-5 text-yellow-600" />
+            <span className="font-semibold text-yellow-800">No Specific Recommendations</span>
+          </div>
+          <p className="text-sm text-yellow-700">
+            The analysis completed but no specific recommendations were generated. Try analyzing a different medical document.
+          </p>
+        </div>
+      );
+    }
+
+    console.log('✅ Rendering valid recommendations');
+    return (
+      <>
+        <div className="bg-green-100 border border-green-300 rounded-lg p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <CheckCircle className="w-5 h-5 text-green-600" />
+            <span className="font-semibold text-green-800">
+              {analysisResult.recommendations.length} Personalized Recommendations Generated
+            </span>
+          </div>
+          <p className="text-sm text-green-700">
+            Based on your medical document analysis, here are specific recommendations for your health:
+          </p>
+        </div>
+        
+        <div className="space-y-3">
+          {analysisResult.recommendations.map((recommendation: string, index: number) => (
+            <div key={index} className="flex items-start gap-4 p-4 bg-white rounded-lg border border-yellow-200 shadow-sm hover:shadow-md transition-shadow">
+              <div className="flex-shrink-0 mt-1">
+                <div className="w-8 h-8 bg-gradient-to-br from-yellow-500 to-orange-500 text-white rounded-full flex items-center justify-center text-sm font-bold">
+                  {index + 1}
+                </div>
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-medium text-gray-900 leading-relaxed">
+                  {recommendation}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </>
+    );
   };
 
   return (
@@ -224,7 +323,7 @@ export const DetailedAnalysisDialog = ({
                   </CardContent>
                 </Card>
 
-                {/* PERSONALIZED MEDICAL RECOMMENDATIONS - ENHANCED */}
+                {/* PERSONALIZED MEDICAL RECOMMENDATIONS */}
                 <Card className="border-2 border-yellow-400 bg-gradient-to-br from-yellow-50 to-orange-50">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
@@ -234,56 +333,7 @@ export const DetailedAnalysisDialog = ({
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
-                      {analysisResult.recommendations && Array.isArray(analysisResult.recommendations) && analysisResult.recommendations.length > 0 ? (
-                        <>
-                          <div className="bg-yellow-100 border border-yellow-300 rounded-lg p-4">
-                            <div className="flex items-center gap-2 mb-2">
-                              <CheckCircle className="w-5 h-5 text-yellow-600" />
-                              <span className="font-semibold text-yellow-800">
-                                {analysisResult.recommendations.length} Personalized Recommendations Generated
-                              </span>
-                            </div>
-                            <p className="text-sm text-yellow-700">
-                              Based on your medical document analysis, here are specific recommendations for your health:
-                            </p>
-                          </div>
-                          
-                          <div className="space-y-3">
-                            {analysisResult.recommendations.map((recommendation: string, index: number) => (
-                              <div key={index} className="flex items-start gap-4 p-4 bg-white rounded-lg border border-yellow-200 shadow-sm hover:shadow-md transition-shadow">
-                                <div className="flex-shrink-0 mt-1">
-                                  <div className="w-7 h-7 bg-gradient-to-br from-yellow-500 to-orange-500 text-white rounded-full flex items-center justify-center text-sm font-bold">
-                                    {index + 1}
-                                  </div>
-                                </div>
-                                <div className="flex-1">
-                                  <p className="text-sm font-medium text-gray-900 leading-relaxed">
-                                    {recommendation}
-                                  </p>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </>
-                      ) : (
-                        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                          <div className="flex items-center gap-2 mb-2">
-                            <AlertTriangle className="w-5 h-5 text-red-600" />
-                            <span className="font-semibold text-red-800">No Recommendations Available</span>
-                          </div>
-                          <p className="text-sm text-red-700">
-                            The analysis did not generate specific recommendations. This could be due to:
-                          </p>
-                          <ul className="mt-2 text-sm text-red-700 list-disc list-inside">
-                            <li>Document image quality issues</li>
-                            <li>Insufficient medical information in the document</li>
-                            <li>API processing error</li>
-                          </ul>
-                          <p className="mt-2 text-sm text-red-700">
-                            Please try uploading a clearer image or consult with your healthcare provider.
-                          </p>
-                        </div>
-                      )}
+                      {renderRecommendations()}
                     </div>
                   </CardContent>
                 </Card>
